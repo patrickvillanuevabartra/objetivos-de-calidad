@@ -66,6 +66,9 @@ header.top nav button{background:transparent;border:0;color:#fff;opacity:.72;fon
   padding:9px 16px;border-radius:8px;cursor:pointer;transition:.15s}
 header.top nav button:hover{opacity:1;background:rgba(255,255,255,.08)}
 header.top nav button.on{opacity:1;background:rgba(255,255,255,.16)}
+header.top nav .cont{display:inline-block;background:rgba(255,255,255,.22);border-radius:20px;padding:0 7px;
+  font-size:11px;font-weight:700;margin-left:5px;line-height:18px;vertical-align:1px}
+header.top nav .cont:empty{display:none}
 header.top .chip{font-size:12px;opacity:.85;padding:0 8px;white-space:nowrap}
 main{max-width:1280px;margin:0 auto;padding:28px 24px 80px}
 .vista{display:none;animation:fade .25s ease}
@@ -251,6 +254,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <nav>
         <button class="on" data-v="tablero">Tablero</button>
         <button data-v="objetivos">Objetivos de calidad</button>
+        <button data-v="despriorizados">Despriorizados <span class="cont" id="contDespri"></span></button>
         <span class="chip" id="chipUsr"></span>
         <button id="btnSalir">Salir</button>
       </nav>
@@ -289,6 +293,21 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <button class="btn" id="btnNuevo">+ Nuevo objetivo</button>
       </div>
       <div id="lista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
+    </section>
+
+    <!-- ---------- despriorizados ---------- -->
+    <section class="vista" id="vDespriorizados">
+      <div class="page-head">
+        <div class="eyebrow">Fuera del seguimiento activo</div>
+        <h1>Objetivos despriorizados</h1>
+        <p>Objetivos que se retiraron del plan sin eliminarse. No entran en el tablero ni en los porcentajes de cumplimiento, pero conservan su historial completo.</p>
+      </div>
+      <div class="filtros">
+        <div class="campo"><label for="dPeriodo">Periodo</label><select id="dPeriodo"></select></div>
+        <div class="campo"><label for="dOficina">Oficina</label><select id="dOficina"></select></div>
+        <div class="campo" style="flex:1.4"><label for="dBuscar">Buscar</label><input type="text" id="dBuscar" placeholder="objetivo, indicador, responsable…"></div>
+      </div>
+      <div id="listaDespri"></div>
     </section>
   </main>
 </div>
@@ -977,7 +996,9 @@ function llenarFiltros(){
   opciones("fPeriodo", per, "", "Todos");
   opciones("tPeriodo", per, "", "Todos");
   opciones("fOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
-  opciones("fCondicion", CONFIG.REGLAS.condiciones, "", "Todas");
+  opciones("dPeriodo", per, "", "Todos");
+  opciones("dOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
+  opciones("fCondicion", CONFIG.REGLAS.condiciones.filter(c => c !== "Despriorizada"), "", "Todas");
   opciones("fEstado", ["Cumplido", "Avance bueno", "Avance crítico", "Vencido", "Por vencer", "Sin indicadores"], "", "Todos");
 }
 
@@ -1052,6 +1073,7 @@ async function recargar(){
   }));
 
   pintarLista();
+  pintarDespriorizados();
   pintarTablero();
 }
 
@@ -1152,6 +1174,7 @@ function filtrados(){
         con = $("fCondicion").value, est = $("fEstado").value,
         q = norm($("fBuscar").value.trim());
   return S.objetivos.filter(o => {
+    if(esDespriorizado(o)) return false;          // van en su propia pestaña
     if(per && o.periodo !== per) return false;
     if(ofi && o.oficina !== ofi) return false;
     if(con && o.condicion !== con) return false;
@@ -1564,9 +1587,18 @@ $("btnGuardarObj").onclick = async () => {
   const b = $("btnGuardarObj");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
+    const antes = S.editObj ? norm(S.editObj.condicion) : "";
     await API.saveForm(S.editObj ? S.editObj.id : null, v, CONFIG.MATRIZ.ENTITY_ID);
     $("mObj").classList.remove("on");
-    toast(S.editObj ? "Objetivo actualizado." : "Objetivo creado. Ahora añádele su primer indicador.");
+    const ahora = norm(d.condicion);
+    let aviso;
+    if(!S.editObj) aviso = "Objetivo creado. Ahora añádele su primer indicador.";
+    else if(antes !== "despriorizada" && ahora === "despriorizada")
+      aviso = "Objetivo despriorizado. Se movió a su pestaña y ya no cuenta en el tablero.";
+    else if(antes === "despriorizada" && ahora !== "despriorizada")
+      aviso = "Objetivo reactivado. Vuelve al seguimiento y al tablero.";
+    else aviso = "Objetivo actualizado.";
+    toast(aviso);
     await recargar();
   }catch(e){ msg("mObjMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar objetivo";
@@ -2079,13 +2111,97 @@ async function eliminarReporte(id){
 }
 
 /* ==========================================================================
+   Despriorizados — pestaña aparte
+   Se retiran del plan sin eliminarse: no cuentan en el tablero ni en los
+   porcentajes de cumplimiento, pero conservan indicadores, hitos y reportes.
+   ========================================================================== */
+const esDespriorizado = o => norm(o.condicion) === "despriorizada";
+
+["dPeriodo","dOficina"].forEach(id => $(id).addEventListener("change", pintarDespriorizados));
+$("dBuscar").addEventListener("input", pintarDespriorizados);
+
+function pintarDespriorizados(){
+  const todos = S.objetivos.filter(esDespriorizado);
+  $("contDespri").textContent = todos.length || "";
+
+  const per = $("dPeriodo").value, ofi = $("dOficina").value, q = norm($("dBuscar").value.trim());
+  const arr = todos.filter(o => {
+    if(per && o.periodo !== per) return false;
+    if(ofi && o.oficina !== ofi) return false;
+    if(q){
+      const inds = indicadoresDe(o.id).map(i => i.indicador + " " + i.respTec).join(" ");
+      if(norm([o.objetivo, o.respProc, o.oficina, inds].join(" ")).indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+
+  if(!todos.length){
+    $("listaDespri").innerHTML = '<div class="vacio">No hay objetivos despriorizados. Para mover uno aquí, cambia su condición a “Despriorizada” en el formulario del objetivo.</div>';
+    return;
+  }
+  if(!arr.length){
+    $("listaDespri").innerHTML = '<div class="vacio">Ningún objetivo despriorizado coincide con los filtros.</div>';
+    return;
+  }
+
+  const abiertos = {};
+  document.querySelectorAll("#listaDespri .obj.abierto").forEach(e => abiertos[e.dataset.id] = 1);
+
+  $("listaDespri").innerHTML = arr.map(o => {
+    const p = progresoObjetivo(o.id), sem = semaforo(p), is = indicadoresDe(o.id);
+    return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + '" data-id="' + esc(o.id) + '" style="opacity:.82">' +
+      '<div class="cab" data-tog="' + esc(o.id) + '">' +
+        '<div class="tit">' +
+          "<h3>" + esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
+          '<div class="meta">' +
+            '<span class="tag a">Despriorizada</span>' +
+            (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+            (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
+            "<span>·</span><span>" + is.length + " indicador(es)</span>" +
+          "</div>" +
+        "</div>" +
+        '<div style="flex:0 0 auto;text-align:right;min-width:150px">' +
+          '<div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--mist)">' +
+            (p == null ? "—" : p + "%") + '</div>' +
+          '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+          '<div style="margin-top:5px;font-size:11.5px;color:var(--mist)">no entra al tablero</div>' +
+        "</div>" +
+        '<div class="acc">' +
+          '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' +
+        "</div>" +
+      "</div>" +
+      '<div class="cuerpo">' + detalle(o) + "</div>" +
+    "</div>";
+  }).join("");
+
+  const raiz = $("listaDespri");
+  raiz.querySelectorAll("[data-tog]").forEach(e => {
+    e.onclick = ev => {
+      if(ev.target.closest("[data-ver]")) return;
+      e.closest(".obj").classList.toggle("abierto");
+    };
+  });
+  const con = (sel, fn) => raiz.querySelectorAll(sel).forEach(e => e.onclick = () => fn(e));
+  con("[data-ver]",    e => abrirObjetivo(e.dataset.ver));
+  con("[data-inuevo]", e => abrirIndicador(e.dataset.inuevo, null));
+  con("[data-iedit]",  e => abrirIndicador(e.dataset.obj, e.dataset.iedit));
+  con("[data-idel]",   e => eliminarIndicador(e.dataset.idel));
+  con("[data-hnuevo]", e => abrirHito(e.dataset.hnuevo, null));
+  con("[data-hedit]",  e => abrirHito(e.dataset.ind, e.dataset.hedit));
+  con("[data-hdel]",   e => eliminarHito(e.dataset.hdel));
+  con("[data-rnuevo]", e => abrirReporte(e.dataset.rnuevo, null));
+  con("[data-redit]",  e => abrirReporte(e.dataset.hito, e.dataset.redit));
+  con("[data-rdel]",   e => eliminarReporte(e.dataset.rdel));
+}
+
+/* ==========================================================================
    Tablero
    ========================================================================== */
 $("tPeriodo").addEventListener("change", pintarTablero);
 
 function pintarTablero(){
   const per = $("tPeriodo").value;
-  const objs = S.objetivos.filter(o => !per || o.periodo === per);
+  const objs = S.objetivos.filter(o => !esDespriorizado(o) && (!per || o.periodo === per));
   if(!objs.length){ $("tablero").innerHTML = '<div class="vacio">Sin objetivos en este periodo.</div>'; return; }
 
   const idsObj = {}; objs.forEach(o => idsObj[o.id] = 1);
