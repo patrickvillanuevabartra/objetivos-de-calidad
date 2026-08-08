@@ -202,6 +202,17 @@ table.t tr:last-child td{border-bottom:0}
 @media (max-width:720px){ .rej{grid-template-columns:1fr} main{padding:14px} .obj .cab{flex-wrap:wrap} }
 @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
 
+/* ---------- lista de casillas ---------- */
+.chklist{border:1px solid var(--line);border-radius:9px;background:#fff;max-height:210px;overflow-y:auto;padding:4px}
+.chklist label{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;border-radius:7px;cursor:pointer;
+  font-weight:400;font-size:13.5px;margin:0;line-height:1.4}
+.chklist label:hover{background:var(--verde-cl)}
+.chklist label.on{background:var(--verde-cl)}
+.chklist input{width:auto;margin:3px 0 0;flex:none;accent-color:var(--brand)}
+.chklist .cod{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brand);flex:none}
+.chklist .nada{padding:10px;color:var(--mist);font-size:13px;text-align:center}
+.chklist.mal{border-color:var(--bad);background:var(--rojo-bg)}
+
 /* ---------- tarjeta de indicador ---------- */
 .ind-card{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:12px}
 .ind-cab{display:flex;gap:12px;align-items:flex-start}
@@ -345,14 +356,14 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
 
         <div class="full">
-          <label for="oPolitica">Compromisos de la política de calidad que atiende</label>
-          <select id="oPolitica"></select>
+          <label>Compromisos de la política de calidad que atiende <span class="op">(puedes marcar varios)</span></label>
+          <div class="chklist" id="oPolitica"></div>
           <div class="err" id="e_oPolitica"></div>
         </div>
 
         <div class="full">
-          <label for="oEstrategia">Estrategia <span class="op">(se filtra por el periodo elegido)</span></label>
-          <select id="oEstrategia"></select>
+          <label>Estrategia <span class="op">(puedes marcar varias · se filtran por el periodo elegido)</span></label>
+          <div class="chklist" id="oEstrategia"></div>
           <div class="err" id="e_oEstrategia"></div>
           <div class="panel" id="pOE" style="display:none"></div>
         </div>
@@ -1260,9 +1271,9 @@ function pintarLista(){
 function detalle(o){
   const editable = puedeEditar(o);
   let h = '<div class="rej" style="gap:10px">';
-  if(o.politica)   h += ficha("Política de calidad", esc(o.politica));
-  if(o.estrategia) h += ficha("Estrategia", esc(o.estrategia));
-  if(o.oe)         h += ficha("Objetivo estratégico", esc(o.oe));
+  if(o.politica)   h += ficha("Política de calidad", listaChips(o.politica));
+  if(o.estrategia) h += ficha("Estrategia", listaChips(o.estrategia));
+  if(o.oe)         h += ficha("Objetivo estratégico", listaChips(o.oe));
   h += ficha("Responsable de proceso", esc(o.respProc || "—") + contacto(o.rpCorreo, o.rpCel));
   h += "</div>";
 
@@ -1358,6 +1369,16 @@ function ficha(t, v){
   return '<div><div style="font-size:11px;font-weight:700;color:var(--mist);text-transform:uppercase;letter-spacing:.05em">' +
     esc(t) + '</div><div style="font-size:13.5px">' + (v || "—") + "</div></div>";
 }
+/* Varios valores separados por "; " se muestran uno por línea, no
+   apelmazados en un solo párrafo. */
+function listaChips(txt){
+  const arr = partir(txt);
+  if(!arr.length) return "—";
+  if(arr.length === 1) return esc(arr[0]);
+  return '<ul style="margin:2px 0 0;padding-left:17px">' +
+    arr.map(x => "<li>" + esc(x) + "</li>").join("") + "</ul>";
+}
+
 function contacto(correo, cel){
   const p = [];
   if(correo) p.push('<a href="mailto:' + esc(correo) + '">' + esc(correo) + "</a>");
@@ -1487,42 +1508,87 @@ function abrirObjetivo(id){
 
   opciones("oPeriodo", S.cat.periodos.map(p => p.label), o ? o.periodo : "", "— elige —");
   opciones("oCondicion", CONFIG.REGLAS.condiciones, o ? o.condicion : "Vigente", "— elige —");
-  opciones("oPolitica", S.cat.politica.map(p => p.label), o ? o.politica : "", "— elige —");
   opciones("oOficina", CONFIG.CATALOGOS.oficinas.opciones, o ? o.oficina : (esGestor() ? "" : S.sesion.oficina), "— elige —");
 
   $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
   $("oRPCorreo").value = o ? o.rpCorreo : "";
   $("oRPCel").value = o ? o.rpCel : "";
 
-  refrescarEstrategias(o ? o.estrategia : "");
-  mostrarOE(o ? o.oe : "");
+  refrescarPolitica(o ? partir(o.politica) : []);
+  refrescarEstrategias(o ? partir(o.estrategia) : []);
   refrescarResponsables(o ? o.respProc : "");
   $("mObj").classList.add("on");
 }
 
-$("oPeriodo").addEventListener("change", () => refrescarEstrategias(""));
-function refrescarEstrategias(valorActual){
+/* ---- selección múltiple: compromisos de política y estrategias ----------
+   QuintaDB los tiene como relación de opción única, pero el aplicativo no
+   escribe ahí: guarda el texto completo en el espejo, separado por "; ".
+   Los rel originales quedan sin uso, como los de proceso.               */
+const SEP = "; ";
+const partir = txt => String(txt || "").split(/\s*;\s*/).map(s => s.trim()).filter(Boolean);
+
+function pintarCasillas(cont, items, marcados, alCambiar){
+  const c = $(cont);
+  if(!items.length){ c.innerHTML = '<div class="nada">No hay opciones disponibles.</div>'; return; }
+  const set = new Set(marcados.map(norm));
+  c.innerHTML = items.map((it, i) => {
+    const marcado = set.has(norm(it.label));
+    return '<label class="' + (marcado ? "on" : "") + '">' +
+      '<input type="checkbox" value="' + esc(it.label) + '"' + (marcado ? " checked" : "") + ">" +
+      (it.codigo ? '<span class="cod">' + esc(it.codigo) + "</span>" : "") +
+      "<span>" + esc(it.label) + "</span></label>";
+  }).join("");
+  c.querySelectorAll("input").forEach(inp => {
+    inp.onchange = () => {
+      inp.closest("label").classList.toggle("on", inp.checked);
+      if(alCambiar) alCambiar();
+    };
+  });
+}
+function leerCasillas(cont){
+  return Array.from($(cont).querySelectorAll("input:checked")).map(i => i.value);
+}
+
+$("oPeriodo").addEventListener("change", () => refrescarEstrategias([]));
+
+function refrescarPolitica(marcados){
+  pintarCasillas("oPolitica", S.cat.politica.map(p => ({ label: p.label, codigo: "" })), marcados);
+}
+
+function refrescarEstrategias(marcados){
   const per = $("oPeriodo").value;
   const arr = S.cat.estrategias.filter(e => !per || !e.periodo || norm(e.periodo) === norm(per));
-  opciones("oEstrategia", arr.map(e => ({ v: e.label, t: (e.codigo ? e.codigo + " — " : "") + e.label })), valorActual, "— elige —");
-  if(!arr.length) mostrarOE("");
+  pintarCasillas("oEstrategia", arr.map(e => ({ label: e.label, codigo: e.codigo })), marcados, actualizarOE);
+  actualizarOE();
 }
-$("oEstrategia").addEventListener("change", () => {
-  const e = S.cat.estrategias.find(x => x.label === $("oEstrategia").value);
-  mostrarOE(e ? textoOE(e) : "");
-});
-function textoOE(e){
-  if(!e || !e.oe) return "";
-  const f = CONFIG.CATALOGOS.objetivos_estrategicos.formato;
-  return String(e.oe).split(/\s*,\s*/).filter(Boolean).map(t => {
-    const oe = S.cat.oe.find(x => x.id === t || norm(x.label) === norm(t));
-    return oe ? f.replace("{codigo}", oe.codigo).replace("{label}", oe.label) : t;
-  }).join(" ");
+
+/* El objetivo estratégico es la unión de los de las estrategias marcadas,
+   sin repetir: si dos estrategias comparten un OE, aparece una sola vez. */
+function actualizarOE(){
+  const elegidas = leerCasillas("oEstrategia");
+  const vistos = new Map();
+  elegidas.forEach(lab => {
+    const e = S.cat.estrategias.find(x => x.label === lab);
+    if(!e || !e.oe) return;
+    String(e.oe).split(/\s*,\s*/).filter(Boolean).forEach(t => {
+      const oe = S.cat.oe.find(x => x.id === t || norm(x.label) === norm(t));
+      const codigo = oe ? oe.codigo : t;
+      const texto = oe ? CONFIG.CATALOGOS.objetivos_estrategicos.formato
+                          .replace("{codigo}", oe.codigo).replace("{label}", oe.label) : t;
+      if(!vistos.has(norm(texto))) vistos.set(norm(texto), { codigo, texto });
+    });
+  });
+  const lista = [...vistos.values()].sort((a, b) =>
+    String(a.codigo).localeCompare(String(b.codigo), "es", { numeric: true }));
+  const txt = lista.map(x => x.texto).join(SEP);
+  mostrarOE(txt, lista.length);
 }
-function mostrarOE(txt){
+function mostrarOE(txt, cuantos){
   $("pOE").dataset.valor = txt || "";
   $("pOE").style.display = txt ? "block" : "none";
-  $("pOE").innerHTML = txt ? "<b>Objetivo estratégico:</b> " + esc(txt) : "";
+  $("pOE").innerHTML = txt
+    ? "<b>Objetivo(s) estratégico(s)" + (cuantos > 1 ? " · " + cuantos : "") + ":</b> " + esc(txt)
+    : "";
 }
 
 $("oOficina").addEventListener("change", () => refrescarResponsables(""));
@@ -1557,7 +1623,8 @@ $("btnGuardarObj").onclick = async () => {
   const d = {
     objetivo: $("oObjetivo").value.trim(),
     periodo: $("oPeriodo").value, condicion: $("oCondicion").value,
-    politica: $("oPolitica").value, estrategia: $("oEstrategia").value,
+    politica: leerCasillas("oPolitica").join(SEP),
+    estrategia: leerCasillas("oEstrategia").join(SEP),
     oe: $("pOE").dataset.valor || "", oficina: $("oOficina").value,
     respProc: $("oRespProc").value,
     rpCorreo: $("oRPCorreo").value.trim(), rpCel: $("oRPCel").value.trim()
@@ -1566,7 +1633,7 @@ $("btnGuardarObj").onclick = async () => {
   if(!d.objetivo){ error("oObjetivo", "Escribe el objetivo."); mal = true; }
   if(!d.periodo){ error("oPeriodo", "Elige el periodo."); mal = true; }
   if(!d.condicion){ error("oCondicion", "Elige la condición."); mal = true; }
-  if(!d.politica){ error("oPolitica", "Elige el compromiso de política que atiende."); mal = true; }
+  if(!d.politica){ error("oPolitica", "Marca al menos un compromiso de política."); mal = true; }
   if(!d.oficina){ error("oOficina", "Elige la oficina responsable."); mal = true; }
   if(!d.respProc){ error("oRespProc", "Elige el responsable de proceso."); mal = true; }
   if(mal){ msg("mObjMsg", "Revisa los campos marcados.", "mal"); return; }
