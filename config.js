@@ -91,6 +91,32 @@ const CONFIG = {
   //  PENDIENTE — completar tras correr el descubridor
   // ==========================================================================
   // ==========================================================================
+  //  TABLA INTERMEDIA — Indicadores del objetivo de calidad
+  //  Un objetivo se mide con varios indicadores. Cada indicador lleva su
+  //  meta, su plazo y sus hitos.
+  // ==========================================================================
+  INDICADORES: {
+    ENTITY_ID: "c9lw5JmGvdOQurAmokgmkq",
+    F: {
+      indicador:   { id: "cQW77dR8jbjzORz8kyW5Pb", type: "text",   col: "Indicador" },
+      formula:     { id: "cRtCoLogbegRZcUSojwmod", type: "text",   col: "Fórmula" },
+      meta:        { id: "cIW7PoW7PdOl7dS8kqWRTh", type: "text",   col: "Meta" },
+      fi_meta:     { id: "a_W41XW4vgq4oMivFcRYif", type: "date",   col: "F.I. Meta" },
+      fv_meta:     { id: "dcSCkjWPncPRuAWOxdHSkG", type: "date",   col: "F.V. Meta" },
+      actividades: { id: "cLs3jMWQfcW5Lqe8kMWRWb", type: "text",   col: "Actividades a realizar" },
+      recursos:    { id: "ddMN41WRvdW4i0ew3cICkB", type: "text",   col: "Recursos requeridos" },
+      proceso:     { id: "bysmokphvcQ4ksW53dH8kw", type: "text",   col: "Proceso (ruta)" },
+      resp_tecnico:        { id: "dcMIJcSSnjW64MmLrasmo2", type: "string", col: "Responsable técnico (texto)" },
+      resp_tecnico_correo: { id: "dcUSo8WOfcHykzWPytCSot", type: "email",  col: "Correo responsable técnico" },
+      resp_tecnico_celular:{ id: "ddUSkaWPLpzA3dPmoeWOX2", type: "phone",  col: "Celular responsable técnico" }
+    },
+    // Vínculo al objetivo padre: guarda su _qid.
+    ESPEJO: {
+      objetivo_ref: { id: "a2WQpdSmjnx7fsB8onpCom", type: "string", col: "Objetivo ref" }
+    }
+  },
+
+  // ==========================================================================
   //  TABLA HIJA — Hitos
   // ==========================================================================
   HITOS: {
@@ -143,9 +169,13 @@ const CONFIG = {
       criterio_por_vencer:     "crW5LNWPfcPikun29VA05E"
     },
 
-    // Campo de texto plano: guarda el _qid del objetivo padre.
-    // Es lo que sostiene toda la jerarquía.
-    ESPEJO: { objetivo_ref: { id: "ddUq7cSCjjW4ldUhy-WPer", type: "string", col: "Objetivo ref" } },
+    // Vínculos de texto plano. El hito cuelga ahora del INDICADOR;
+    // `objetivo_ref` se conserva como respaldo de la migración y para poder
+    // volver atrás si algo sale mal.
+    ESPEJO: {
+      indicador_ref: { id: "cmiCoEW6zdJOk8WPbHjmk1", type: "string", col: "Indicador ref" },
+      objetivo_ref:  { id: "ddUq7cSCjjW4ldUhy-WPer", type: "string", col: "Objetivo ref" }
+    },
 
     // El responsable técnico del hito NO tiene espejo propio: se hereda
     // del objetivo. Si más adelante hace falta que varíe por hito, se
@@ -455,9 +485,21 @@ const CONFIG = {
     // % participación de los hitos de un objetivo debe sumar 100
     participacion: { suma: 100, tolerancia: 0.5 },
 
-    // % progreso objetivo = Σ (participación_hito × progreso_hito) / 100
-    // % progreso hito     = Σ (contribuciones de sus reportes)
-    progreso: { redondeo: 1 },
+    // Jerarquía: Objetivo → Indicador → Hito → Reporte → Próxima acción
+    //
+    //   % del hito      = % de avance ACUMULADO del último reporte por fecha
+    //                     (no suma de contribuciones: cada reporte declara
+    //                      dónde está el hito hoy, así se puede corregir)
+    //   % del indicador = Σ (participación del hito × % del hito) ÷ 100
+    //   % del objetivo  = promedio simple de sus indicadores, sin ponderar
+    //
+    // Solo los hitos ponderan. Entre indicadores no hay vara comparable que
+    // justifique un peso, y obligar a que sumen 100% complicaría agregar uno.
+    progreso: { redondeo: 1, hitoDesde: "ultimoReporte", objetivoDesde: "promedioIndicadores" },
+
+    // Aviso si un reporte declara menos avance que el anterior: es válido
+    // (corregir una sobrestimación) pero casi siempre es error de captura.
+    avisarRetroceso: true,
 
     // Estado del hito: NO se lee del campo Estado de la tabla Hitos
     // (ese es una fórmula rota). Sale del reporte más reciente por fecha.
