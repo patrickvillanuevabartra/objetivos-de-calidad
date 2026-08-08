@@ -570,19 +570,109 @@ function opciones(sel, arr, valorActual, vacio){
 /* ==========================================================================
    Capa QuintaDB (vía Worker de Cloudflare)
    ========================================================================== */
-async function qdb(ruta, metodo, cuerpo){
-  const r = await fetch(CONFIG.PROXY_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ path: ruta, method: metodo || "GET", body: cuerpo || {} })
-  });
-  const txt = await r.text();
-  let d;
-  try { d = JSON.parse(txt); }
-  catch(e){ throw new Error("respuesta no JSON: " + txt.slice(0, 140)); }
-  if(d && d.error) throw new Error(String(d.error).slice(0, 180));
-  return d;
+/* Cliente del proxy — mismo patrón que Matriz de Indicadores y Riesgos:
+   reintentos con esperas crecientes, timeout amplio y errores legibles. */
+const API = {
+  async call(path, method, body, contentType){
+    if(!CONFIG.PROXY_URL) throw new Error("Falta PROXY_URL en config.js");
+    const payload = { path, method: method || "GET", body: body || {} };
+    if(contentType) payload.contentType = contentType;
+    if(CONFIG.PROXY_TOKEN) payload.token = CONFIG.PROXY_TOKEN;
+    const esLectura = (payload.method === "GET");
+    const PAUSAS = [2000, 4000], TIMEOUT = 45000;
+    const dormir = ms => new Promise(res => setTimeout(res, ms));
+    let ultimo;
+    for(let intento = 1; intento <= 3; intento++){
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), TIMEOUT);
+      let r;
+      try{
+        r = await fetch(CONFIG.PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+      }catch(e){
+        clearTimeout(t);
+        ultimo = (e.name === "AbortError") ? new Error("Sin respuesta del servidor. Revisa tu conexión.") : e;
+        if(intento < 3){ await dormir(PAUSAS[intento - 1]); continue; }
+        throw ultimo;
+      }
+      clearTimeout(t);
+      if(!r.ok){
+        ultimo = new Error("El servidor no está disponible (código " + r.status + ").");
+        if(intento < 3){ await dormir(PAUSAS[intento - 1]); continue; }
+        throw ultimo;
+      }
+      let data;
+      try{ data = await r.json(); }
+      catch(e){
+        ultimo = new Error("El servidor respondió de forma inesperada.");
+        if(esLectura && intento < 3){ await dormir(PAUSAS[intento - 1]); continue; }
+        throw ultimo;
+      }
+      if(data.error) throw new Error(data.error);
+      return data;
+    }
+    throw ultimo || new Error("Sin respuesta del servidor.");
+  },
+
+  /* Listado completo de una tabla. name_value=1 hace que QuintaDB devuelva
+     los valores indexados por NOMBRE DE COLUMNA, no por id de campo. */
+  records(entityId, sinCache){
+    const q = { name_value: 1, fetch_all: true, per_page: 2000 };
+    if(sinCache) q._ts = Date.now();
+    return this.call("/apps/" + CONFIG.APP_ID + "/dtypes/entity/" + entityId + ".json", "GET", q);
+  },
+
+  /* Lectura individual: es la única que trae los subform_values completos. */
+  record(recordId){
+    return this.call("/apps/" + CONFIG.APP_ID + "/dtypes/" + recordId + ".json", "GET", { name_value: 1 });
+  },
+
+  /* Guardar por formulario (form-urlencoded). recordId null = crear.
+     Se escribe por ID DE CAMPO, aunque se lea por nombre de columna. */
+  saveForm(recordId, campos, entityId){
+    const partes = [];
+    Object.keys(campos).forEach(fid => {
+      const val = campos[fid];
+      if(val === null || val === undefined) return;
+      if(Array.isArray(val)){
+        val.forEach(it => { if(it !== null && it !== undefined && it !== "") partes.push("values[" + encodeURIComponent(fid) + "][]=" + encodeURIComponent(it)); });
+      }else{
+        partes.push("values[" + encodeURIComponent(fid) + "]=" + encodeURIComponent(val));
+      }
+    });
+    let path, bodyStr;
+    if(recordId){ path = "/apps/" + CONFIG.APP_ID + "/dtypes/" + recordId + ".json"; bodyStr = partes.join("&"); }
+    else { path = "/apps/" + CONFIG.APP_ID + "/dtypes.json"; bodyStr = "entity_id=" + encodeURIComponent(entityId) + (partes.length ? "&" + partes.join("&") : ""); }
+    return this.call(path, recordId ? "PUT" : "POST", bodyStr, "application/x-www-form-urlencoded");
+  },
+
+  /* Subformularios: llamada aparte con json_subforms_values. */
+  saveSubform(recordId, subFieldId, subEntityId, filas){
+    const sub = {};
+    sub[subFieldId] = { entity_id: subEntityId };
+    filas.forEach(f => { sub[subFieldId][genId22()] = f; });
+    return this.call("/apps/" + CONFIG.APP_ID + "/dtypes/" + recordId + ".json", "PUT",
+      { json_subforms_values: JSON.stringify(sub) });
+  },
+
+  del(recordId){
+    return this.call("/apps/" + CONFIG.APP_ID + "/dtypes/" + recordId + ".json", "DELETE", {});
+  }
+};
+
+function genId22(){
+  const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let s = "";
+  for(let i = 0; i < 22; i++) s += c[Math.floor(Math.random() * c.length)];
+  return s;
 }
+/* QuintaDB a veces devuelve el id del campo como si fuera el valor. Eso es basura. */
+const esBasura = x => (!x || /^[a-zA-Z0-9_\-]{22}$/.test(String(x)));
+const limpio = x => esBasura(x) ? "" : String(x).trim();
 
 function listaDe(d, ...claves){
   for(const k of claves) if(Array.isArray(d && d[k])) return d[k];
@@ -594,37 +684,25 @@ function nodoDe(x, ...claves){
   return x || {};
 }
 
-/* Devuelve [{id, v:{campo->valor}, sub:{campoSubform->[...]}}] */
+/* Devuelve [{id, v:{columna->valor}, sub:{campoSubform->…}}]. */
 async function listar(entityId){
-  const out = [];
-  for(let pag = 1; pag <= 30; pag++){
-    const d = await qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records.json", "GET", { page: pag });
-    const regs = listaDe(d, "records").map(x => nodoDe(x, "record"));
-    regs.forEach(r => out.push({
-      id: r.id,
-      v: r.values || {},
-      sub: r.subforms_values || r.subform_values || {}
-    }));
-    const total = parseInt(d && (d.num_records || d.total), 10);
-    if(!regs.length) break;
-    if(!isNaN(total) && out.length >= total) break;
-    if(regs.length < 20) break;
-  }
-  return out;
+  const d = await API.records(entityId, true);
+  return (d.records || []).map(r => ({
+    id: r.id,
+    v: r.values || {},
+    sub: r.subform_values || r.subforms_values || {}
+  }));
 }
 
-async function crear(entityId, valores, subforms){
-  const b = { json_values: JSON.stringify(valores) };
-  if(subforms) b.json_subforms_values = JSON.stringify(subforms);
-  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records.json", "POST", b);
-}
-async function actualizar(entityId, recId, valores, subforms){
-  const b = { json_values: JSON.stringify(valores) };
-  if(subforms) b.json_subforms_values = JSON.stringify(subforms);
-  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records/" + recId + ".json", "PUT", b);
-}
-async function borrar(entityId, recId){
-  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records/" + recId + ".json", "DELETE", {});
+/* Lee un valor por NOMBRE DE COLUMNA, descartando la basura de QuintaDB
+   (cuando devuelve el id del campo como si fuera el valor). */
+function val(reg, campo){
+  if(!reg || !campo) return "";
+  const col = (typeof campo === "object") ? campo.col : campo;
+  const x = reg[col];
+  if(x == null) return "";
+  if(String(x) === String(col)) return "";   // devolvió el encabezado
+  return esBasura(x) ? "" : String(x).trim();
 }
 
 /* ==========================================================================
@@ -639,20 +717,37 @@ $("btnEntrar").onclick = async () => {
   try{
     const F = CONFIG.USUARIOS.F;
     const regs = await listar(CONFIG.USUARIOS.ENTITY_ID);
-    const encontrado = regs.find(r =>
-      norm(r.v[F.usuario.id]) === norm(u) && String(r.v[F.password.id] || "") === p
-    );
-    if(!encontrado) throw new Error("Usuario o contraseña incorrectos.");
-    const activo = norm(encontrado.v[F.activo.id] || "");
-    if(activo && (activo.indexOf("no") === 0 || activo.indexOf("inactiv") >= 0)) throw new Error("Este usuario está inactivo.");
+    /* Puede haber varios registros del mismo usuario, uno por oficina. */
+    const coincidencias = regs.filter(r => val(r.v, F.usuario) === u && val(r.v, F.password) === p);
+    if(!coincidencias.length) throw new Error("Usuario o contraseña incorrectos.");
+    const activos = coincidencias.filter(r => val(r.v, F.activo) === "Sí");
+    if(!activos.length) throw new Error("Este usuario está desactivado. Contacta al administrador.");
+
+    const enc = activos[0];
+    let rol = val(enc.v, F.rol) || "Usuario libre";
+    if(CONFIG.USUARIOS.ROLES.indexOf(rol) < 0) rol = "Usuario libre";
+
+    /* Oficinas: se unen las de todos sus registros activos, y cada campo
+       puede traer varias separadas por punto y coma. */
+    const setOfi = new Map();
+    activos.forEach(r => {
+      String(val(r.v, F.oficina) || "").split(/[;,]/).forEach(o => {
+        const t = o.replace(/\s+/g, " ").trim();
+        if(t) setOfi.set(t.toLowerCase(), t);
+      });
+    });
+    const oficinas = [...setOfi.values()];
+
     S.sesion = {
-      usuario: encontrado.v[F.usuario.id] || u,
-      rol: encontrado.v[F.rol.id] || "Oficina",
-      oficina: encontrado.v[F.oficina.id] || ""
+      usuario: val(enc.v, F.usuario) || u,
+      nombre: val(enc.v, F.nombre) || val(enc.v, F.usuario) || u,
+      rol,
+      oficinas,
+      oficina: oficinas[0] || ""
     };
     $("login").style.display = "none";
     $("app").style.display = "block";
-    $("chipUsr").textContent = S.sesion.usuario + " · " + S.sesion.rol;
+    $("chipUsr").textContent = S.sesion.nombre + " · " + S.sesion.rol;
     arrancar();
   }catch(e){
     $("loginErr").style.display = "block";
@@ -663,11 +758,12 @@ $("btnEntrar").onclick = async () => {
 $("pwd").addEventListener("keydown", e => { if(e.key === "Enter") $("btnEntrar").click(); });
 $("btnSalir").onclick = () => location.reload();
 
-const esAdmin = () => norm(S.sesion.rol).indexOf("admin") >= 0;
-const esGestor = () => esAdmin() || norm(S.sesion.rol).indexOf("gestor") >= 0;
+const esAdmin  = () => S.sesion.rol === "Administrador";
+const esGestor = () => esAdmin() || S.sesion.rol === "Gestor";
 function puedeEditar(obj){
   if(esGestor()) return true;
-  return norm(obj.oficina) === norm(S.sesion.oficina);
+  if(S.sesion.rol === "Usuario libre") return false;
+  return (S.sesion.oficinas || []).some(o => norm(o) === norm(obj.oficina));
 }
 
 /* ==========================================================================
@@ -686,8 +782,8 @@ async function cargarCat(nombre){
   const c = CONFIG.CATALOGOS[nombre];
   const regs = await listar(c.entity);
   return regs.map(r => {
-    const label = String(r.v[c.label] || "").trim();
-    const codigo = c.codigo ? String(r.v[c.codigo] || "").trim() : "";
+    const label = String(val(r.v, c.col) || "").trim();
+    const codigo = c.codigo ? String(val(r.v, c.colCodigo) || "").trim() : "";
     return { id: r.id, label, codigo, v: r.v };
   }).filter(x => x.label);
 }
@@ -711,22 +807,22 @@ async function cargarCatalogos(){
   /* Estrategias: guardan periodo y sus objetivos estratégicos */
   S.cat.estrategias = est.map(e => ({
     id: e.id, label: e.label, codigo: e.codigo,
-    periodo: String(e.v[C.estrategias.filtro.campo] || "").trim(),
-    oe: String(e.v[C.estrategias.hijo.campo] || "").trim()
+    periodo: String(val(e.v, C.estrategias.colPeriodo) || "").trim(),
+    oe: String(val(e.v, C.estrategias.colHijo) || "").trim()
   }));
 
   /* Responsables técnicos, con su líder */
   S.cat.respTecnicos = rt.map(x => ({
     id: x.id, label: x.label,
-    correo: String(x.v[C.responsables_tecnicos.correo] || "").trim(),
-    celular: String(x.v[C.responsables_tecnicos.celular] || "").trim(),
-    lider: String(x.v[C.responsables_tecnicos.lider.campo] || "").trim()
+    correo: String(val(x.v, C.responsables_tecnicos.correo) || "").trim(),
+    celular: String(val(x.v, C.responsables_tecnicos.celular) || "").trim(),
+    lider: String(val(x.v, C.responsables_tecnicos.lider.campo) || "").trim()
   }));
 
   S.cat.respProceso = rp.map(x => ({
     id: x.id, label: x.label,
-    correo: String(x.v[C.responsables_proceso.correo] || "").trim(),
-    celular: String(x.v[C.responsables_proceso.celular] || "").trim()
+    correo: String(val(x.v, C.responsables_proceso.correo) || "").trim(),
+    celular: String(val(x.v, C.responsables_proceso.celular) || "").trim()
   }));
 
   /* Inventario de procesos: ruta completa, archivados marcados */
@@ -734,15 +830,15 @@ async function cargarCatalogos(){
   const vistos = {};
   S.cat.procesos = [];
   inv.forEach(r => {
-    const ruta = String(r.v[I.ruta_completa] || "").trim();
+    const ruta = String(val(r.v, I.colRuta) || "").trim();
     if(!ruta) return;
     if(vistos[ruta]) return;
     vistos[ruta] = 1;
-    const estado = norm(r.v[I.archivado] || "");
+    const estado = norm(val(r.v, I.colArchivado) || "");
     S.cat.procesos.push({
       id: r.id,
       ruta,
-      codigo: String(r.v[I.codigo] || "").trim(),
+      codigo: String(val(r.v, I.colCodigo) || "").trim(),
       archivado: estado.indexOf(I.archivadoRegla.descartarSiContiene) >= 0
     });
   });
@@ -774,52 +870,52 @@ async function recargar(){
   const F = CONFIG.MATRIZ.F, E = CONFIG.ESPEJO;
   S.objetivos = obj.map(r => ({
     id: r.id,
-    objetivo: r.v[F.objetivo.id] || "",
-    indicador: r.v[F.indicador.id] || "",
-    formula: r.v[F.formula.id] || "",
-    meta: r.v[F.meta.id] || "",
-    actividades: r.v[F.actividades.id] || "",
-    recursos: r.v[F.recursos.id] || "",
-    fi: r.v[F.fi_meta.id] || "",
-    fv: r.v[F.fv_meta.id] || "",
-    condicion: r.v[F.condicion.id] || "",
-    periodo: r.v[E.periodo_txt.id] || "",
-    politica: r.v[E.compromisos_txt.id] || "",
-    estrategia: r.v[E.estrategia_txt.id] || "",
-    oe: r.v[E.objetivo_estrategico_txt.id] || "",
-    proceso: r.v[E.proceso_ruta.id] || "",
-    oficina: r.v[E.oficina_txt.id] || "",
-    respProc: r.v[E.resp_proceso_txt.id] || "",
-    rpCorreo: r.v[E.resp_proceso_correo.id] || "",
-    rpCel: r.v[E.resp_proceso_celular.id] || "",
-    respTec: r.v[E.resp_tecnico_txt.id] || "",
-    rtCorreo: r.v[E.resp_tecnico_correo.id] || "",
-    rtCel: r.v[E.resp_tecnico_celular.id] || ""
+    objetivo: val(r.v, F.objetivo) || "",
+    indicador: val(r.v, F.indicador) || "",
+    formula: val(r.v, F.formula) || "",
+    meta: val(r.v, F.meta) || "",
+    actividades: val(r.v, F.actividades) || "",
+    recursos: val(r.v, F.recursos) || "",
+    fi: val(r.v, F.fi_meta) || "",
+    fv: val(r.v, F.fv_meta) || "",
+    condicion: val(r.v, F.condicion) || "",
+    periodo: val(r.v, E.periodo_txt) || "",
+    politica: val(r.v, E.compromisos_txt) || "",
+    estrategia: val(r.v, E.estrategia_txt) || "",
+    oe: val(r.v, E.objetivo_estrategico_txt) || "",
+    proceso: val(r.v, E.proceso_ruta) || "",
+    oficina: val(r.v, E.oficina_txt) || "",
+    respProc: val(r.v, E.resp_proceso_txt) || "",
+    rpCorreo: val(r.v, E.resp_proceso_correo) || "",
+    rpCel: val(r.v, E.resp_proceso_celular) || "",
+    respTec: val(r.v, E.resp_tecnico_txt) || "",
+    rtCorreo: val(r.v, E.resp_tecnico_correo) || "",
+    rtCel: val(r.v, E.resp_tecnico_celular) || ""
   }));
 
   const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
   S.hitos = hit.map(r => ({
     id: r.id,
-    objetivoRef: String(r.v[HE.objetivo_ref.id] || "").trim(),
-    hito: r.v[H.hito.id] || "",
-    part: num(r.v[H.pct_participacion.id]),
-    fi: r.v[H.fi_hito.id] || "",
-    fv: r.v[H.fv_hito.id] || "",
-    costo: num(r.v[H.costo.id])
+    objetivoRef: String(val(r.v, HE.objetivo_ref) || "").trim(),
+    hito: val(r.v, H.hito) || "",
+    part: num(val(r.v, H.pct_participacion)),
+    fi: val(r.v, H.fi_hito) || "",
+    fv: val(r.v, H.fv_hito) || "",
+    costo: num(val(r.v, H.costo))
   }));
 
   const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
   S.reportes = rep.map(r => ({
     id: r.id,
-    objetivoRef: String(r.v[RE.objetivo_ref.id] || "").trim(),
-    hitoRef: String(r.v[RE.hito_ref.id] || "").trim(),
-    fecha: r.v[R.fecha_ejecucion.id] || "",
-    avance: r.v[R.avance.id] || "",
-    estado: r.v[R.estado_hito.id] || "",
-    contrib: num(r.v[R.contribucion.id]),
-    dificultades: r.v[R.dificultades.id] || "",
-    obs: r.v[R.observacion.id] || "",
-    enlaces: parseEnlaces(r.v[RE.evidencias_enlaces.id]),
+    objetivoRef: String(val(r.v, RE.objetivo_ref) || "").trim(),
+    hitoRef: String(val(r.v, RE.hito_ref) || "").trim(),
+    fecha: val(r.v, R.fecha_ejecucion) || "",
+    avance: val(r.v, R.avance) || "",
+    estado: val(r.v, R.estado_hito) || "",
+    contrib: num(val(r.v, R.contribucion)),
+    dificultades: val(r.v, R.dificultades) || "",
+    obs: val(r.v, R.observacion) || "",
+    enlaces: parseEnlaces(val(r.v, RE.evidencias_enlaces)),
     acciones: leerAcciones(r.sub && r.sub[SUB.id])
   }));
 
@@ -836,18 +932,30 @@ function parseEnlaces(txt){
   return String(txt).split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => ({ etiqueta: "", url: l }));
 }
 
-function leerAcciones(arr){
-  if(!Array.isArray(arr)) return [];
+/* Las próximas acciones llegan como objeto {idFila: {columna: valor}} o como
+   array. En la carga masiva QuintaDB solo manda los ids de fila, así que las
+   filas completas se releen al abrir el reporte (ver abrirReporte). */
+function leerAcciones(bruto){
+  if(!bruto) return [];
   const SF = CONFIG.REPORTES.SUBFORM.proximas_acciones.F;
-  return arr.map(x => {
-    const n = nodoDe(x, "record", "subform_value");
-    const v = n.values || n;
+  let filas = [];
+  if(Array.isArray(bruto)){
+    filas = bruto.filter(x => x && typeof x === "object");
+  }else if(typeof bruto === "object"){
+    Object.keys(bruto).forEach(k => {
+      if(k === "entity_id") return;
+      const f = bruto[k];
+      if(f && typeof f === "object") filas.push(f);
+    });
+  }
+  return filas.map(x => {
+    const v = (x && x.values) ? x.values : x;
     return {
-      accion: v[SF.accion.id] || "",
-      responsable: v[SF.responsable.id] || "",
-      fecha: v[SF.fecha_venc.id] || "",
-      articulacion: v[SF.articulacion.id] || "",
-      obs: v[SF.observacion.id] || ""
+      accion: val(v, SF.accion),
+      responsable: val(v, SF.responsable),
+      fecha: val(v, SF.fecha_venc),
+      articulacion: val(v, SF.articulacion),
+      obs: val(v, SF.observacion)
     };
   }).filter(a => a.accion || a.responsable);
 }
@@ -1317,8 +1425,7 @@ $("btnGuardarObj").onclick = async () => {
   const b = $("btnGuardarObj");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
-    if(S.editObj) await actualizar(CONFIG.MATRIZ.ENTITY_ID, S.editObj.id, v);
-    else await crear(CONFIG.MATRIZ.ENTITY_ID, v);
+    await API.saveForm(S.editObj ? S.editObj.id : null, v, CONFIG.MATRIZ.ENTITY_ID);
     $("mObj").classList.remove("on");
     toast("Objetivo guardado.");
     await recargar();
@@ -1334,10 +1441,10 @@ async function eliminarObjetivo(id){
   if(!confirm("¿Eliminar este objetivo" + (hs.length ? " y sus " + hs.length + " hito(s) con sus reportes" : "") + "?\n\nEsta acción no se puede deshacer.")) return;
   try{
     for(const h of hs){
-      for(const r of reportesDe(h.id)) await borrar(CONFIG.REPORTES.ENTITY_ID, r.id);
-      await borrar(CONFIG.HITOS.ENTITY_ID, h.id);
+      for(const r of reportesDe(h.id)) await API.del(r.id);
+      await API.del(h.id);
     }
-    await borrar(CONFIG.MATRIZ.ENTITY_ID, id);
+    await API.del(id);
     toast("Objetivo eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
@@ -1428,8 +1535,7 @@ $("btnGuardarHito").onclick = async () => {
   const b = $("btnGuardarHito");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
-    if(S.editHito) await actualizar(CONFIG.HITOS.ENTITY_ID, S.editHito.id, v);
-    else await crear(CONFIG.HITOS.ENTITY_ID, v);
+    await API.saveForm(S.editHito ? S.editHito.id : null, v, CONFIG.HITOS.ENTITY_ID);
     $("mHito").classList.remove("on");
     toast("Hito guardado.");
     await recargar();
@@ -1443,8 +1549,8 @@ async function eliminarHito(id){
   const rs = reportesDe(id);
   if(!confirm("¿Eliminar este hito" + (rs.length ? " y sus " + rs.length + " reporte(s)" : "") + "?")) return;
   try{
-    for(const r of rs) await borrar(CONFIG.REPORTES.ENTITY_ID, r.id);
-    await borrar(CONFIG.HITOS.ENTITY_ID, id);
+    for(const r of rs) await API.del(r.id);
+    await API.del(id);
     toast("Hito eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
@@ -1483,6 +1589,19 @@ function abrirReporte(objId, hitoId, repId){
   pintarAcciones(r ? r.acciones : []);
   calcularProgreso();
   $("mRep").classList.add("on");
+
+  /* La carga masiva no trae las filas del subformulario, solo sus ids.
+     Se relee el registro individual, que sí las trae completas. */
+  if(r){
+    API.record(r.id).then(d => {
+      const reg = d && d.record;
+      if(!reg) return;
+      const SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
+      const bruto = (reg.subform_values || reg.subforms_values || {})[SUB.id];
+      const acc = leerAcciones(bruto);
+      if(acc.length){ r.acciones = acc; pintarAcciones(acc); }
+    }).catch(() => { /* si falla, se queda con lo que trajo la carga masiva */ });
+  }
 }
 
 $("rFecha").addEventListener("change", () => {
@@ -1658,8 +1777,7 @@ $("btnGuardarRep").onclick = async () => {
   v[RE.hito_ref.id] = hi.id;
   v[RE.evidencias_enlaces.id] = d.enlaces.length ? JSON.stringify(d.enlaces) : "";
 
-  const sub = {};
-  sub[SUB.id] = d.acciones.map(a => {
+  const filas = d.acciones.map(a => {
     const x = {};
     x[SUB.F.accion.id] = a.accion;
     x[SUB.F.responsable.id] = a.responsable;
@@ -1672,8 +1790,13 @@ $("btnGuardarRep").onclick = async () => {
   const b = $("btnGuardarRep");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
-    if(S.editRep) await actualizar(CONFIG.REPORTES.ENTITY_ID, S.editRep.id, v, sub);
-    else await crear(CONFIG.REPORTES.ENTITY_ID, v, sub);
+    const resp = await API.saveForm(S.editRep ? S.editRep.id : null, v, CONFIG.REPORTES.ENTITY_ID);
+    const repId = S.editRep ? S.editRep.id : (resp && resp.record && resp.record.id);
+    /* Las próximas acciones son subformulario: van en una llamada aparte. */
+    if(repId && filas.length){
+      try{ await API.saveSubform(repId, SUB.id, SUB.ENTITY_ID, filas); }
+      catch(err){ toast("El reporte se guardó, pero las próximas acciones no: " + err.message, true); }
+    }
     $("mRep").classList.remove("on");
     const tarde = dias(hi.fv, d.fecha);
     toast("Reporte guardado." + (tarde != null && tarde > 0 ? " Registrado como extemporáneo (+" + tarde + " d)." : ""));
@@ -1687,7 +1810,7 @@ $("btnGuardarRep").onclick = async () => {
 async function eliminarReporte(id){
   if(!confirm("¿Eliminar este reporte de avance?")) return;
   try{
-    await borrar(CONFIG.REPORTES.ENTITY_ID, id);
+    await API.del(id);
     toast("Reporte eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
