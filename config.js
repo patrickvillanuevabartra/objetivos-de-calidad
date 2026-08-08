@@ -371,11 +371,19 @@ const CONFIG = {
       ],
       relLegado: "cXW7_dOCnctOlcRSo6W4LK"   // no usar como catálogo
     },
+    // Tabla de unidades/oficinas. La etiqueta se detecta sola: primer campo
+    // de texto que no sea un ID. Se usa para resolver las relaciones.
+    unidades: {
+      entity: "cXW7_dOCnctOlcRSo6W4LK",
+      label:  null
+    },
     responsables_proceso: {
       entity:  "cPW44qr3vlW6XMn01eWPiv",
       label:   "bZW65VW5jdJ6rOiSkpWO40", col:        "Responsable proceso",
       correo:  "cGh8oRW7TcV6pcOSkhWQfs", colCorreo:  "Correo electrónico responsable proceso",
       celular: "c1WQqQWOvmhOozqSoMW5m2", colCelular: "Celular responsable proceso",
+      // Relación a la tabla de unidades. Devuelve el ID del registro, no texto.
+      colUnidad: "Unidad responsable",
       // Su campo `Unidad responsable` apunta a cXW7_dOCnctOlcRSo6W4LK,
       // lo que confirma que esa tabla es de UNIDADES, no de personas.
       // (En el config de Indicadores está mal etiquetada como RESPONSABLES.)
