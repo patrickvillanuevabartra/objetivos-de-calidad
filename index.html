@@ -914,12 +914,22 @@ async function arrancar(){
 
 async function cargarCat(nombre){
   const c = CONFIG.CATALOGOS[nombre];
+  if(!c || !c.entity) throw new Error('Falta el catálogo "' + nombre + '" en config.js. Sube la versión actualizada del archivo.');
   const regs = await listar(c.entity);
   return regs.map(r => {
     const label = String(val(r.v, c.col) || "").trim();
     const codigo = c.codigo ? String(val(r.v, c.colCodigo) || "").trim() : "";
     return { id: r.id, label, codigo, v: r.v };
   }).filter(x => x.label);
+}
+
+/* Catálogo opcional: si no está configurado se sigue adelante sin él,
+   en vez de tumbar toda la carga. */
+async function cargarCatOpcional(nombre){
+  const c = CONFIG.CATALOGOS[nombre];
+  if(!c || !c.entity){ console.warn('Catálogo "' + nombre + '" no configurado; se omite.'); return []; }
+  try{ return await listar(c.entity); }
+  catch(e){ console.warn('No se pudo leer el catálogo "' + nombre + '": ' + e.message); return []; }
 }
 
 async function cargarCatalogos(){
@@ -931,13 +941,13 @@ async function cargarCatalogos(){
     cargarCat("objetivos_estrategicos"),
     cargarCat("responsables_tecnicos"),
     cargarCat("responsables_proceso"),
-    listar(C.inventario_procesos.entity),
-    listar(C.unidades.entity)
+    cargarCatOpcional("inventario_procesos"),
+    cargarCatOpcional("unidades")
   ]);
 
   /* Unidades: la etiqueta se autodetecta. Sirve para resolver el campo
      "Unidad responsable" de los responsables de proceso, que llega como id. */
-  S.cat.unidades = uni.map(r => ({ id: r.id, label: etiquetaAuto(r.v) })).filter(x => x.label);
+  S.cat.unidades = (uni || []).map(r => ({ id: r.id, label: etiquetaAuto(r.v) })).filter(x => x.label);
 
   S.cat.periodos = per;
   S.cat.politica = pol;
@@ -977,11 +987,11 @@ async function cargarCatalogos(){
      por API): se derivan partiendo el texto plano de "Ruta completa", con
      formato  Tipo › N0 › N1 › N2 › N3 › Procedimiento.
      Es el mismo método que usa Matriz de Indicadores. */
-  const I = C.inventario_procesos;
+  const I = C.inventario_procesos || {};
   const generico = /^(Tipo de proceso|Procesos? nivel [0-3]|Procedimiento|Ruta completa)$/i;
   S.cat.procesos = [];
-  inv.forEach(r => {
-    const ruta = r.v[I.colRuta];
+  (inv || []).forEach(r => {
+    const ruta = I.colRuta ? r.v[I.colRuta] : null;
     if(!ruta || generico.test(String(ruta).trim())) return;
     const segs = String(ruta).split(/\s*[›>]\s*/).map(s => s.trim()).filter(Boolean);
     if(segs.length < 2) return;
