@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matriz Plan de Acción de Objetivos de Calidad — FI URP</title>
+<style>
+:root{
+  --verde:#0b5d3b; --verde-osc:#08422a; --verde-cl:#e8f2ed; --verde-med:#177a52;
+  --gris:#5b6770; --gris-cl:#8b959c; --linea:#dde3e0; --fondo:#f5f7f6;
+  --ambar:#b7791f; --ambar-bg:#fdf6e7; --ambar-ln:#edd9a8;
+  --rojo:#b02a2a; --rojo-bg:#fdecec; --rojo-ln:#f2c6c6;
+  --azul:#1d4e89; --azul-bg:#e9f0f8;
+  --r:9px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fondo);color:#222d26;font-size:15px;line-height:1.5}
+button,input,select,textarea{font-family:inherit;font-size:14px}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--verde) 0%,var(--verde-osc) 100%)}
+#login .caja{background:#fff;border-radius:14px;padding:32px 30px;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
+#login h1{margin:0 0 4px;font-size:19px;color:var(--verde)}
+#login p.sub{margin:0 0 22px;font-size:13px;color:var(--gris)}
+#login label{display:block;font-weight:600;font-size:13px;margin:0 0 5px}
+#login input{width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:7px;margin-bottom:14px}
+#login button{width:100%;background:var(--verde);color:#fff;border:0;border-radius:7px;padding:11px;font-weight:600;cursor:pointer}
+#login button:hover{background:var(--verde-osc)}
+#login button:disabled{background:#9aa5a0;cursor:not-allowed}
+
+/* ---------- estructura ---------- */
+#app{display:none}
+header.top{background:var(--verde);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header.top .logo{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;flex:0 0 auto}
+header.top h1{margin:0;font-size:17px;font-weight:600}
+header.top p{margin:1px 0 0;font-size:12px;opacity:.85}
+header.top .der{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
+header.top .chip{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px;font-size:12px}
+header.top button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:13px}
+header.top button:hover{background:rgba(255,255,255,.28)}
+nav.tabs{background:#fff;border-bottom:1px solid var(--linea);padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{background:none;border:0;padding:13px 17px;cursor:pointer;font-weight:600;color:var(--gris);border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:var(--verde);border-bottom-color:var(--verde)}
+main{max-width:1240px;margin:0 auto;padding:20px}
+.vista{display:none}
+.vista.on{display:block}
+
+/* ---------- filtros ---------- */
+.filtros{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filtros .campo{flex:1;min-width:160px}
+.filtros label{display:block;font-size:11.5px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.filtros select,.filtros input{width:100%;padding:8px 10px;border:1px solid var(--linea);border-radius:7px;background:#fff}
+
+/* ---------- botones ---------- */
+.btn{background:var(--verde);color:#fff;border:0;border-radius:7px;padding:9px 16px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--verde-osc)}
+.btn:disabled{background:#9aa5a0;cursor:not-allowed}
+.btn.sec{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}
+.btn.sec:hover{background:var(--verde-cl)}
+.btn.mini{padding:5px 10px;font-size:12.5px}
+.btn.peligro{background:var(--rojo)}
+.btn.peligro:hover{background:#8d2020}
+.ico{background:none;border:1px solid var(--linea);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:14px;line-height:1}
+.ico:hover{background:var(--verde-cl);border-color:var(--verde)}
+
+/* ---------- tarjetas de objetivo ---------- */
+.obj{background:#fff;border:1px solid var(--linea);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.obj .cab{padding:13px 16px;display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.obj .cab:hover{background:#fafcfb}
+.obj .tit{flex:1;min-width:0}
+.obj .tit h3{margin:0 0 3px;font-size:14.5px;font-weight:600;line-height:1.35}
+.obj .meta{font-size:12px;color:var(--gris);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.obj .acc{display:flex;gap:5px;flex:0 0 auto}
+.obj .cuerpo{border-top:1px solid var(--linea);padding:14px 16px;display:none;background:#fbfdfc}
+.obj.abierto .cuerpo{display:block}
+
+.barra{height:7px;background:#e6ebe8;border-radius:20px;overflow:hidden;min-width:80px;flex:0 0 110px}
+.barra i{display:block;height:100%;border-radius:20px;background:var(--verde-med)}
+.barra.critico i{background:var(--rojo)}
+.barra.bueno i{background:var(--ambar)}
+.barra.cumplido i{background:var(--verde-med)}
+
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.tag.v{background:var(--verde-cl);color:var(--verde-osc)}
+.tag.a{background:var(--ambar-bg);color:var(--ambar)}
+.tag.r{background:var(--rojo-bg);color:var(--rojo)}
+.tag.z{background:var(--azul-bg);color:var(--azul)}
+.tag.g{background:#eef1f0;color:var(--gris)}
+
+/* ---------- tablas internas ---------- */
+table.t{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;background:#fff}
+table.t th{background:var(--verde-cl);color:var(--verde-osc);text-align:left;padding:7px 9px;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+table.t td{padding:7px 9px;border-bottom:1px solid #eef2f0;vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+.subtit{font-size:12px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 4px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.subtit .btn{margin-left:auto}
+.vacio{padding:14px;text-align:center;color:var(--gris-cl);font-size:13px;background:#fff;border:1px dashed var(--linea);border-radius:7px}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(12,25,20,.55);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;z-index:50}
+.modal.on{display:flex}
+.modal .caja{background:#fff;border-radius:12px;width:100%;max-width:920px;margin:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.modal .cab{padding:18px 22px;border-bottom:1px solid var(--linea);display:flex;align-items:flex-start;gap:14px;position:sticky;top:0;background:#fff;border-radius:12px 12px 0 0;z-index:2}
+.modal .cab h2{margin:0;font-size:16px;color:var(--verde);flex:1}
+.modal .cab .et{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.modal .cuerpo{padding:20px 22px}
+.modal .pie{padding:14px 22px;border-top:1px solid var(--linea);display:flex;gap:9px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;border-radius:0 0 12px 12px}
+.cerrar{background:none;border:0;font-size:22px;cursor:pointer;color:var(--gris);line-height:1;padding:0 4px}
+.cerrar:hover{color:var(--rojo)}
+
+/* ---------- formulario ---------- */
+.rej{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.rej .full{grid-column:1/-1}
+.f label{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+.f label .op{font-weight:400;color:var(--gris);font-size:12px}
+.f input,.f select,.f textarea{width:100%;padding:8px 10px;border:1px solid var(--linea);border-radius:7px;background:#fff}
+.f textarea{min-height:70px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus,.rte:focus{outline:2px solid var(--verde);outline-offset:-1px;border-color:var(--verde)}
+.f input.mal,.f select.mal{border-color:var(--rojo);background:var(--rojo-bg)}
+.f .err{color:var(--rojo);font-size:12px;margin-top:3px;display:none}
+.f .err.on{display:block}
+.f .pista{color:var(--gris);font-size:12px;margin-top:3px}
+.f .aviso{background:var(--ambar-bg);border:1px solid var(--ambar-ln);color:var(--ambar);font-size:12.5px;padding:7px 10px;border-radius:6px;margin-top:5px;display:none}
+.f .aviso.on{display:block}
+.rte{border:1px solid var(--linea);border-radius:0 0 7px 7px;padding:9px 11px;min-height:80px;background:#fff;overflow-y:auto;max-height:260px}
+.rtebar{display:flex;gap:2px;border:1px solid var(--linea);border-bottom:0;border-radius:7px 7px 0 0;background:#f7faf9;padding:4px}
+.rtebar button{background:none;border:0;padding:4px 9px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--gris)}
+.rtebar button:hover{background:var(--verde-cl);color:var(--verde)}
+.panel{background:#f7faf9;border:1px solid var(--linea);border-radius:8px;padding:12px 14px;margin-top:6px;font-size:13px}
+.panel b{color:var(--verde)}
+
+/* ---------- enlaces múltiples ---------- */
+.enl{display:flex;gap:7px;margin-bottom:7px;align-items:center}
+.enl input.et{flex:0 0 34%}
+.enl input.url{flex:1}
+.enl .ico{flex:0 0 auto}
+
+/* ---------- tablero ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px}
+.kpi .n{font-size:26px;font-weight:700;color:var(--verde);line-height:1.1}
+.kpi .n.r{color:var(--rojo)} .kpi .n.a{color:var(--ambar)}
+.kpi .e{font-size:11.5px;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;font-weight:600}
+.tarj{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.tarj h3{margin:0 0 10px;font-size:13px;color:var(--verde);text-transform:uppercase;letter-spacing:.5px}
+.bar2{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:13px}
+.bar2 .n{flex:0 0 46%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar2 .v{flex:0 0 46px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- varios ---------- */
+.cargando{text-align:center;padding:44px;color:var(--gris)}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(11,93,59,.25);border-top-color:var(--verde);border-radius:50%;animation:g .7s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes g{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--verde-osc);color:#fff;padding:11px 20px;border-radius:8px;font-size:14px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.28);display:none;max-width:90vw}
+.toast.on{display:block}
+.toast.mal{background:var(--rojo)}
+.msg{padding:9px 12px;border-radius:7px;font-size:13px;margin-bottom:12px}
+.msg.mal{background:var(--rojo-bg);color:var(--rojo);border:1px solid var(--rojo-ln)}
+.msg.ok{background:var(--verde-cl);color:var(--verde-osc);border:1px solid #bcd9cb}
+.msg.av{background:var(--ambar-bg);color:var(--ambar);border:1px solid var(--ambar-ln)}
+.tachado{text-decoration:line-through;color:var(--gris-cl)}
+@media (max-width:720px){ .rej{grid-template-columns:1fr} main{padding:14px} .obj .cab{flex-wrap:wrap} }
+@media (prefers-reduced-motion:reduce){ .spin{animation:none} }
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="login">
+  <div class="caja">
+    <h1>Matriz Plan de Acción de Objetivos de Calidad</h1>
+    <p class="sub">Facultad de Ingeniería URP · SGOE ISO 21001</p>
+    <div class="msg mal" id="loginErr" style="display:none"></div>
+    <label for="usr">Usuario</label>
+    <input type="text" id="usr" autocomplete="username">
+    <label for="pwd">Contraseña</label>
+    <input type="password" id="pwd" autocomplete="current-password">
+    <button id="btnEntrar">Entrar</button>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app">
+  <header class="top">
+    <div class="logo">Q</div>
+    <div>
+      <h1>Matriz Plan de Acción de Objetivos de Calidad</h1>
+      <p>Facultad de Ingeniería URP · SGOE ISO 21001</p>
+    </div>
+    <div class="der">
+      <span class="chip" id="chipUsr"></span>
+      <button id="btnSalir">Salir</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="on" data-v="objetivos">Objetivos</button>
+    <button data-v="tablero">Tablero</button>
+  </nav>
+
+  <main>
+    <!-- ---------- objetivos ---------- -->
+    <section class="vista on" id="vObjetivos">
+      <div class="filtros">
+        <div class="campo"><label for="fPeriodo">Periodo</label><select id="fPeriodo"></select></div>
+        <div class="campo"><label for="fOficina">Oficina</label><select id="fOficina"></select></div>
+        <div class="campo"><label for="fCondicion">Condición</label><select id="fCondicion"></select></div>
+        <div class="campo"><label for="fEstado">Estado</label><select id="fEstado"></select></div>
+        <div class="campo" style="flex:1.4"><label for="fBuscar">Buscar</label><input type="text" id="fBuscar" placeholder="objetivo, indicador, responsable…"></div>
+        <button class="btn" id="btnNuevo">+ Nuevo objetivo</button>
+      </div>
+      <div id="lista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
+    </section>
+
+    <!-- ---------- tablero ---------- -->
+    <section class="vista" id="vTablero">
+      <div class="filtros">
+        <div class="campo"><label for="tPeriodo">Periodo</label><select id="tPeriodo"></select></div>
+      </div>
+      <div id="tablero"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ==================== MODAL OBJETIVO ==================== -->
+<div class="modal" id="mObj">
+  <div class="caja">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Objetivo de calidad</div>
+        <h2 id="mObjTit">Nuevo objetivo</h2>
+      </div>
+      <button class="cerrar" data-cierra="mObj">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mObjMsg"></div>
+      <div class="rej">
+        <div class="full">
+          <label for="oObjetivo">Objetivo del sistema de gestión de la calidad</label>
+          <textarea id="oObjetivo"></textarea>
+          <div class="err" id="e_oObjetivo"></div>
+        </div>
+
+        <div>
+          <label for="oPeriodo">Periodo</label>
+          <select id="oPeriodo"></select>
+          <div class="err" id="e_oPeriodo"></div>
+        </div>
+        <div>
+          <label for="oCondicion">Condición</label>
+          <select id="oCondicion"></select>
+          <div class="err" id="e_oCondicion"></div>
+        </div>
+
+        <div class="full">
+          <label for="oPolitica">Compromisos de la política de calidad que atiende</label>
+          <select id="oPolitica"></select>
+          <div class="err" id="e_oPolitica"></div>
+        </div>
+
+        <div class="full">
+          <label for="oEstrategia">Estrategia <span class="op">(se filtra por el periodo elegido)</span></label>
+          <select id="oEstrategia"></select>
+          <div class="err" id="e_oEstrategia"></div>
+          <div class="panel" id="pOE" style="display:none"></div>
+        </div>
+
+        <div class="full">
+          <label for="oProceso">Proceso <span class="op">(del inventario · ruta completa)</span></label>
+          <select id="oProceso"></select>
+          <div class="err" id="e_oProceso"></div>
+        </div>
+
+        <div class="full">
+          <label>Actividades a realizar</label>
+          <div class="rtebar" data-para="oActividades">
+            <button type="button" data-cmd="bold"><b>B</b></button>
+            <button type="button" data-cmd="italic"><i>I</i></button>
+            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
+            <button type="button" data-cmd="removeFormat">Limpiar</button>
+          </div>
+          <div class="rte" id="oActividades" contenteditable="true"></div>
+        </div>
+
+        <div class="full">
+          <label>Recursos requeridos</label>
+          <div class="rtebar" data-para="oRecursos">
+            <button type="button" data-cmd="bold"><b>B</b></button>
+            <button type="button" data-cmd="italic"><i>I</i></button>
+            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
+            <button type="button" data-cmd="removeFormat">Limpiar</button>
+          </div>
+          <div class="rte" id="oRecursos" contenteditable="true"></div>
+        </div>
+
+        <div class="full">
+          <label for="oIndicador">Indicador</label>
+          <textarea id="oIndicador"></textarea>
+          <div class="err" id="e_oIndicador"></div>
+        </div>
+        <div class="full">
+          <label for="oFormula">Fórmula</label>
+          <textarea id="oFormula"></textarea>
+        </div>
+        <div class="full">
+          <label for="oMeta">Meta</label>
+          <textarea id="oMeta" style="min-height:50px"></textarea>
+          <div class="pista">Texto libre, tal como se maneja hoy: 100%, 1 proyecto, 2 procesos misionales…</div>
+        </div>
+
+        <div>
+          <label for="oFI">F.I. Meta</label>
+          <input type="date" id="oFI">
+          <div class="err" id="e_oFI"></div>
+        </div>
+        <div>
+          <label for="oFV">F.V. Meta</label>
+          <input type="date" id="oFV">
+          <div class="err" id="e_oFV"></div>
+          <div class="aviso" id="avFechas"></div>
+        </div>
+
+        <div class="full">
+          <label for="oOficina">Oficina o área responsable</label>
+          <select id="oOficina"></select>
+          <div class="err" id="e_oOficina"></div>
+        </div>
+
+        <div class="full">
+          <label for="oRespTec">Responsable técnico <span class="op">(al elegirlo se completan los contactos)</span></label>
+          <select id="oRespTec"></select>
+        </div>
+        <div><label for="oRTCorreo">Correo responsable técnico</label><input type="email" id="oRTCorreo"></div>
+        <div><label for="oRTCel">Celular responsable técnico</label><input type="text" id="oRTCel"></div>
+
+        <div class="full">
+          <label for="oRespProc">Responsable de proceso <span class="op">(propuesto desde el responsable técnico · editable)</span></label>
+          <select id="oRespProc"></select>
+          <div class="err" id="e_oRespProc"></div>
+        </div>
+        <div><label for="oRPCorreo">Correo responsable de proceso</label><input type="email" id="oRPCorreo"></div>
+        <div><label for="oRPCel">Celular responsable de proceso</label><input type="text" id="oRPCel"></div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn sec" data-cierra="mObj">Cancelar</button>
+      <button class="btn" id="btnGuardarObj">Guardar objetivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL HITO ==================== -->
+<div class="modal" id="mHito">
+  <div class="caja" style="max-width:720px">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Hito</div>
+        <h2 id="mHitoTit">Nuevo hito</h2>
+      </div>
+      <button class="cerrar" data-cierra="mHito">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mHitoMsg"></div>
+      <div class="panel" id="pHitoObj"></div>
+      <div class="rej" style="margin-top:13px">
+        <div class="full">
+          <label for="hNombre">Hito</label>
+          <input type="text" id="hNombre">
+          <div class="err" id="e_hNombre"></div>
+        </div>
+        <div>
+          <label for="hPart">% participación</label>
+          <input type="number" id="hPart" min="0" max="100" step="0.01">
+          <div class="err" id="e_hPart"></div>
+          <div class="aviso" id="avPart"></div>
+        </div>
+        <div>
+          <label for="hCosto">Costo <span class="op">(opcional)</span></label>
+          <input type="number" id="hCosto" min="0" step="0.01">
+        </div>
+        <div>
+          <label for="hFI">F.I. hito</label>
+          <input type="date" id="hFI">
+          <div class="err" id="e_hFI"></div>
+        </div>
+        <div>
+          <label for="hFV">F.V. hito</label>
+          <input type="date" id="hFV">
+          <div class="err" id="e_hFV"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn sec" data-cierra="mHito">Cancelar</button>
+      <button class="btn" id="btnGuardarHito">Guardar hito</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL REPORTE ==================== -->
+<div class="modal" id="mRep">
+  <div class="caja">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Reporte de avance</div>
+        <h2 id="mRepTit">Nuevo reporte</h2>
+      </div>
+      <button class="cerrar" data-cierra="mRep">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mRepMsg"></div>
+      <div class="panel" id="pRepHito"></div>
+      <div class="rej" style="margin-top:13px">
+        <div>
+          <label for="rFecha">Fecha de ejecución o reporte</label>
+          <input type="date" id="rFecha">
+          <div class="err" id="e_rFecha"></div>
+          <div class="aviso" id="avExtemp"></div>
+        </div>
+        <div>
+          <label for="rEstado">Estado del hito</label>
+          <select id="rEstado"></select>
+          <div class="err" id="e_rEstado"></div>
+        </div>
+        <div class="full">
+          <label>Avance (descripción)</label>
+          <div class="rtebar" data-para="rAvance">
+            <button type="button" data-cmd="bold"><b>B</b></button>
+            <button type="button" data-cmd="italic"><i>I</i></button>
+            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
+            <button type="button" data-cmd="removeFormat">Limpiar</button>
+          </div>
+          <div class="rte" id="rAvance" contenteditable="true"></div>
+          <div class="err" id="e_rAvance"></div>
+        </div>
+        <div>
+          <label for="rContrib">Contribución al progreso del hito (%)</label>
+          <input type="number" id="rContrib" min="0" max="100" step="0.01">
+          <div class="err" id="e_rContrib"></div>
+          <div class="aviso" id="avContrib"></div>
+        </div>
+        <div>
+          <label>Progreso del hito tras este reporte</label>
+          <input type="text" id="rProgreso" readonly style="background:#f7faf9;font-weight:600">
+        </div>
+        <div class="full">
+          <label for="rDificultades">Dificultades</label>
+          <textarea id="rDificultades"></textarea>
+        </div>
+        <div class="full">
+          <label for="rObs">Observación</label>
+          <textarea id="rObs"></textarea>
+        </div>
+        <div class="full">
+          <label>Evidencias <span class="op">(enlaces a SharePoint/Drive · puedes agregar varias)</span></label>
+          <div id="rEnlaces"></div>
+          <button type="button" class="btn sec mini" id="btnAddEnlace">+ Añadir enlace</button>
+        </div>
+      </div>
+
+      <div class="subtit">Próximas acciones <button type="button" class="btn sec mini" id="btnAddAccion">+ Añadir acción</button></div>
+      <div id="rAcciones"></div>
+    </div>
+    <div class="pie">
+      <button class="btn sec" data-cierra="mRep">Cancelar</button>
+      <button class="btn" id="btnGuardarRep">Guardar reporte</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+"use strict";
+
+/* ==========================================================================
+   Estado
+   ========================================================================== */
+const S = {
+  sesion: null,
+  cat: {},              // catálogos cargados
+  objetivos: [],
+  hitos: [],
+  reportes: [],
+  editObj: null,
+  editHito: null,
+  editRep: null,
+  ctxObj: null,         // objetivo al que pertenece el hito/reporte en edición
+  ctxHito: null
+};
+
+const HOY = new Date(new Date().toDateString());
+
+/* ==========================================================================
+   Utilidades
+   ========================================================================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sinHtml = s => String(s == null ? "" : s).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+const norm = s => String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const num = v => { const n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isNaN(n) ? 0 : n; };
+const red1 = n => Math.round(n * 10) / 10;
+
+function fecha(v){
+  if(!v) return null;
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  if(m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  const d = new Date(s);
+  return isNaN(d) ? null : new Date(d.toDateString());
+}
+function iso(d){
+  if(!d) return "";
+  const x = d instanceof Date ? d : fecha(d);
+  if(!x) return "";
+  return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
+}
+function verFecha(v){
+  const d = fecha(v);
+  if(!d) return "—";
+  return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear();
+}
+function dias(a, b){
+  const x = fecha(a), y = fecha(b);
+  if(!x || !y) return null;
+  return Math.round((y - x) / 86400000);
+}
+function toast(txt, mal){
+  const t = $("toast");
+  t.textContent = txt;
+  t.className = "toast on" + (mal ? " mal" : "");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = "toast"; }, 3600);
+}
+function msg(cont, texto, clase){
+  $(cont).innerHTML = texto ? '<div class="msg ' + clase + '">' + esc(texto) + "</div>" : "";
+}
+function limpiaErrores(caja){
+  document.querySelectorAll("#" + caja + " .err").forEach(e => e.classList.remove("on"));
+  document.querySelectorAll("#" + caja + " .mal").forEach(e => e.classList.remove("mal"));
+  document.querySelectorAll("#" + caja + " .aviso").forEach(e => e.classList.remove("on"));
+}
+function error(campo, texto){
+  const e = $("e_" + campo), c = $(campo);
+  if(e){ e.textContent = texto; e.classList.add("on"); }
+  if(c) c.classList.add("mal");
+}
+function aviso(id, texto){
+  const a = $(id);
+  if(!a) return;
+  if(texto){ a.textContent = texto; a.classList.add("on"); }
+  else a.classList.remove("on");
+}
+function opciones(sel, arr, valorActual, vacio){
+  const e = typeof sel === "string" ? $(sel) : sel;
+  const items = (vacio ? ['<option value="">' + esc(vacio) + "</option>"] : []);
+  arr.forEach(o => {
+    const v = typeof o === "string" ? o : o.v;
+    const t = typeof o === "string" ? o : o.t;
+    const extra = (typeof o === "object" && o.tachado) ? ' class="tachado"' : "";
+    items.push("<option value=\"" + esc(v) + "\"" + extra + (String(v) === String(valorActual || "") ? " selected" : "") + ">" + esc(t) + "</option>");
+  });
+  e.innerHTML = items.join("");
+}
+
+/* ==========================================================================
+   Capa QuintaDB (vía Worker de Cloudflare)
+   ========================================================================== */
+async function qdb(ruta, metodo, cuerpo){
+  const r = await fetch(CONFIG.PROXY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ path: ruta, method: metodo || "GET", body: cuerpo || {} })
+  });
+  const txt = await r.text();
+  let d;
+  try { d = JSON.parse(txt); }
+  catch(e){ throw new Error("respuesta no JSON: " + txt.slice(0, 140)); }
+  if(d && d.error) throw new Error(String(d.error).slice(0, 180));
+  return d;
+}
+
+function listaDe(d, ...claves){
+  for(const k of claves) if(Array.isArray(d && d[k])) return d[k];
+  if(Array.isArray(d)) return d;
+  return [];
+}
+function nodoDe(x, ...claves){
+  for(const k of claves) if(x && x[k] && typeof x[k] === "object") return x[k];
+  return x || {};
+}
+
+/* Devuelve [{id, v:{campo->valor}, sub:{campoSubform->[...]}}] */
+async function listar(entityId){
+  const out = [];
+  for(let pag = 1; pag <= 30; pag++){
+    const d = await qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records.json", "GET", { page: pag });
+    const regs = listaDe(d, "records").map(x => nodoDe(x, "record"));
+    regs.forEach(r => out.push({
+      id: r.id,
+      v: r.values || {},
+      sub: r.subforms_values || r.subform_values || {}
+    }));
+    const total = parseInt(d && (d.num_records || d.total), 10);
+    if(!regs.length) break;
+    if(!isNaN(total) && out.length >= total) break;
+    if(regs.length < 20) break;
+  }
+  return out;
+}
+
+async function crear(entityId, valores, subforms){
+  const b = { json_values: JSON.stringify(valores) };
+  if(subforms) b.json_subforms_values = JSON.stringify(subforms);
+  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records.json", "POST", b);
+}
+async function actualizar(entityId, recId, valores, subforms){
+  const b = { json_values: JSON.stringify(valores) };
+  if(subforms) b.json_subforms_values = JSON.stringify(subforms);
+  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records/" + recId + ".json", "PUT", b);
+}
+async function borrar(entityId, recId){
+  return qdb("/apps/" + CONFIG.APP_ID + "/entities/" + entityId + "/records/" + recId + ".json", "DELETE", {});
+}
+
+/* ==========================================================================
+   Login
+   ========================================================================== */
+$("btnEntrar").onclick = async () => {
+  const u = $("usr").value.trim(), p = $("pwd").value;
+  if(!u || !p){ $("loginErr").style.display = "block"; $("loginErr").textContent = "Escribe usuario y contraseña."; return; }
+  const b = $("btnEntrar");
+  b.disabled = true; b.textContent = "Verificando…";
+  $("loginErr").style.display = "none";
+  try{
+    const F = CONFIG.USUARIOS.F;
+    const regs = await listar(CONFIG.USUARIOS.ENTITY_ID);
+    const encontrado = regs.find(r =>
+      norm(r.v[F.usuario.id]) === norm(u) && String(r.v[F.password.id] || "") === p
+    );
+    if(!encontrado) throw new Error("Usuario o contraseña incorrectos.");
+    const activo = norm(encontrado.v[F.activo.id] || "");
+    if(activo && (activo.indexOf("no") === 0 || activo.indexOf("inactiv") >= 0)) throw new Error("Este usuario está inactivo.");
+    S.sesion = {
+      usuario: encontrado.v[F.usuario.id] || u,
+      rol: encontrado.v[F.rol.id] || "Oficina",
+      oficina: encontrado.v[F.oficina.id] || ""
+    };
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    $("chipUsr").textContent = S.sesion.usuario + " · " + S.sesion.rol;
+    arrancar();
+  }catch(e){
+    $("loginErr").style.display = "block";
+    $("loginErr").textContent = e.message;
+  }
+  b.disabled = false; b.textContent = "Entrar";
+};
+$("pwd").addEventListener("keydown", e => { if(e.key === "Enter") $("btnEntrar").click(); });
+$("btnSalir").onclick = () => location.reload();
+
+const esAdmin = () => norm(S.sesion.rol).indexOf("admin") >= 0;
+const esGestor = () => esAdmin() || norm(S.sesion.rol).indexOf("gestor") >= 0;
+function puedeEditar(obj){
+  if(esGestor()) return true;
+  return norm(obj.oficina) === norm(S.sesion.oficina);
+}
+
+/* ==========================================================================
+   Carga inicial
+   ========================================================================== */
+async function arrancar(){
+  try{
+    await cargarCatalogos();
+    await recargar();
+  }catch(e){
+    $("lista").innerHTML = '<div class="msg mal">No se pudo cargar: ' + esc(e.message) + "</div>";
+  }
+}
+
+async function cargarCat(nombre){
+  const c = CONFIG.CATALOGOS[nombre];
+  const regs = await listar(c.entity);
+  return regs.map(r => {
+    const label = String(r.v[c.label] || "").trim();
+    const codigo = c.codigo ? String(r.v[c.codigo] || "").trim() : "";
+    return { id: r.id, label, codigo, v: r.v };
+  }).filter(x => x.label);
+}
+
+async function cargarCatalogos(){
+  const C = CONFIG.CATALOGOS;
+  const [per, pol, est, oe, rt, rp, inv] = await Promise.all([
+    cargarCat("periodos"),
+    cargarCat("politica_calidad"),
+    cargarCat("estrategias"),
+    cargarCat("objetivos_estrategicos"),
+    cargarCat("responsables_tecnicos"),
+    cargarCat("responsables_proceso"),
+    listar(C.inventario_procesos.entity)
+  ]);
+
+  S.cat.periodos = per;
+  S.cat.politica = pol;
+  S.cat.oe = oe;
+
+  /* Estrategias: guardan periodo y sus objetivos estratégicos */
+  S.cat.estrategias = est.map(e => ({
+    id: e.id, label: e.label, codigo: e.codigo,
+    periodo: String(e.v[C.estrategias.filtro.campo] || "").trim(),
+    oe: String(e.v[C.estrategias.hijo.campo] || "").trim()
+  }));
+
+  /* Responsables técnicos, con su líder */
+  S.cat.respTecnicos = rt.map(x => ({
+    id: x.id, label: x.label,
+    correo: String(x.v[C.responsables_tecnicos.correo] || "").trim(),
+    celular: String(x.v[C.responsables_tecnicos.celular] || "").trim(),
+    lider: String(x.v[C.responsables_tecnicos.lider.campo] || "").trim()
+  }));
+
+  S.cat.respProceso = rp.map(x => ({
+    id: x.id, label: x.label,
+    correo: String(x.v[C.responsables_proceso.correo] || "").trim(),
+    celular: String(x.v[C.responsables_proceso.celular] || "").trim()
+  }));
+
+  /* Inventario de procesos: ruta completa, archivados marcados */
+  const I = C.inventario_procesos;
+  const vistos = {};
+  S.cat.procesos = [];
+  inv.forEach(r => {
+    const ruta = String(r.v[I.ruta_completa] || "").trim();
+    if(!ruta) return;
+    if(vistos[ruta]) return;
+    vistos[ruta] = 1;
+    const estado = norm(r.v[I.archivado] || "");
+    S.cat.procesos.push({
+      id: r.id,
+      ruta,
+      codigo: String(r.v[I.codigo] || "").trim(),
+      archivado: estado.indexOf(I.archivadoRegla.descartarSiContiene) >= 0
+    });
+  });
+  S.cat.procesos.sort((a, b) => (a.codigo || a.ruta).localeCompare(b.codigo || b.ruta, "es"));
+
+  llenarFiltros();
+}
+
+function llenarFiltros(){
+  const per = S.cat.periodos.map(p => p.label).sort();
+  opciones("fPeriodo", per, "", "Todos");
+  opciones("tPeriodo", per, per[per.length - 1] || "", "Todos");
+  opciones("fOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
+  opciones("fCondicion", CONFIG.REGLAS.condiciones, "", "Todas");
+  opciones("fEstado", ["Cumplido", "Avance bueno", "Avance crítico", "Vencido", "Por vencer", "Sin hitos"], "", "Todos");
+}
+
+/* ==========================================================================
+   Lectura de datos
+   ========================================================================== */
+async function recargar(){
+  $("lista").innerHTML = '<div class="cargando"><span class="spin"></span>Cargando objetivos…</div>';
+  const [obj, hit, rep] = await Promise.all([
+    listar(CONFIG.MATRIZ.ENTITY_ID),
+    listar(CONFIG.HITOS.ENTITY_ID),
+    listar(CONFIG.REPORTES.ENTITY_ID)
+  ]);
+
+  const F = CONFIG.MATRIZ.F, E = CONFIG.ESPEJO;
+  S.objetivos = obj.map(r => ({
+    id: r.id,
+    objetivo: r.v[F.objetivo.id] || "",
+    indicador: r.v[F.indicador.id] || "",
+    formula: r.v[F.formula.id] || "",
+    meta: r.v[F.meta.id] || "",
+    actividades: r.v[F.actividades.id] || "",
+    recursos: r.v[F.recursos.id] || "",
+    fi: r.v[F.fi_meta.id] || "",
+    fv: r.v[F.fv_meta.id] || "",
+    condicion: r.v[F.condicion.id] || "",
+    periodo: r.v[E.periodo_txt.id] || "",
+    politica: r.v[E.compromisos_txt.id] || "",
+    estrategia: r.v[E.estrategia_txt.id] || "",
+    oe: r.v[E.objetivo_estrategico_txt.id] || "",
+    proceso: r.v[E.proceso_ruta.id] || "",
+    oficina: r.v[E.oficina_txt.id] || "",
+    respProc: r.v[E.resp_proceso_txt.id] || "",
+    rpCorreo: r.v[E.resp_proceso_correo.id] || "",
+    rpCel: r.v[E.resp_proceso_celular.id] || "",
+    respTec: r.v[E.resp_tecnico_txt.id] || "",
+    rtCorreo: r.v[E.resp_tecnico_correo.id] || "",
+    rtCel: r.v[E.resp_tecnico_celular.id] || ""
+  }));
+
+  const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
+  S.hitos = hit.map(r => ({
+    id: r.id,
+    objetivoRef: String(r.v[HE.objetivo_ref.id] || "").trim(),
+    hito: r.v[H.hito.id] || "",
+    part: num(r.v[H.pct_participacion.id]),
+    fi: r.v[H.fi_hito.id] || "",
+    fv: r.v[H.fv_hito.id] || "",
+    costo: num(r.v[H.costo.id])
+  }));
+
+  const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
+  S.reportes = rep.map(r => ({
+    id: r.id,
+    objetivoRef: String(r.v[RE.objetivo_ref.id] || "").trim(),
+    hitoRef: String(r.v[RE.hito_ref.id] || "").trim(),
+    fecha: r.v[R.fecha_ejecucion.id] || "",
+    avance: r.v[R.avance.id] || "",
+    estado: r.v[R.estado_hito.id] || "",
+    contrib: num(r.v[R.contribucion.id]),
+    dificultades: r.v[R.dificultades.id] || "",
+    obs: r.v[R.observacion.id] || "",
+    enlaces: parseEnlaces(r.v[RE.evidencias_enlaces.id]),
+    acciones: leerAcciones(r.sub && r.sub[SUB.id])
+  }));
+
+  pintarLista();
+  pintarTablero();
+}
+
+function parseEnlaces(txt){
+  if(!txt) return [];
+  try{
+    const d = JSON.parse(txt);
+    if(Array.isArray(d)) return d.filter(x => x && (x.url || x.etiqueta));
+  }catch(e){ /* texto suelto: una URL por línea */ }
+  return String(txt).split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => ({ etiqueta: "", url: l }));
+}
+
+function leerAcciones(arr){
+  if(!Array.isArray(arr)) return [];
+  const SF = CONFIG.REPORTES.SUBFORM.proximas_acciones.F;
+  return arr.map(x => {
+    const n = nodoDe(x, "record", "subform_value");
+    const v = n.values || n;
+    return {
+      accion: v[SF.accion.id] || "",
+      responsable: v[SF.responsable.id] || "",
+      fecha: v[SF.fecha_venc.id] || "",
+      articulacion: v[SF.articulacion.id] || "",
+      obs: v[SF.observacion.id] || ""
+    };
+  }).filter(a => a.accion || a.responsable);
+}
+
+/* ==========================================================================
+   Cálculos
+   ========================================================================== */
+const hitosDe = objId => S.hitos.filter(h => h.objetivoRef === objId);
+const reportesDe = hitoId => S.reportes.filter(r => r.hitoRef === hitoId)
+  .sort((a, b) => (fecha(a.fecha) || 0) - (fecha(b.fecha) || 0));
+
+/* % progreso del hito = Σ contribuciones de sus reportes, tope 100 */
+function progresoHito(hitoId){
+  const s = reportesDe(hitoId).reduce((n, r) => n + r.contrib, 0);
+  return Math.min(100, Math.max(0, s));
+}
+/* Estado del hito: del reporte más reciente. Sin reportes -> Pendiente */
+function estadoHito(hitoId){
+  const rs = reportesDe(hitoId);
+  if(!rs.length) return CONFIG.REGLAS.estadoHito.sinReportes;
+  return rs[rs.length - 1].estado || "En Proceso";
+}
+/* % progreso del objetivo = Σ (participación × progreso del hito) / 100 */
+function progresoObjetivo(objId){
+  const hs = hitosDe(objId);
+  if(!hs.length) return null;
+  const s = hs.reduce((n, h) => n + h.part * progresoHito(h.id), 0);
+  return red1(Math.min(100, s / 100));
+}
+function sumaParticipacion(objId, excluirHitoId){
+  return hitosDe(objId).filter(h => h.id !== excluirHitoId).reduce((n, h) => n + h.part, 0);
+}
+function semaforo(p){
+  if(p == null) return { clase: "g", etiqueta: "Sin hitos" };
+  for(const s of CONFIG.REGLAS.semaforo){
+    if(p <= s.max) return {
+      clase: s.clase === "critico" ? "r" : (s.clase === "bueno" ? "a" : "v"),
+      etiqueta: s.etiqueta, cl: s.clase
+    };
+  }
+  return { clase: "v", etiqueta: "Cumplido", cl: "cumplido" };
+}
+function estadoObjetivo(o){
+  const p = progresoObjetivo(o.id);
+  const d = dias(HOY, o.fv);
+  if(p != null && p >= 100) return { tag: "v", txt: "Cumplido" };
+  if(d != null && d < 0) return { tag: "r", txt: "Vencido hace " + Math.abs(d) + " d" };
+  if(d != null && d <= CONFIG.REGLAS.alertas.porVencer) return { tag: "a", txt: "Vence en " + d + " d" };
+  return { tag: "z", txt: "En plazo" };
+}
+
+/* ==========================================================================
+   Listado
+   ========================================================================== */
+["fPeriodo","fOficina","fCondicion","fEstado"].forEach(id => $(id).addEventListener("change", pintarLista));
+$("fBuscar").addEventListener("input", pintarLista);
+
+function filtrados(){
+  const per = $("fPeriodo").value, ofi = $("fOficina").value,
+        con = $("fCondicion").value, est = $("fEstado").value,
+        q = norm($("fBuscar").value.trim());
+  return S.objetivos.filter(o => {
+    if(per && o.periodo !== per) return false;
+    if(ofi && o.oficina !== ofi) return false;
+    if(con && o.condicion !== con) return false;
+    if(est){
+      const p = progresoObjetivo(o.id), d = dias(HOY, o.fv), sem = semaforo(p);
+      if(est === "Sin hitos" && p != null) return false;
+      if(est === "Cumplido" && !(p != null && p >= 100)) return false;
+      if(est === "Avance bueno" && !(p != null && p < 100 && sem.cl === "bueno")) return false;
+      if(est === "Avance crítico" && !(p != null && sem.cl === "critico")) return false;
+      if(est === "Vencido" && !(d != null && d < 0)) return false;
+      if(est === "Por vencer" && !(d != null && d >= 0 && d <= CONFIG.REGLAS.alertas.porVencer)) return false;
+    }
+    if(q){
+      const heno = norm([o.objetivo, o.indicador, o.respTec, o.respProc, o.oficina, o.proceso, sinHtml(o.actividades)].join(" "));
+      if(heno.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
+
+function pintarLista(){
+  const arr = filtrados();
+  if(!arr.length){
+    $("lista").innerHTML = '<div class="vacio">No hay objetivos que coincidan con los filtros.</div>';
+    return;
+  }
+  const abiertos = {};
+  document.querySelectorAll(".obj.abierto").forEach(e => abiertos[e.dataset.id] = 1);
+
+  $("lista").innerHTML = arr.map(o => {
+    const p = progresoObjetivo(o.id), sem = semaforo(p), eo = estadoObjetivo(o);
+    const hs = hitosDe(o.id);
+    const suma = red1(sumaParticipacion(o.id));
+    const avisoPart = hs.length && Math.abs(suma - 100) > CONFIG.REGLAS.participacion.tolerancia;
+    return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + '" data-id="' + esc(o.id) + '">' +
+      '<div class="cab" data-tog="' + esc(o.id) + '">' +
+        '<div class="tit">' +
+          "<h3>" + esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
+          '<div class="meta">' +
+            (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+            (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
+            "<span>·</span><span>" + hs.length + " hito(s)</span>" +
+            (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
+            (avisoPart ? '<span class="tag r" title="La suma de participación de los hitos debe ser 100%">Σ ' + suma + "%</span>" : "") +
+          "</div>" +
+        "</div>" +
+        '<div style="flex:0 0 auto;text-align:right;min-width:150px">' +
+          '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") + "</div>" +
+          '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+          '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
+        "</div>" +
+        '<div class="acc">' +
+          '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' +
+          (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
+        "</div>" +
+      "</div>" +
+      '<div class="cuerpo">' + detalle(o) + "</div>" +
+    "</div>";
+  }).join("");
+
+  $("lista").querySelectorAll("[data-tog]").forEach(e => {
+    e.onclick = ev => {
+      if(ev.target.closest("[data-ver],[data-del]")) return;
+      e.closest(".obj").classList.toggle("abierto");
+    };
+  });
+  $("lista").querySelectorAll("[data-ver]").forEach(e => e.onclick = () => abrirObjetivo(e.dataset.ver));
+  $("lista").querySelectorAll("[data-del]").forEach(e => e.onclick = () => eliminarObjetivo(e.dataset.del));
+  $("lista").querySelectorAll("[data-hnuevo]").forEach(e => e.onclick = () => abrirHito(e.dataset.hnuevo, null));
+  $("lista").querySelectorAll("[data-hedit]").forEach(e => e.onclick = () => abrirHito(e.dataset.obj, e.dataset.hedit));
+  $("lista").querySelectorAll("[data-hdel]").forEach(e => e.onclick = () => eliminarHito(e.dataset.hdel));
+  $("lista").querySelectorAll("[data-rnuevo]").forEach(e => e.onclick = () => abrirReporte(e.dataset.obj, e.dataset.rnuevo, null));
+  $("lista").querySelectorAll("[data-redit]").forEach(e => e.onclick = () => abrirReporte(e.dataset.obj, e.dataset.hito, e.dataset.redit));
+  $("lista").querySelectorAll("[data-rdel]").forEach(e => e.onclick = () => eliminarReporte(e.dataset.rdel));
+}
+
+function detalle(o){
+  const hs = hitosDe(o.id).sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0));
+  const editable = puedeEditar(o);
+  let h = "";
+
+  h += '<div class="rej" style="gap:10px">';
+  h += ficha("Indicador", esc(o.indicador));
+  h += ficha("Meta", esc(o.meta) + '<div style="color:#5b6770;font-size:12px;margin-top:2px">' + verFecha(o.fi) + " → " + verFecha(o.fv) + "</div>");
+  if(o.formula) h += ficha("Fórmula", esc(o.formula));
+  if(o.proceso) h += ficha("Proceso", esc(o.proceso));
+  if(o.politica) h += ficha("Política de calidad", esc(o.politica));
+  if(o.estrategia) h += ficha("Estrategia", esc(o.estrategia));
+  if(o.oe) h += ficha("Objetivo estratégico", esc(o.oe));
+  if(o.actividades) h += '<div class="full">' + fichaHtml("Actividades a realizar", o.actividades) + "</div>";
+  if(o.recursos) h += '<div class="full">' + fichaHtml("Recursos requeridos", o.recursos) + "</div>";
+  h += ficha("Responsable técnico", esc(o.respTec || "—") + contacto(o.rtCorreo, o.rtCel));
+  h += ficha("Responsable de proceso", esc(o.respProc || "—") + contacto(o.rpCorreo, o.rpCel));
+  h += "</div>";
+
+  /* ---- hitos ---- */
+  const suma = red1(sumaParticipacion(o.id));
+  h += '<div class="subtit">Hitos <span style="font-weight:400;text-transform:none;letter-spacing:0;color:' +
+       (hs.length && Math.abs(suma - 100) > CONFIG.REGLAS.participacion.tolerancia ? "var(--rojo)" : "var(--gris)") +
+       '">participación acumulada ' + suma + "%</span>" +
+       (editable ? '<button class="btn sec mini" data-hnuevo="' + esc(o.id) + '">+ Añadir hito</button>' : "") + "</div>";
+
+  if(!hs.length){
+    h += '<div class="vacio">Este objetivo todavía no tiene hitos. Sin hitos no se puede calcular el progreso.</div>';
+  }else{
+    h += '<table class="t"><thead><tr><th style="width:30%">Hito</th><th>Part.</th><th>Plazo</th><th>Progreso</th><th>Estado</th><th>Reportes</th><th></th></tr></thead><tbody>';
+    hs.forEach(hi => {
+      const ph = red1(progresoHito(hi.id)), eh = estadoHito(hi.id), rs = reportesDe(hi.id);
+      const d = dias(HOY, hi.fv);
+      const fueraRango = malPlazoHito(o, hi);
+      h += "<tr>" +
+        "<td><b>" + esc(hi.hito) + "</b>" + (fueraRango ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
+        "<td>" + red1(hi.part) + "%</td>" +
+        "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) +
+          (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
+        '<td><div class="barra" style="flex:none;width:70px"><i style="width:' + ph + '%"></i></div>' + ph + "%</td>" +
+        '<td><span class="tag ' + (eh === "Ejecutado" ? "v" : (eh === "Pendiente" ? "g" : "z")) + '">' + esc(eh) + "</span></td>" +
+        "<td>" + rs.length +
+          (editable ? ' <button class="ico" data-rnuevo="' + esc(hi.id) + '" data-obj="' + esc(o.id) + '" title="Añadir reporte">＋</button>' : "") + "</td>" +
+        "<td>" + (editable ?
+          '<button class="ico" data-hedit="' + esc(hi.id) + '" data-obj="' + esc(o.id) + '" title="Editar">✏️</button> ' +
+          '<button class="ico" data-hdel="' + esc(hi.id) + '" title="Eliminar">🗑️</button>' : "") + "</td>" +
+      "</tr>";
+
+      rs.forEach(r => {
+        h += '<tr style="background:#fbfdfc"><td colspan="7" style="padding-left:22px;border-left:3px solid var(--verde-cl)">' +
+          '<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">' +
+            '<div style="flex:0 0 auto"><span class="tag z">📅 ' + verFecha(r.fecha) + "</span></div>" +
+            '<div style="flex:1;min-width:200px">' + (r.avance || "<i>sin descripción</i>") +
+              (r.dificultades ? '<div style="font-size:12px;color:var(--ambar);margin-top:3px">Dificultades: ' + esc(r.dificultades) + "</div>" : "") +
+              (r.obs ? '<div style="font-size:12px;color:var(--gris);margin-top:3px">Obs.: ' + esc(r.obs) + "</div>" : "") +
+              enlacesHtml(r.enlaces) + accionesHtml(r.acciones) +
+              extempHtml(hi, r) +
+            "</div>" +
+            '<div style="flex:0 0 auto;font-weight:600">+' + red1(r.contrib) + "%</div>" +
+            (editable ? '<div style="flex:0 0 auto">' +
+              '<button class="ico" data-redit="' + esc(r.id) + '" data-hito="' + esc(hi.id) + '" data-obj="' + esc(o.id) + '">✏️</button> ' +
+              '<button class="ico" data-rdel="' + esc(r.id) + '">🗑️</button></div>' : "") +
+          "</div></td></tr>";
+      });
+    });
+    h += "</tbody></table>";
+  }
+  return h;
+}
+
+function ficha(t, v){
+  return '<div><div style="font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px">' +
+    esc(t) + '</div><div style="font-size:13.5px">' + (v || "—") + "</div></div>";
+}
+function fichaHtml(t, html){
+  return '<div style="font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px">' +
+    esc(t) + '</div><div style="font-size:13.5px">' + html + "</div>";
+}
+function contacto(correo, cel){
+  const p = [];
+  if(correo) p.push('<a href="mailto:' + esc(correo) + '">' + esc(correo) + "</a>");
+  if(cel) p.push(esc(cel));
+  return p.length ? '<div style="font-size:12px;color:var(--gris)">' + p.join(" · ") + "</div>" : "";
+}
+function enlacesHtml(arr){
+  if(!arr || !arr.length) return "";
+  return '<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">' + arr.map(e =>
+    '<a class="tag z" style="text-decoration:none" href="' + esc(e.url) + '" target="_blank" rel="noopener">🔗 ' +
+    esc(e.etiqueta || "evidencia") + "</a>").join("") + "</div>";
+}
+function accionesHtml(arr){
+  if(!arr || !arr.length) return "";
+  return '<div style="margin-top:5px;font-size:12px;color:var(--gris)"><b>Próximas acciones:</b><ul style="margin:3px 0 0;padding-left:18px">' +
+    arr.map(a => "<li>" + esc(a.accion) +
+      (a.responsable ? " — " + esc(a.responsable) : "") +
+      (a.fecha ? " (" + verFecha(a.fecha) + ")" : "") + "</li>").join("") + "</ul></div>";
+}
+function extempHtml(hi, r){
+  const d = dias(hi.fv, r.fecha);
+  if(d != null && d > 0) return '<div class="tag a" style="margin-top:4px">reporte extemporáneo (+' + d + " d)</div>";
+  return "";
+}
+function malPlazoHito(o, hi){
+  const oi = fecha(o.fi), ov = fecha(o.fv), hi_ = fecha(hi.fi), hv = fecha(hi.fv);
+  if(!oi || !ov || !hi_ || !hv) return false;
+  return hi_ < oi || hv > ov;
+}
+
+/* ==========================================================================
+   Editor de texto enriquecido
+   ========================================================================== */
+document.querySelectorAll(".rtebar").forEach(bar => {
+  bar.querySelectorAll("button").forEach(b => {
+    b.onclick = () => {
+      const destino = $(bar.dataset.para);
+      destino.focus();
+      document.execCommand(b.dataset.cmd, false, null);
+    };
+  });
+});
+
+/* ==========================================================================
+   Modales — apertura y cierre
+   ========================================================================== */
+document.querySelectorAll("[data-cierra]").forEach(b => b.onclick = () => $(b.dataset.cierra).classList.remove("on"));
+document.querySelectorAll(".modal").forEach(m => m.onclick = e => { if(e.target === m) m.classList.remove("on"); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") document.querySelectorAll(".modal.on").forEach(m => m.classList.remove("on"));
+});
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  document.querySelectorAll(".vista").forEach(v => v.classList.remove("on"));
+  $("v" + b.dataset.v.charAt(0).toUpperCase() + b.dataset.v.slice(1)).classList.add("on");
+});
+
+/* ==========================================================================
+   Formulario del objetivo
+   ========================================================================== */
+$("btnNuevo").onclick = () => abrirObjetivo(null);
+
+function abrirObjetivo(id){
+  const o = id ? S.objetivos.find(x => x.id === id) : null;
+  if(o && !puedeEditar(o)){ toast("Solo puedes editar objetivos de tu oficina.", true); return; }
+  S.editObj = o;
+  limpiaErrores("mObj");
+  msg("mObjMsg", "", "");
+  $("mObjTit").textContent = o ? sinHtml(o.objetivo).slice(0, 90) : "Nuevo objetivo";
+
+  opciones("oPeriodo", S.cat.periodos.map(p => p.label), o ? o.periodo : "", "— elige —");
+  opciones("oCondicion", CONFIG.REGLAS.condiciones, o ? o.condicion : "Vigente", "— elige —");
+  opciones("oPolitica", S.cat.politica.map(p => ({ v: p.label, t: p.label })), o ? o.politica : "", "— elige —");
+  opciones("oOficina", CONFIG.CATALOGOS.oficinas.opciones, o ? o.oficina : (esGestor() ? "" : S.sesion.oficina), "— elige —");
+  opciones("oProceso", S.cat.procesos.map(p => ({
+    v: p.ruta, t: (p.codigo ? p.codigo + " — " : "") + p.ruta + (p.archivado ? "  (archivado)" : ""), tachado: p.archivado
+  })).filter(p => !p.tachado || (o && o.proceso === p.v)), o ? o.proceso : "", "— elige —");
+  opciones("oRespTec", S.cat.respTecnicos.map(r => r.label), o ? o.respTec : "", "— elige —");
+  opciones("oRespProc", S.cat.respProceso.map(r => r.label), o ? o.respProc : "", "— elige —");
+
+  $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
+  $("oIndicador").value = o ? o.indicador : "";
+  $("oFormula").value = o ? o.formula : "";
+  $("oMeta").value = o ? o.meta : "";
+  $("oFI").value = o ? iso(o.fi) : "";
+  $("oFV").value = o ? iso(o.fv) : "";
+  $("oActividades").innerHTML = o ? o.actividades : "";
+  $("oRecursos").innerHTML = o ? o.recursos : "";
+  $("oRTCorreo").value = o ? o.rtCorreo : "";
+  $("oRTCel").value = o ? o.rtCel : "";
+  $("oRPCorreo").value = o ? o.rpCorreo : "";
+  $("oRPCel").value = o ? o.rpCel : "";
+
+  refrescarEstrategias(o ? o.estrategia : "");
+  mostrarOE(o ? o.oe : "");
+  $("mObj").classList.add("on");
+}
+
+/* Estrategias filtradas por periodo */
+$("oPeriodo").addEventListener("change", () => refrescarEstrategias(""));
+function refrescarEstrategias(valorActual){
+  const per = $("oPeriodo").value;
+  const arr = S.cat.estrategias.filter(e => !per || !e.periodo || norm(e.periodo) === norm(per));
+  opciones("oEstrategia", arr.map(e => ({
+    v: e.label, t: (e.codigo ? e.codigo + " — " : "") + e.label
+  })), valorActual, "— elige —");
+  if(!arr.length) mostrarOE("");
+}
+
+/* Al elegir estrategia, arrastra su(s) objetivo(s) estratégico(s) */
+$("oEstrategia").addEventListener("change", () => {
+  const e = S.cat.estrategias.find(x => x.label === $("oEstrategia").value);
+  mostrarOE(e ? textoOE(e) : "");
+});
+function textoOE(e){
+  if(!e || !e.oe) return "";
+  const ids = String(e.oe).split(/\s*,\s*/).filter(Boolean);
+  const f = CONFIG.CATALOGOS.objetivos_estrategicos.formato;
+  const partes = [];
+  ids.forEach(t => {
+    const oe = S.cat.oe.find(x => x.id === t || norm(x.label) === norm(t));
+    if(oe) partes.push(f.replace("{codigo}", oe.codigo).replace("{label}", oe.label));
+    else partes.push(t);
+  });
+  return partes.join(" ");
+}
+function mostrarOE(txt){
+  $("pOE").dataset.valor = txt || "";
+  if(txt){
+    $("pOE").style.display = "block";
+    $("pOE").innerHTML = "<b>Objetivo estratégico:</b> " + esc(txt);
+  }else{
+    $("pOE").style.display = "none";
+    $("pOE").innerHTML = "";
+  }
+}
+
+/* Al elegir responsable técnico se completa el contacto y se propone el líder */
+$("oRespTec").addEventListener("change", () => {
+  const rt = S.cat.respTecnicos.find(x => x.label === $("oRespTec").value);
+  if(!rt) return;
+  $("oRTCorreo").value = rt.correo || "";
+  $("oRTCel").value = rt.celular || "";
+  if(rt.lider && !$("oRespProc").value){
+    const rp = S.cat.respProceso.find(x => x.id === rt.lider || norm(x.label) === norm(rt.lider));
+    if(rp){
+      $("oRespProc").value = rp.label;
+      $("oRPCorreo").value = rp.correo || "";
+      $("oRPCel").value = rp.celular || "";
+      toast("Responsable de proceso propuesto: " + rp.label + ". Puedes cambiarlo.");
+    }
+  }
+});
+$("oRespProc").addEventListener("change", () => {
+  const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
+  if(!rp) return;
+  $("oRPCorreo").value = rp.correo || "";
+  $("oRPCel").value = rp.celular || "";
+});
+
+/* Aviso si al recortar el plazo quedan hitos fuera */
+["oFI","oFV"].forEach(id => $(id).addEventListener("change", () => {
+  if(!S.editObj){ aviso("avFechas", ""); return; }
+  const fi = fecha($("oFI").value), fv = fecha($("oFV").value);
+  if(!fi || !fv) return;
+  const fuera = hitosDe(S.editObj.id).filter(h => {
+    const a = fecha(h.fi), b = fecha(h.fv);
+    return (a && a < fi) || (b && b > fv);
+  });
+  aviso("avFechas", fuera.length ?
+    "Con este plazo quedan " + fuera.length + " hito(s) fuera de rango: " +
+    fuera.map(h => h.hito).join(", ") + ". Tendrás que ajustarlos." : "");
+}));
+
+$("btnGuardarObj").onclick = async () => {
+  limpiaErrores("mObj");
+  const d = {
+    objetivo: $("oObjetivo").value.trim(),
+    periodo: $("oPeriodo").value,
+    condicion: $("oCondicion").value,
+    politica: $("oPolitica").value,
+    estrategia: $("oEstrategia").value,
+    oe: $("pOE").dataset.valor || "",
+    proceso: $("oProceso").value,
+    actividades: $("oActividades").innerHTML.trim(),
+    recursos: $("oRecursos").innerHTML.trim(),
+    indicador: $("oIndicador").value.trim(),
+    formula: $("oFormula").value.trim(),
+    meta: $("oMeta").value.trim(),
+    fi: $("oFI").value,
+    fv: $("oFV").value,
+    oficina: $("oOficina").value,
+    respTec: $("oRespTec").value,
+    rtCorreo: $("oRTCorreo").value.trim(),
+    rtCel: $("oRTCel").value.trim(),
+    respProc: $("oRespProc").value,
+    rpCorreo: $("oRPCorreo").value.trim(),
+    rpCel: $("oRPCel").value.trim()
+  };
+
+  let mal = false;
+  if(!d.objetivo){ error("oObjetivo", "Escribe el objetivo."); mal = true; }
+  if(!d.periodo){ error("oPeriodo", "Elige el periodo."); mal = true; }
+  if(!d.condicion){ error("oCondicion", "Elige la condición."); mal = true; }
+  if(!d.politica){ error("oPolitica", "Elige el compromiso de política que atiende."); mal = true; }
+  if(!d.indicador){ error("oIndicador", "Escribe el indicador."); mal = true; }
+  if(!d.oficina){ error("oOficina", "Elige la oficina responsable."); mal = true; }
+  if(!d.respProc){ error("oRespProc", "Elige el responsable de proceso."); mal = true; }
+  if(!d.fi){ error("oFI", "Falta la fecha de inicio."); mal = true; }
+  if(!d.fv){ error("oFV", "Falta la fecha de vencimiento."); mal = true; }
+  if(d.fi && d.fv && fecha(d.fv) < fecha(d.fi)){ error("oFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
+
+  if(S.editObj && d.fi && d.fv){
+    const fi = fecha(d.fi), fv = fecha(d.fv);
+    const fuera = hitosDe(S.editObj.id).filter(h => {
+      const a = fecha(h.fi), b = fecha(h.fv);
+      return (a && a < fi) || (b && b > fv);
+    });
+    if(fuera.length){
+      error("oFV", "Hay " + fuera.length + " hito(s) fuera del nuevo plazo: " + fuera.map(h => h.hito).join(", "));
+      mal = true;
+    }
+  }
+  if(mal){ msg("mObjMsg", "Revisa los campos marcados.", "mal"); return; }
+
+  const F = CONFIG.MATRIZ.F, E = CONFIG.ESPEJO;
+  const v = {};
+  v[F.objetivo.id] = d.objetivo;
+  v[F.actividades.id] = d.actividades;
+  v[F.recursos.id] = d.recursos;
+  v[F.indicador.id] = d.indicador;
+  v[F.formula.id] = d.formula;
+  v[F.meta.id] = d.meta;
+  v[F.fi_meta.id] = d.fi;
+  v[F.fv_meta.id] = d.fv;
+  v[F.condicion.id] = d.condicion;
+  v[E.periodo_txt.id] = d.periodo;
+  v[E.compromisos_txt.id] = d.politica;
+  v[E.estrategia_txt.id] = d.estrategia;
+  v[E.objetivo_estrategico_txt.id] = d.oe;
+  v[E.proceso_ruta.id] = d.proceso;
+  v[E.oficina_txt.id] = d.oficina;
+  v[E.resp_proceso_txt.id] = d.respProc;
+  v[E.resp_proceso_correo.id] = d.rpCorreo;
+  v[E.resp_proceso_celular.id] = d.rpCel;
+  v[E.resp_tecnico_txt.id] = d.respTec;
+  v[E.resp_tecnico_correo.id] = d.rtCorreo;
+  v[E.resp_tecnico_celular.id] = d.rtCel;
+
+  const b = $("btnGuardarObj");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    if(S.editObj) await actualizar(CONFIG.MATRIZ.ENTITY_ID, S.editObj.id, v);
+    else await crear(CONFIG.MATRIZ.ENTITY_ID, v);
+    $("mObj").classList.remove("on");
+    toast("Objetivo guardado.");
+    await recargar();
+  }catch(e){
+    msg("mObjMsg", "No se pudo guardar: " + e.message, "mal");
+  }
+  b.disabled = false; b.textContent = "Guardar objetivo";
+};
+
+async function eliminarObjetivo(id){
+  const o = S.objetivos.find(x => x.id === id);
+  const hs = hitosDe(id);
+  if(!confirm("¿Eliminar este objetivo" + (hs.length ? " y sus " + hs.length + " hito(s) con sus reportes" : "") + "?\n\nEsta acción no se puede deshacer.")) return;
+  try{
+    for(const h of hs){
+      for(const r of reportesDe(h.id)) await borrar(CONFIG.REPORTES.ENTITY_ID, r.id);
+      await borrar(CONFIG.HITOS.ENTITY_ID, h.id);
+    }
+    await borrar(CONFIG.MATRIZ.ENTITY_ID, id);
+    toast("Objetivo eliminado.");
+    await recargar();
+  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
+}
+
+/* ==========================================================================
+   Formulario del hito
+   ========================================================================== */
+function abrirHito(objId, hitoId){
+  const o = S.objetivos.find(x => x.id === objId);
+  if(!o) return;
+  if(!puedeEditar(o)){ toast("Solo puedes editar objetivos de tu oficina.", true); return; }
+  const hi = hitoId ? S.hitos.find(x => x.id === hitoId) : null;
+  S.ctxObj = o; S.editHito = hi;
+  limpiaErrores("mHito");
+  msg("mHitoMsg", "", "");
+  $("mHitoTit").textContent = hi ? hi.hito : "Nuevo hito";
+
+  const usada = red1(sumaParticipacion(objId, hi ? hi.id : null));
+  $("pHitoObj").innerHTML =
+    "<b>Objetivo:</b> " + esc(sinHtml(o.objetivo)) +
+    '<div style="margin-top:5px">Plazo de la meta: <b>' + verFecha(o.fi) + " → " + verFecha(o.fv) + "</b></div>" +
+    '<div style="margin-top:3px">Participación ya asignada a otros hitos: <b>' + usada + "%</b> · disponible <b>" + red1(100 - usada) + "%</b></div>";
+
+  $("hNombre").value = hi ? hi.hito : "";
+  $("hPart").value = hi ? hi.part : "";
+  $("hCosto").value = hi && hi.costo ? hi.costo : "";
+  $("hFI").value = hi ? iso(hi.fi) : iso(o.fi);
+  $("hFV").value = hi ? iso(hi.fv) : "";
+
+  /* El calendario no deja salirse del plazo del objetivo */
+  $("hFI").min = iso(o.fi); $("hFI").max = iso(o.fv);
+  $("hFV").min = iso(o.fi); $("hFV").max = iso(o.fv);
+
+  $("mHito").classList.add("on");
+  revisarParticipacion();
+}
+
+$("hPart").addEventListener("input", revisarParticipacion);
+function revisarParticipacion(){
+  if(!S.ctxObj) return;
+  const usada = sumaParticipacion(S.ctxObj.id, S.editHito ? S.editHito.id : null);
+  const total = red1(usada + num($("hPart").value));
+  const tol = CONFIG.REGLAS.participacion.tolerancia;
+  if(total > 100 + tol) aviso("avPart", "Con este valor la participación total llega a " + total + "%. El máximo es 100%.");
+  else if(Math.abs(total - 100) > tol) aviso("avPart", "Participación total: " + total + "%. Debe sumar 100% entre todos los hitos.");
+  else aviso("avPart", "");
+}
+
+$("btnGuardarHito").onclick = async () => {
+  limpiaErrores("mHito");
+  const o = S.ctxObj;
+  const d = {
+    hito: $("hNombre").value.trim(),
+    part: num($("hPart").value),
+    costo: num($("hCosto").value),
+    fi: $("hFI").value,
+    fv: $("hFV").value
+  };
+
+  let mal = false;
+  if(!d.hito){ error("hNombre", "Escribe el nombre del hito."); mal = true; }
+  if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
+  if(!d.fi){ error("hFI", "Falta la fecha de inicio."); mal = true; }
+  if(!d.fv){ error("hFV", "Falta la fecha de vencimiento."); mal = true; }
+
+  const oi = fecha(o.fi), ov = fecha(o.fv), hi = fecha(d.fi), hv = fecha(d.fv);
+  if(hi && hv && hv < hi){ error("hFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
+  if(hi && oi && hi < oi){ error("hFI", "No puede empezar antes que la meta (" + verFecha(o.fi) + ")."); mal = true; }
+  if(hv && ov && hv > ov){ error("hFV", "No puede vencer después que la meta (" + verFecha(o.fv) + ")."); mal = true; }
+
+  const total = red1(sumaParticipacion(o.id, S.editHito ? S.editHito.id : null) + d.part);
+  if(total > 100 + CONFIG.REGLAS.participacion.tolerancia){
+    error("hPart", "La participación total llegaría a " + total + "%. El máximo es 100%.");
+    mal = true;
+  }
+  if(mal){ msg("mHitoMsg", "Revisa los campos marcados.", "mal"); return; }
+
+  const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
+  const v = {};
+  v[H.hito.id] = d.hito;
+  v[H.pct_participacion.id] = d.part;
+  v[H.fi_hito.id] = d.fi;
+  v[H.fv_hito.id] = d.fv;
+  if(d.costo) v[H.costo.id] = d.costo;
+  v[HE.objetivo_ref.id] = o.id;
+
+  const b = $("btnGuardarHito");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    if(S.editHito) await actualizar(CONFIG.HITOS.ENTITY_ID, S.editHito.id, v);
+    else await crear(CONFIG.HITOS.ENTITY_ID, v);
+    $("mHito").classList.remove("on");
+    toast("Hito guardado.");
+    await recargar();
+  }catch(e){
+    msg("mHitoMsg", "No se pudo guardar: " + e.message, "mal");
+  }
+  b.disabled = false; b.textContent = "Guardar hito";
+};
+
+async function eliminarHito(id){
+  const rs = reportesDe(id);
+  if(!confirm("¿Eliminar este hito" + (rs.length ? " y sus " + rs.length + " reporte(s)" : "") + "?")) return;
+  try{
+    for(const r of rs) await borrar(CONFIG.REPORTES.ENTITY_ID, r.id);
+    await borrar(CONFIG.HITOS.ENTITY_ID, id);
+    toast("Hito eliminado.");
+    await recargar();
+  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
+}
+
+/* ==========================================================================
+   Formulario del reporte
+   ========================================================================== */
+function abrirReporte(objId, hitoId, repId){
+  const o = S.objetivos.find(x => x.id === objId);
+  const hi = S.hitos.find(x => x.id === hitoId);
+  if(!o || !hi) return;
+  if(!puedeEditar(o)){ toast("Solo puedes editar objetivos de tu oficina.", true); return; }
+  const r = repId ? S.reportes.find(x => x.id === repId) : null;
+  S.ctxObj = o; S.ctxHito = hi; S.editRep = r;
+  limpiaErrores("mRep");
+  msg("mRepMsg", "", "");
+  $("mRepTit").textContent = r ? "Reporte del " + verFecha(r.fecha) : "Nuevo reporte";
+
+  const ph = red1(progresoHito(hi.id));
+  $("pRepHito").innerHTML =
+    "<b>Hito:</b> " + esc(hi.hito) +
+    '<div style="margin-top:5px">Plazo del hito: <b>' + verFecha(hi.fi) + " → " + verFecha(hi.fv) + "</b>" +
+    " · participación en el objetivo: <b>" + red1(hi.part) + "%</b></div>" +
+    '<div style="margin-top:3px">Progreso acumulado del hito: <b>' + ph + "%</b></div>";
+
+  opciones("rEstado", CONFIG.REPORTES.ESTADOS, r ? r.estado : "", "— elige —");
+  $("rFecha").value = r ? iso(r.fecha) : "";
+  $("rFecha").min = iso(hi.fi);
+  $("rAvance").innerHTML = r ? r.avance : "";
+  $("rContrib").value = r ? r.contrib : "";
+  $("rDificultades").value = r ? r.dificultades : "";
+  $("rObs").value = r ? r.obs : "";
+
+  pintarEnlaces(r ? r.enlaces : []);
+  pintarAcciones(r ? r.acciones : []);
+  calcularProgreso();
+  $("mRep").classList.add("on");
+}
+
+$("rFecha").addEventListener("change", () => {
+  const hi = S.ctxHito;
+  if(!hi) return;
+  const d = dias(hi.fv, $("rFecha").value);
+  aviso("avExtemp", (d != null && d > 0) ?
+    "Reporte extemporáneo: " + d + " día(s) después del vencimiento del hito. Se puede guardar y queda registrado el desfase." : "");
+});
+$("rContrib").addEventListener("input", calcularProgreso);
+function calcularProgreso(){
+  const hi = S.ctxHito;
+  if(!hi) return;
+  const previo = reportesDe(hi.id)
+    .filter(r => !S.editRep || r.id !== S.editRep.id)
+    .reduce((n, r) => n + r.contrib, 0);
+  const total = red1(previo + num($("rContrib").value));
+  $("rProgreso").value = total + "%" + (total > 100 ? "  ← supera el 100%" : "");
+  aviso("avContrib", total > 100 ?
+    "La suma de contribuciones del hito llegaría a " + total + "%. El máximo es 100%." : "");
+}
+
+/* ---- enlaces múltiples ---- */
+$("btnAddEnlace").onclick = () => agregarEnlace("", "");
+function pintarEnlaces(arr){
+  $("rEnlaces").innerHTML = "";
+  (arr && arr.length ? arr : [{ etiqueta: "", url: "" }]).forEach(e => agregarEnlace(e.etiqueta, e.url));
+}
+function agregarEnlace(et, url){
+  const d = document.createElement("div");
+  d.className = "enl";
+  d.innerHTML =
+    '<input type="text" class="et" placeholder="Etiqueta (ej. Acta de reunión)">' +
+    '<input type="url" class="url" placeholder="https://…">' +
+    '<button type="button" class="ico" data-abrir>Abrir</button>' +
+    '<button type="button" class="ico" data-quita>✕</button>';
+  d.querySelector(".et").value = et || "";
+  d.querySelector(".url").value = url || "";
+  d.querySelector("[data-quita]").onclick = () => d.remove();
+  d.querySelector("[data-abrir]").onclick = () => {
+    const u = d.querySelector(".url").value.trim();
+    if(u) window.open(u, "_blank", "noopener");
+  };
+  d.querySelector(".url").addEventListener("blur", function(){
+    const u = this.value.trim();
+    this.style.borderColor = (u && !/^https?:\/\//i.test(u)) ? "var(--ambar)" : "";
+  });
+  $("rEnlaces").appendChild(d);
+}
+function leerEnlacesForm(){
+  const out = [];
+  $("rEnlaces").querySelectorAll(".enl").forEach(d => {
+    const url = d.querySelector(".url").value.trim();
+    const et = d.querySelector(".et").value.trim();
+    if(url) out.push({ etiqueta: et, url });
+  });
+  return out;
+}
+
+/* ---- próximas acciones ---- */
+$("btnAddAccion").onclick = () => agregarAccion({});
+function pintarAcciones(arr){
+  $("rAcciones").innerHTML = "";
+  (arr || []).forEach(a => agregarAccion(a));
+  if(!arr || !arr.length) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+}
+function agregarAccion(a){
+  const vacio = $("rAcciones").querySelector(".vacio");
+  if(vacio) vacio.remove();
+  const d = document.createElement("div");
+  d.className = "acc-item panel";
+  d.style.marginBottom = "8px";
+  d.innerHTML =
+    '<div class="rej" style="gap:9px">' +
+      '<div class="full"><label>Próxima acción</label><textarea class="a-acc" style="min-height:50px"></textarea></div>' +
+      '<div><label>Responsable</label><input type="text" class="a-resp"></div>' +
+      '<div><label>Fecha de vencimiento</label><input type="date" class="a-fec"><div class="aviso a-av"></div></div>' +
+      '<div class="full"><label>Necesidades de articulación</label><textarea class="a-art" style="min-height:44px"></textarea></div>' +
+      '<div class="full"><label>Observación</label><textarea class="a-obs" style="min-height:44px"></textarea></div>' +
+      '<div class="full" style="text-align:right"><button type="button" class="btn sec mini a-del">Quitar acción</button></div>' +
+    "</div>";
+  d.querySelector(".a-acc").value = a.accion || "";
+  d.querySelector(".a-resp").value = a.responsable || "";
+  d.querySelector(".a-fec").value = iso(a.fecha);
+  d.querySelector(".a-art").value = a.articulacion || "";
+  d.querySelector(".a-obs").value = a.obs || "";
+  d.querySelector(".a-del").onclick = () => {
+    d.remove();
+    if(!$("rAcciones").querySelector(".acc-item")) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+  };
+  d.querySelector(".a-fec").addEventListener("change", function(){
+    const av = d.querySelector(".a-av");
+    const dh = dias(S.ctxHito.fv, this.value);
+    const dobj = dias(S.ctxObj.fv, this.value);
+    if(dobj != null && dobj > 0){
+      av.textContent = "Se pasa " + dobj + " día(s) del vencimiento del objetivo. No se puede guardar así.";
+      av.classList.add("on");
+    }else if(dh != null && dh > 0){
+      av.textContent = "Se pasa " + dh + " día(s) del vencimiento del hito. Se puede guardar: queda como señal de atraso.";
+      av.classList.add("on");
+    }else av.classList.remove("on");
+  });
+  $("rAcciones").appendChild(d);
+}
+function leerAccionesForm(){
+  const out = [];
+  $("rAcciones").querySelectorAll(".acc-item").forEach(d => {
+    const acc = d.querySelector(".a-acc").value.trim();
+    if(!acc) return;
+    out.push({
+      accion: acc,
+      responsable: d.querySelector(".a-resp").value.trim(),
+      fecha: d.querySelector(".a-fec").value,
+      articulacion: d.querySelector(".a-art").value.trim(),
+      obs: d.querySelector(".a-obs").value.trim()
+    });
+  });
+  return out;
+}
+
+$("btnGuardarRep").onclick = async () => {
+  limpiaErrores("mRep");
+  const o = S.ctxObj, hi = S.ctxHito;
+  const d = {
+    fecha: $("rFecha").value,
+    estado: $("rEstado").value,
+    avance: $("rAvance").innerHTML.trim(),
+    contrib: num($("rContrib").value),
+    dificultades: $("rDificultades").value.trim(),
+    obs: $("rObs").value.trim(),
+    enlaces: leerEnlacesForm(),
+    acciones: leerAccionesForm()
+  };
+
+  let mal = false;
+  if(!d.fecha){ error("rFecha", "Falta la fecha del reporte."); mal = true; }
+  if(!d.estado){ error("rEstado", "Elige el estado del hito."); mal = true; }
+  if(!sinHtml(d.avance)){ error("rAvance", "Describe el avance."); mal = true; }
+  if(!d.contrib || d.contrib <= 0){ error("rContrib", "La contribución debe ser mayor que cero."); mal = true; }
+
+  /* Contención: no se reporta antes de que el hito empiece */
+  const antes = dias(d.fecha, hi.fi);
+  if(antes != null && antes > 0){
+    error("rFecha", "El hito empieza el " + verFecha(hi.fi) + ". No se puede reportar avance antes de esa fecha.");
+    mal = true;
+  }
+
+  const previo = reportesDe(hi.id)
+    .filter(r => !S.editRep || r.id !== S.editRep.id)
+    .reduce((n, r) => n + r.contrib, 0);
+  if(red1(previo + d.contrib) > 100){
+    error("rContrib", "La suma de contribuciones llegaría a " + red1(previo + d.contrib) + "%. El máximo es 100%.");
+    mal = true;
+  }
+
+  /* Próximas acciones: no pueden pasarse del vencimiento del objetivo */
+  const fuera = d.acciones.filter(a => { const x = dias(o.fv, a.fecha); return x != null && x > 0; });
+  if(fuera.length){
+    msg("mRepMsg", "Hay " + fuera.length + " próxima(s) acción(es) con fecha posterior al vencimiento del objetivo (" + verFecha(o.fv) + "). Ajústalas antes de guardar.", "mal");
+    return;
+  }
+  if(mal){ msg("mRepMsg", "Revisa los campos marcados.", "mal"); return; }
+
+  const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
+  const v = {};
+  v[R.fecha_ejecucion.id] = d.fecha;
+  v[R.avance.id] = d.avance;
+  v[R.estado_hito.id] = d.estado;
+  v[R.contribucion.id] = d.contrib;
+  v[R.dificultades.id] = d.dificultades;
+  v[R.observacion.id] = d.obs;
+  v[RE.objetivo_ref.id] = o.id;
+  v[RE.hito_ref.id] = hi.id;
+  v[RE.evidencias_enlaces.id] = d.enlaces.length ? JSON.stringify(d.enlaces) : "";
+
+  const sub = {};
+  sub[SUB.id] = d.acciones.map(a => {
+    const x = {};
+    x[SUB.F.accion.id] = a.accion;
+    x[SUB.F.responsable.id] = a.responsable;
+    x[SUB.F.fecha_venc.id] = a.fecha;
+    x[SUB.F.articulacion.id] = a.articulacion;
+    x[SUB.F.observacion.id] = a.obs;
+    return x;
+  });
+
+  const b = $("btnGuardarRep");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    if(S.editRep) await actualizar(CONFIG.REPORTES.ENTITY_ID, S.editRep.id, v, sub);
+    else await crear(CONFIG.REPORTES.ENTITY_ID, v, sub);
+    $("mRep").classList.remove("on");
+    const tarde = dias(hi.fv, d.fecha);
+    toast("Reporte guardado." + (tarde != null && tarde > 0 ? " Registrado como extemporáneo (+" + tarde + " d)." : ""));
+    await recargar();
+  }catch(e){
+    msg("mRepMsg", "No se pudo guardar: " + e.message, "mal");
+  }
+  b.disabled = false; b.textContent = "Guardar reporte";
+};
+
+async function eliminarReporte(id){
+  if(!confirm("¿Eliminar este reporte de avance?")) return;
+  try{
+    await borrar(CONFIG.REPORTES.ENTITY_ID, id);
+    toast("Reporte eliminado.");
+    await recargar();
+  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
+}
+
+/* ==========================================================================
+   Tablero
+   ========================================================================== */
+$("tPeriodo").addEventListener("change", pintarTablero);
+
+function pintarTablero(){
+  const per = $("tPeriodo").value;
+  const arr = S.objetivos.filter(o => !per || o.periodo === per);
+  if(!arr.length){ $("tablero").innerHTML = '<div class="vacio">Sin objetivos en este periodo.</div>'; return; }
+
+  let cumplidos = 0, criticos = 0, buenos = 0, sinHitos = 0, vencidos = 0, porVencer = 0;
+  arr.forEach(o => {
+    const p = progresoObjetivo(o.id), d = dias(HOY, o.fv);
+    if(p == null) sinHitos++;
+    else if(p >= 100) cumplidos++;
+    else if(p < 50) criticos++;
+    else buenos++;
+    if(d != null && d < 0 && !(p != null && p >= 100)) vencidos++;
+    else if(d != null && d >= 0 && d <= CONFIG.REGLAS.alertas.porVencer) porVencer++;
+  });
+  const T = arr.length, pc = n => T ? Math.round(n * 1000 / T) / 10 : 0;
+
+  let h = '<div class="kpis">' +
+    kpi(T, "Total objetivos", "") +
+    kpi(cumplidos + " (" + pc(cumplidos) + "%)", "Cumplidos", "") +
+    kpi(buenos + " (" + pc(buenos) + "%)", "Avance bueno ≥50%", "a") +
+    kpi(criticos + " (" + pc(criticos) + "%)", "Avance crítico <50%", "r") +
+    kpi(vencidos + " (" + pc(vencidos) + "%)", "Vencidos", "r") +
+    kpi(porVencer + " (" + pc(porVencer) + "%)", "Por vencer ≤30 d", "a") +
+    kpi(sinHitos, "Sin hitos cargados", "") +
+    "</div>";
+
+  /* Progreso por objetivo */
+  const orden = arr.slice().sort((a, b) => (progresoObjetivo(a.id) || 0) - (progresoObjetivo(b.id) || 0));
+  h += '<div class="tarj"><h3>Progreso por objetivo</h3>' + orden.map(o => {
+    const p = progresoObjetivo(o.id), sem = semaforo(p);
+    return '<div class="bar2"><div class="n" title="' + esc(sinHtml(o.objetivo)) + '">' + esc(sinHtml(o.objetivo).slice(0, 70)) + "</div>" +
+      '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (p || 0) + '%"></i></div>' +
+      '<div class="v">' + (p == null ? "—" : p + "%") + "</div></div>";
+  }).join("") + "</div>";
+
+  /* Por oficina */
+  const porOfi = {};
+  arr.forEach(o => {
+    const k = o.oficina || "(sin oficina)";
+    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0 };
+    porOfi[k].n++;
+    const p = progresoObjetivo(o.id);
+    if(p != null){ porOfi[k].suma += p; porOfi[k].con++; }
+  });
+  h += '<div class="tarj"><h3>Avance promedio por oficina</h3>' +
+    Object.keys(porOfi).sort().map(k => {
+      const x = porOfi[k], prom = x.con ? red1(x.suma / x.con) : null, sem = semaforo(prom);
+      return '<div class="bar2"><div class="n">' + esc(k) + " <span style=\"color:var(--gris-cl)\">(" + x.n + ")</span></div>" +
+        '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (prom || 0) + '%"></i></div>' +
+        '<div class="v">' + (prom == null ? "—" : prom + "%") + "</div></div>";
+    }).join("") + "</div>";
+
+  /* Hitos vencidos sin cerrar */
+  const pendientes = [];
+  arr.forEach(o => hitosDe(o.id).forEach(hi => {
+    const d = dias(HOY, hi.fv), ph = progresoHito(hi.id);
+    if(d != null && d < 0 && ph < 100) pendientes.push({ o, hi, d: Math.abs(d), ph: red1(ph) });
+  }));
+  pendientes.sort((a, b) => b.d - a.d);
+  h += '<div class="tarj"><h3>Hitos vencidos sin cerrar (' + pendientes.length + ")</h3>";
+  h += pendientes.length ?
+    '<table class="t"><thead><tr><th>Hito</th><th>Objetivo</th><th>Venció</th><th>Días</th><th>Progreso</th></tr></thead><tbody>' +
+    pendientes.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" + esc(sinHtml(x.o.objetivo).slice(0, 60)) +
+      "</td><td>" + verFecha(x.hi.fv) + '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
+    "</tbody></table>" :
+    '<div class="vacio">Ningún hito vencido pendiente. </div>';
+  h += "</div>";
+
+  $("tablero").innerHTML = h;
+}
+function kpi(n, e, clase){
+  return '<div class="kpi"><div class="n ' + (clase || "") + '">' + esc(n) + '</div><div class="e">' + esc(e) + "</div></div>";
+}
+</script>
+</body>
+</html>
