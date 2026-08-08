@@ -26,15 +26,15 @@ const CONFIG = {
     // ---- Escribibles por REST -------------------------------------------
     // (texto, fecha y lista desplegable: confirmados como escribibles)
     F: {
-      objetivo:      { id: "c7f1ndW5XcOOoWW67cSx8j", type: "text" },
-      actividades:   { id: "bjWQhcPwHhlioRW5XJWPyh", type: "text" },  // RTE
-      recursos:      { id: "c1W6BcSq5gW6ldN8oOhCov", type: "text" },  // RTE
-      indicador:     { id: "ddKmoCi8nni5pdLmkepSkH", type: "text" },  // obligatorio
-      formula:       { id: "dcSCoKW5TgW7GCaslcUmkg", type: "text" },
-      meta:          { id: "ddShmrWODaWQSxWPeGAfKI", type: "text" },
-      fi_meta:       { id: "ddQSkFW7HmBztdM8kBWPWZ", type: "date" },  // obligatorio
-      fv_meta:       { id: "ddRHWlW5vcU5lcM8kOWRvA", type: "date" },  // obligatorio
-      condicion:     { id: "a_xSkfWQXcG4olu8kkW60k", type: "select" } // obligatorio
+      objetivo:      { id: "c7f1ndW5XcOOoWW67cSx8j", type: "text", col: "Objetivo del sistema de gestión de la calidad" },
+      actividades:   { id: "bjWQhcPwHhlioRW5XJWPyh", type: "text", col: "Actividades a realizar" },  // RTE
+      recursos:      { id: "c1W6BcSq5gW6ldN8oOhCov", type: "text", col: "Recursos requeridos" },  // RTE
+      indicador:     { id: "ddKmoCi8nni5pdLmkepSkH", type: "text", col: "Indicador" },  // obligatorio
+      formula:       { id: "dcSCoKW5TgW7GCaslcUmkg", type: "text", col: "Fórmula" },
+      meta:          { id: "ddShmrWODaWQSxWPeGAfKI", type: "text", col: "Meta" },
+      fi_meta:       { id: "ddQSkFW7HmBztdM8kBWPWZ", type: "date", col: "F.I. Meta" },  // obligatorio
+      fv_meta:       { id: "ddRHWlW5vcU5lcM8kOWRvA", type: "date", col: "F.V. Meta" },  // obligatorio
+      condicion:     { id: "a_xSkfWQXcG4olu8kkW60k", type: "select", col: "Condición" } // obligatorio
     },
 
     // ---- Relaciones: NO escribibles por REST -----------------------------
@@ -98,11 +98,11 @@ const CONFIG = {
 
     // ---- Escribibles por REST (los únicos 5) ------------------------------
     F: {
-      hito:              { id: "cmW67cJSnlW7BcKhb-oZi9", type: "string" }, // oblig.
-      pct_participacion: { id: "dcImoDW5bcL4oaW7Tibmk8", type: "float"  }, // oblig.
-      fi_hito:           { id: "buWPVcI3TdM4o7WOCqECoJ", type: "date"   }, // oblig.
-      fv_hito:           { id: "ddKKxdShHcQOVcMrJdMM08", type: "date"   }, // oblig.
-      costo:             { id: "cSWQrkCgPcJikSWPFdMuSu", type: "float"  }
+      hito:              { id: "cmW67cJSnlW7BcKhb-oZi9", type: "string", col: "Hito" }, // oblig.
+      pct_participacion: { id: "dcImoDW5bcL4oaW7Tibmk8", type: "float", col: "% participación"  }, // oblig.
+      fi_hito:           { id: "buWPVcI3TdM4o7WOCqECoJ", type: "date", col: "F.I. hito"   }, // oblig.
+      fv_hito:           { id: "ddKKxdShHcQOVcMrJdMM08", type: "date", col: "F.V. hito"   }, // oblig.
+      costo:             { id: "cSWQrkCgPcJikSWPFdMuSu", type: "float", col: "Costo"  }
     },
 
     // ---- Relaciones: NO escribibles por REST ------------------------------
@@ -145,7 +145,7 @@ const CONFIG = {
 
     // Campo de texto plano: guarda el _qid del objetivo padre.
     // Es lo que sostiene toda la jerarquía.
-    ESPEJO: { objetivo_ref: { id: "ddUq7cSCjjW4ldUhy-WPer", type: "string" } },
+    ESPEJO: { objetivo_ref: { id: "ddUq7cSCjjW4ldUhy-WPer", type: "string", col: "Objetivo ref" } },
 
     // El responsable técnico del hito NO tiene espejo propio: se hereda
     // del objetivo. Si más adelante hace falta que varíe por hito, se
@@ -162,12 +162,12 @@ const CONFIG = {
 
     // ---- Escribibles por REST ---------------------------------------------
     F: {
-      fecha_ejecucion:  { id: "coAMD6WR1cGiPaWQ7cNb5O", type: "date"  }, // oblig.
-      avance:           { id: "afWPRdKaHcTQqaW5emyZGZ", type: "text"  }, // oblig. RTE
-      estado_hito:      { id: "dcK0BcGmnfW5jnkSo9nCkM", type: "radio" }, // oblig.
-      contribucion:     { id: "cTtSkeyKXeWQRdKSkJFCkM", type: "float" }, // oblig.
-      dificultades:     { id: "ddRhNcJCjcWOJdJZxcJmof", type: "text"  },
-      observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text"  }
+      fecha_ejecucion:  { id: "coAMD6WR1cGiPaWQ7cNb5O", type: "date", col: "Fecha de ejecución o reporte"  }, // oblig.
+      avance:           { id: "afWPRdKaHcTQqaW5emyZGZ", type: "text", col: "Avance (descripción)"  }, // oblig. RTE
+      estado_hito:      { id: "dcK0BcGmnfW5jnkSo9nCkM", type: "radio", col: "Estado del hito" }, // oblig.
+      contribucion:     { id: "cTtSkeyKXeWQRdKSkJFCkM", type: "float", col: "Contribución al progreso del hito" }, // oblig.
+      dificultades:     { id: "ddRhNcJCjcWOJdJZxcJmof", type: "text", col: "Dificultades"  },
+      observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text", col: "Observación"  }
     },
 
     // Literales EXACTOS del radio. Mandar con esta capitalización o se
@@ -203,11 +203,11 @@ const CONFIG = {
         id: "cGW4JcMmnhW5TpmSkbnCog",
         ENTITY_ID: "ddN0pdVSnov6RcUCoOWRjR",
         F: {
-          accion:       { id: "c1CSk4WQbpEiolDqS-xs8-", type: "text"   },
-          responsable:  { id: "ddTaBdNCjlvzXFf8k3WQKf", type: "string" },
-          fecha_venc:   { id: "dcG8oPW4bcHyo-kCk5pbHs", type: "date"   },
-          articulacion: { id: "dcN0DjW5XcO6VdKCkPWRr-", type: "text"   },
-          observacion:  { id: "afWR7cLw9lW4RdOCkLu8oG", type: "text"   }
+          accion:       { id: "c1CSk4WQbpEiolDqS-xs8-", type: "text", col: "Próxima acción"   },
+          responsable:  { id: "ddTaBdNCjlvzXFf8k3WQKf", type: "string", col: "Responsable" },
+          fecha_venc:   { id: "dcG8oPW4bcHyo-kCk5pbHs", type: "date", col: "Fecha de vencimiento"   },
+          articulacion: { id: "dcN0DjW5XcO6VdKCkPWRr-", type: "text", col: "Necesidades de articulación"   },
+          observacion:  { id: "afWR7cLw9lW4RdOCkLu8oG", type: "text", col: "Observación"   }
         },
         // Campo Archivo: no escribible por REST. Sin espejo por decisión
         // de diseño (la evidencia multi-enlace vive en el reporte padre).
@@ -217,9 +217,9 @@ const CONFIG = {
 
     // Campos de texto plano que sostienen la jerarquía y las evidencias.
     ESPEJO: {
-      objetivo_ref:       { id: "c3u2qUorLdLBjzaNFdNCof", type: "string" },  // _qid del objetivo
-      hito_ref:           { id: "dcK8oXbJzcuRxdQh3cLCoO", type: "string" },  // _qid del hito
-      evidencias_enlaces: { id: "c5W751WQvdK4ogW4xcPmk-", type: "text"   }   // JSON [{etiqueta, url}]
+      objetivo_ref:       { id: "c3u2qUorLdLBjzaNFdNCof", type: "string", col: "Objetivo ref" },  // _qid del objetivo
+      hito_ref:           { id: "dcK8oXbJzcuRxdQh3cLCoO", type: "string", col: "Hito ref" },  // _qid del hito
+      evidencias_enlaces: { id: "c5W751WQvdK4ogW4xcPmk-", type: "text", col: "Evidencias (enlaces)"   }   // JSON [{etiqueta, url}]
     }
   },
 
@@ -230,13 +230,16 @@ const CONFIG = {
   // ==========================================================================
   USUARIOS: {
     ENTITY_ID: "aNDhddT0PnW7PLW5tcJwLP",
+    // La lectura va por NOMBRE de columna (QuintaDB con name_value=1).
     F: {
-      usuario:  { id: "baCMPTW5zhv5pcVIVcKSkQ", type: "string" },
-      password: { id: "dcS1xdTCjivyoEWQVdSCoy", type: "string" },
-      rol:      { id: "ddRmknWQbcTO0qW4Tyz8oV", type: "select" },
-      oficina:  { id: "aTcmohWOLgWO_dHCo6x1SJ", type: "string" },
-      activo:   { id: "bRxCofW6HhpBP5rCkdiwuZ", type: "select" }
-    }
+      usuario:  { id: "baCMPTW5zhv5pcVIVcKSkQ", type: "string", col: "Usuario" },
+      password: { id: "dcS1xdTCjivyoEWQVdSCoy", type: "string", col: "Contraseña" },
+      rol:      { id: "ddRmknWQbcTO0qW4Tyz8oV", type: "select", col: "Rol" },
+      oficina:  { id: "aTcmohWOLgWO_dHCo6x1SJ", type: "string", col: "Oficina asignada" },
+      activo:   { id: "bRxCofW6HhpBP5rCkdiwuZ", type: "select", col: "Activo" },
+      nombre:   { id: "bZCCoBWRXcSQhdJapdTCoY", type: "string", col: "Nombre completo" }
+    },
+    ROLES: ["Administrador", "Gestor", "Oficina", "Usuario libre"]
   },
 
   // ==========================================================================
@@ -260,16 +263,17 @@ const CONFIG = {
   CATALOGOS: {
     periodos: {
       entity: "c9W5DoACjaWROpW6uAAaHm",
-      label:  "c0rCode3LnW5fvmqvnWQia"   // string, único campo de la tabla
+      label:  "c0rCode3LnW5fvmqvnWQia", col: "Periodo"   // string, único campo de la tabla
     },
     politica_calidad: {
       entity: "cufJtdJCjnbyouC3qOCSkx",
-      label:  "c-bSo7DZLihRRdMmoqyLuv"
+      label:  "c-bSo7DZLihRRdMmoqyLuv", col: "Política de calidad"
     },
     estrategias: {
       entity: "aZW5TeW5bcIikKkx3cHe4T",
-      label:  "csWRVcMv1cUPldOrZdUCkX",
-      codigo: "cUvsSwdv1dNyfZW53dTsje",          // select E1…E25
+      label:  "csWRVcMv1cUPldOrZdUCkX", col: "Estrategia",
+      codigo: "cUvsSwdv1dNyfZW53dTsje", colCodigo: "Código estrategia",
+      colPeriodo: "Periodo", colHijo: "Objetivos estratégicos",          // select E1…E25
       filtro: { campo: "cmW4P9WQDdPOkqW7pcQxXN", catalogo: "periodos" },
       // Una estrategia arrastra sus objetivos estratégicos:
       hijo:   { campo: "bcW5HxWRbdNikWWRNdOCo4", catalogo: "objetivos_estrategicos" },
@@ -277,8 +281,8 @@ const CONFIG = {
     },
     objetivos_estrategicos: {
       entity: "c_aKz4e8jdW5BcTSoXsSoX",
-      label:  "cWWPVdV8nneOkOmSoth8o3",   // text
-      codigo: "bMWQZdTSnjfzxcJJFdN8k7",   // select O1…O20
+      label:  "cWWPVdV8nneOkOmSoth8o3", col:       "Objetivos estratégicos",
+      codigo: "bMWQZdTSnjfzxcJJFdN8k7", colCodigo: "Código OE",
       // El espejo guarda "O1: texto". Varios se unen con espacio,
       // tal como aparecen hoy concatenados en el Excel de origen.
       formato: "{codigo}: {label}"
@@ -292,10 +296,10 @@ const CONFIG = {
     // ni se escriben. Solo se usa el espejo `Proceso (ruta)`.
     inventario_procesos: {
       entity: "dcUCouymnkz4ovWRVdOmk0",   // = PROCEDIMIENTO en el config de Indicadores
-      ruta_completa: "cIWOeqW6vkuildQSkfW4WT",   // text — fuente de verdad
-      archivado:     "cGoSkYwSnnWPj6W7tcHSoK",   // string libre, NO select
-      codigo:        "dcVSkHkSnhl5iaW7uMqCox",   // select, codificación completa
-      nombre:        "coi8oUW41cMOk7cCk2W4vk",   // text, nombre del procedimiento
+      ruta_completa: "cIWOeqW6vkuildQSkfW4WT", colRuta:      "Ruta completa",
+      archivado:     "cGoSkYwSnnWPj6W7tcHSoK", colArchivado: "Estado del registro",
+      codigo:        "dcVSkHkSnhl5iaW7uMqCox", colCodigo:    "Código \"Procedimiento\"",
+      nombre:        "coi8oUW41cMOk7cCk2W4vk", colNombre:    "Procedimiento",
       // `Estado del registro` es texto libre: puede traer variantes de
       // escritura. Filtro tolerante hasta confirmar los valores reales.
       archivadoRegla: { normalizar: true, descartarSiContiene: "archiv" },
@@ -369,9 +373,9 @@ const CONFIG = {
     },
     responsables_proceso: {
       entity:  "cPW44qr3vlW6XMn01eWPiv",
-      label:   "bZW65VW5jdJ6rOiSkpWO40",   // string
-      correo:  "cGh8oRW7TcV6pcOSkhWQfs",   // email
-      celular: "c1WQqQWOvmhOozqSoMW5m2",   // phone
+      label:   "bZW65VW5jdJ6rOiSkpWO40", col:        "Responsable proceso",
+      correo:  "cGh8oRW7TcV6pcOSkhWQfs", colCorreo:  "Correo electrónico responsable proceso",
+      celular: "c1WQqQWOvmhOozqSoMW5m2", colCelular: "Celular responsable proceso",
       // Su campo `Unidad responsable` apunta a cXW7_dOCnctOlcRSo6W4LK,
       // lo que confirma que esa tabla es de UNIDADES, no de personas.
       // (En el config de Indicadores está mal etiquetada como RESPONSABLES.)
@@ -379,9 +383,10 @@ const CONFIG = {
     },
     responsables_tecnicos: {
       entity:  "ddOCoDW51dSikTWP3dVSoL",
-      label:   "bxWRGzWQXoxin1WPxcMuT3",   // string
-      correo:  "dcMSoJaNrcTOkxW4_dHmkE",   // email
-      celular: "bqWRJdICjiW5NcTvddVSkB",   // phone
+      label:   "bxWRGzWQXoxin1WPxcMuT3", col:        "Responsable técnico",
+      correo:  "dcMSoJaNrcTOkxW4_dHmkE", colCorreo:  "Correo electrónico responsable técnico",
+      celular: "bqWRJdICjiW5NcTvddVSkB", colCelular: "Celular responsable técnico",
+      colLider: "Líder",
       // Cada técnico tiene asignado su responsable de proceso.
       lider:   { campo: "dcNwWVCCjno4orW6NdJvPL", catalogo: "responsables_proceso" }
       // `Unidad responsable` (ddJJtcQrHkW4RdTbBcU8oy) es linked_column rota:
@@ -411,18 +416,18 @@ const CONFIG = {
   //  la vista nativa de QuintaDB.
   // ==========================================================================
   ESPEJO: {
-    periodo_txt:              { id: "clzmkIbsnbWOJdIKDhmIj5", type: "string" },
-    compromisos_txt:          { id: "bnW7RdMvrhj4pdLSocmvmn", type: "text"   },
-    estrategia_txt:           { id: "dcGX4mF1zgpkOAWQZcImoj", type: "text"   },
-    objetivo_estrategico_txt: { id: "dcOXNcRSnlu7_dIfdcIWOA", type: "text"   },
-    proceso_ruta:             { id: "clWPdcVCnjWQFcLSknlmkC", type: "text"   },
-    oficina_txt:              { id: "cUWR41AmnetykXoapdH8of", type: "string" },
-    resp_proceso_txt:         { id: "aVWPjSaCnaeikRW50KoeX9", type: "string" },
-    resp_proceso_correo:      { id: "bSWR3cTbDdNRm2zSo3aCkZ", type: "email"  },
-    resp_proceso_celular:     { id: "dcLSoYW7ncMyoAW7KPWOnx", type: "phone"  },
-    resp_tecnico_txt:         { id: "bdE8khDtfcIioWlmkjW5i1", type: "string" },
-    resp_tecnico_correo:      { id: "dcSSozWPrlz4oJWQOccM1k", type: "email"  },
-    resp_tecnico_celular:     { id: "ddOSk0ubDdKik8kmoAW6Wc", type: "phone"  }
+    periodo_txt:              { id: "clzmkIbsnbWOJdIKDhmIj5", type: "string", col: "Periodo (texto)" },
+    compromisos_txt:          { id: "bnW7RdMvrhj4pdLSocmvmn", type: "text", col: "Compromisos política (texto)"   },
+    estrategia_txt:           { id: "dcGX4mF1zgpkOAWQZcImoj", type: "text", col: "Estrategia (texto)"   },
+    objetivo_estrategico_txt: { id: "dcOXNcRSnlu7_dIfdcIWOA", type: "text", col: "Objetivo estratégico (texto)"   },
+    proceso_ruta:             { id: "clWPdcVCnjWQFcLSknlmkC", type: "text", col: "Proceso (ruta)"   },
+    oficina_txt:              { id: "cUWR41AmnetykXoapdH8of", type: "string", col: "Oficina responsable (texto)" },
+    resp_proceso_txt:         { id: "aVWPjSaCnaeikRW50KoeX9", type: "string", col: "Responsable proceso (texto)" },
+    resp_proceso_correo:      { id: "bSWR3cTbDdNRm2zSo3aCkZ", type: "email", col: "Correo responsable proceso"  },
+    resp_proceso_celular:     { id: "dcLSoYW7ncMyoAW7KPWOnx", type: "phone", col: "Celular responsable proceso"  },
+    resp_tecnico_txt:         { id: "bdE8khDtfcIioWlmkjW5i1", type: "string", col: "Responsable técnico (texto)" },
+    resp_tecnico_correo:      { id: "dcSSozWPrlz4oJWQOccM1k", type: "email", col: "Correo responsable técnico"  },
+    resp_tecnico_celular:     { id: "ddOSk0ubDdKik8kmoAW6Wc", type: "phone", col: "Celular responsable técnico"  }
   },
 
   // ==========================================================================
