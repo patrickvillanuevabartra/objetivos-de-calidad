@@ -164,6 +164,7 @@ table.t tr:last-child td{border-bottom:0}
 .rtebar{display:flex;gap:2px;border:1px solid var(--linea);border-bottom:0;border-radius:7px 7px 0 0;background:#f7faf9;padding:4px}
 .rtebar button{background:none;border:0;padding:4px 9px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--gris)}
 .rtebar button:hover{background:var(--verde-cl);color:var(--verde)}
+.ruta.mal{border-color:var(--bad);background:var(--rojo-bg)}
 .ruta{font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--paper);border:1px dashed var(--line);
   border-radius:9px;padding:10px 12px;color:var(--slate);min-height:40px;display:flex;align-items:center;word-break:break-word}
 .panel{background:#f7faf9;border:1px solid var(--linea);border-radius:8px;padding:12px 14px;margin-top:6px;font-size:13px}
@@ -405,6 +406,25 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div id="mIndMsg"></div>
       <div class="panel" id="pIndObj"></div>
       <div class="rej" style="margin-top:13px">
+        <div class="full" style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:2px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px">
+            Proceso que se mide
+          </div>
+          <div class="rej">
+            <div><label for="oTipo">Tipo de proceso</label><select id="oTipo"></select></div>
+            <div><label for="oN0">Proceso nivel 0</label><select id="oN0" disabled></select></div>
+            <div><label for="oN1">Proceso nivel 1</label><select id="oN1" disabled></select></div>
+            <div><label for="oN2">Proceso nivel 2</label><select id="oN2" disabled></select></div>
+            <div><label for="oN3">Proceso nivel 3</label><select id="oN3" disabled></select></div>
+            <div><label for="oProcedimiento">Procedimiento</label><select id="oProcedimiento" disabled></select></div>
+            <div class="full">
+              <label>Ruta del proceso</label>
+              <div class="ruta" id="oRuta">Selecciona la jerarquía arriba…</div>
+              <div class="err" id="e_oRuta"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="full">
           <label for="iIndicador">Indicador</label>
           <textarea id="iIndicador"></textarea>
@@ -453,17 +473,6 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             <button type="button" data-cmd="removeFormat">Limpiar</button>
           </div>
           <div class="rte" id="iRecursos" contenteditable="true"></div>
-        </div>
-
-        <div><label for="oTipo">Tipo de proceso</label><select id="oTipo"></select></div>
-        <div><label for="oN0">Proceso nivel 0</label><select id="oN0" disabled></select></div>
-        <div><label for="oN1">Proceso nivel 1</label><select id="oN1" disabled></select></div>
-        <div><label for="oN2">Proceso nivel 2</label><select id="oN2" disabled></select></div>
-        <div><label for="oN3">Proceso nivel 3</label><select id="oN3" disabled></select></div>
-        <div><label for="oProcedimiento">Procedimiento</label><select id="oProcedimiento" disabled></select></div>
-        <div class="full">
-          <label>Ruta del proceso</label>
-          <div class="ruta" id="oRuta">Selecciona la jerarquía arriba…</div>
         </div>
 
         <div class="full">
@@ -1043,7 +1052,7 @@ async function recargar(){
   const NI = CONFIG.INDICADORES.F, NE = CONFIG.INDICADORES.ESPEJO;
   S.indicadores = ind.map(r => ({
     id: r.id,
-    objetivoRef: val(r.v, NE.objetivo_ref),
+    objetivoRef: valRel(r.v, NE.objetivo_ref),
     indicador:   val(r.v, NI.indicador),
     formula:     val(r.v, NI.formula),
     meta:        val(r.v, NI.meta),
@@ -1060,8 +1069,8 @@ async function recargar(){
   const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
   S.hitos = hit.map(r => ({
     id: r.id,
-    indicadorRef: val(r.v, HE.indicador_ref),
-    objetivoRef:  val(r.v, HE.objetivo_ref),
+    indicadorRef: valRel(r.v, HE.indicador_ref),
+    objetivoRef:  valRel(r.v, HE.objetivo_ref),
     hito: val(r.v, H.hito),
     part: num(val(r.v, H.pct_participacion)),
     fi:   val(r.v, H.fi_hito),
@@ -1072,7 +1081,7 @@ async function recargar(){
   const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
   S.reportes = rep.map(r => ({
     id: r.id,
-    hitoRef: val(r.v, RE.hito_ref),
+    hitoRef: valRel(r.v, RE.hito_ref),
     fecha:   val(r.v, R.fecha_ejecucion),
     avance:  r.v[R.avance.col] || "",
     estado:  val(r.v, R.estado_hito),
@@ -1563,25 +1572,37 @@ function refrescarEstrategias(marcados){
 }
 
 /* El objetivo estratégico es la unión de los de las estrategias marcadas,
-   sin repetir: si dos estrategias comparten un OE, aparece una sola vez. */
+   sin repetir: si dos estrategias comparten un OE, aparece una sola vez.
+
+   El campo de QuintaDB devuelve varios OE concatenados, pero NO se puede
+   partir por comas: los propios textos llevan comas dentro y quedarían
+   trozados. Se buscan las etiquetas del catálogo dentro de la cadena. */
+function oeDeEstrategia(e){
+  if(!e || !e.oe) return [];
+  const bruto = String(e.oe), plano = norm(bruto);
+  const hallados = S.cat.oe.filter(x => x.label && plano.indexOf(norm(x.label)) >= 0);
+  if(hallados.length) return hallados;
+  /* Puede venir como ids separados por coma (sin comas dentro). */
+  const porId = bruto.split(/\s*,\s*/).map(t => S.cat.oe.find(x => x.id === t.trim())).filter(Boolean);
+  if(porId.length) return porId;
+  /* Último recurso: texto suelto que no está en el catálogo. */
+  return bruto.trim() ? [{ id: "", codigo: "", label: bruto.trim() }] : [];
+}
+
 function actualizarOE(){
-  const elegidas = leerCasillas("oEstrategia");
   const vistos = new Map();
-  elegidas.forEach(lab => {
+  leerCasillas("oEstrategia").forEach(lab => {
     const e = S.cat.estrategias.find(x => x.label === lab);
-    if(!e || !e.oe) return;
-    String(e.oe).split(/\s*,\s*/).filter(Boolean).forEach(t => {
-      const oe = S.cat.oe.find(x => x.id === t || norm(x.label) === norm(t));
-      const codigo = oe ? oe.codigo : t;
-      const texto = oe ? CONFIG.CATALOGOS.objetivos_estrategicos.formato
-                          .replace("{codigo}", oe.codigo).replace("{label}", oe.label) : t;
-      if(!vistos.has(norm(texto))) vistos.set(norm(texto), { codigo, texto });
+    oeDeEstrategia(e).forEach(oe => {
+      const texto = oe.codigo
+        ? CONFIG.CATALOGOS.objetivos_estrategicos.formato.replace("{codigo}", oe.codigo).replace("{label}", oe.label)
+        : oe.label;
+      if(!vistos.has(norm(texto))) vistos.set(norm(texto), { codigo: oe.codigo, texto });
     });
   });
   const lista = [...vistos.values()].sort((a, b) =>
     String(a.codigo).localeCompare(String(b.codigo), "es", { numeric: true }));
-  const txt = lista.map(x => x.texto).join(SEP);
-  mostrarOE(txt, lista.length);
+  mostrarOE(lista.map(x => x.texto).join(SEP), lista.length);
 }
 function mostrarOE(txt, cuantos){
   $("pOE").dataset.valor = txt || "";
@@ -1775,6 +1796,7 @@ $("btnGuardarInd").onclick = async () => {
     rtCorreo: $("oRTCorreo").value.trim(), rtCel: $("oRTCel").value.trim()
   };
   let mal = false;
+  if(!d.proceso){ error("oRuta", "Elige el proceso que mide este indicador."); mal = true; }
   if(!d.indicador){ error("iIndicador", "Escribe el indicador."); mal = true; }
   if(!d.meta){ error("iMeta", "Escribe la meta."); mal = true; }
   if(!d.fi){ error("iFI", "Falta la fecha de inicio."); mal = true; }
