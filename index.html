@@ -161,6 +161,8 @@ table.t tr:last-child td{border-bottom:0}
 .rtebar{display:flex;gap:2px;border:1px solid var(--linea);border-bottom:0;border-radius:7px 7px 0 0;background:#f7faf9;padding:4px}
 .rtebar button{background:none;border:0;padding:4px 9px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--gris)}
 .rtebar button:hover{background:var(--verde-cl);color:var(--verde)}
+.ruta{font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--paper);border:1px dashed var(--line);
+  border-radius:9px;padding:10px 12px;color:var(--slate);min-height:40px;display:flex;align-items:center;word-break:break-word}
 .panel{background:#f7faf9;border:1px solid var(--linea);border-radius:8px;padding:12px 14px;margin-top:6px;font-size:13px}
 .panel b{color:var(--verde)}
 
@@ -326,10 +328,34 @@ table.t tr:last-child td{border-bottom:0}
           <div class="panel" id="pOE" style="display:none"></div>
         </div>
 
+        <div>
+          <label for="oTipo">Tipo de proceso</label>
+          <select id="oTipo"></select>
+        </div>
+        <div>
+          <label for="oN0">Proceso nivel 0</label>
+          <select id="oN0" disabled></select>
+        </div>
+        <div>
+          <label for="oN1">Proceso nivel 1</label>
+          <select id="oN1" disabled></select>
+        </div>
+        <div>
+          <label for="oN2">Proceso nivel 2</label>
+          <select id="oN2" disabled></select>
+        </div>
+        <div>
+          <label for="oN3">Proceso nivel 3</label>
+          <select id="oN3" disabled></select>
+        </div>
+        <div>
+          <label for="oProcedimiento">Procedimiento</label>
+          <select id="oProcedimiento" disabled></select>
+        </div>
         <div class="full">
-          <label for="oProceso">Proceso <span class="op">(del inventario · ruta completa)</span></label>
-          <select id="oProceso"></select>
-          <div class="err" id="e_oProceso"></div>
+          <label>Ruta del proceso</label>
+          <div class="ruta" id="oRuta">Selecciona la jerarquía arriba…</div>
+          <div class="err" id="e_oRuta"></div>
         </div>
 
         <div class="full">
@@ -388,9 +414,10 @@ table.t tr:last-child td{border-bottom:0}
         </div>
 
         <div class="full">
-          <label for="oRespProc">Responsable de proceso</label>
+          <label for="oRespProc">Responsable de proceso <span class="op">(se filtra según la oficina)</span></label>
           <select id="oRespProc"></select>
           <div class="err" id="e_oRespProc"></div>
+          <div class="pista" id="pistaRP"></div>
         </div>
         <div><label for="oRPCorreo">Correo responsable de proceso</label><input type="email" id="oRPCorreo"></div>
         <div><label for="oRPCel">Celular responsable de proceso</label><input type="text" id="oRPCel"></div>
@@ -766,6 +793,37 @@ function val(reg, campo){
   return esBasura(x) ? "" : String(x).trim();
 }
 
+/* Igual, pero SIN descartar los valores de 22 caracteres. Las columnas de
+   relación devuelven exactamente eso —el id del registro relacionado—, así
+   que para ellas no se puede aplicar el filtro de basura. */
+function valRel(reg, campo){
+  if(!reg || !campo) return "";
+  const col = (typeof campo === "object") ? campo.col : campo;
+  const x = reg[col];
+  if(x == null) return "";
+  if(String(x) === String(col)) return "";
+  return String(x).trim();
+}
+
+/* Etiqueta de un registro cuando no sabemos qué columna la lleva:
+   el primer texto que no sea un id ni el propio nombre de la columna. */
+function etiquetaAuto(v){
+  for(const k in v){
+    const x = v[k];
+    if(typeof x === "string" && x && x !== k && !esBasura(x)) return x.trim();
+  }
+  return "";
+}
+
+/* Compara un valor de relación (que puede venir como id o como texto)
+   contra un registro del catálogo destino. */
+function coincideRel(valor, destino){
+  if(!valor || !destino) return false;
+  const v = String(valor).trim();
+  if(v === destino.id) return true;
+  return norm(v) === norm(destino.label);
+}
+
 /* ==========================================================================
    Login
    ========================================================================== */
@@ -866,15 +924,20 @@ async function cargarCat(nombre){
 
 async function cargarCatalogos(){
   const C = CONFIG.CATALOGOS;
-  const [per, pol, est, oe, rt, rp, inv] = await Promise.all([
+  const [per, pol, est, oe, rt, rp, inv, uni] = await Promise.all([
     cargarCat("periodos"),
     cargarCat("politica_calidad"),
     cargarCat("estrategias"),
     cargarCat("objetivos_estrategicos"),
     cargarCat("responsables_tecnicos"),
     cargarCat("responsables_proceso"),
-    listar(C.inventario_procesos.entity)
+    listar(C.inventario_procesos.entity),
+    listar(C.unidades.entity)
   ]);
+
+  /* Unidades: la etiqueta se autodetecta. Sirve para resolver el campo
+     "Unidad responsable" de los responsables de proceso, que llega como id. */
+  S.cat.unidades = uni.map(r => ({ id: r.id, label: etiquetaAuto(r.v) })).filter(x => x.label);
 
   S.cat.periodos = per;
   S.cat.politica = pol;
@@ -883,42 +946,55 @@ async function cargarCatalogos(){
   /* Estrategias: guardan periodo y sus objetivos estratégicos */
   S.cat.estrategias = est.map(e => ({
     id: e.id, label: e.label, codigo: e.codigo,
-    periodo: String(val(e.v, C.estrategias.colPeriodo) || "").trim(),
-    oe: String(val(e.v, C.estrategias.colHijo) || "").trim()
+    periodo: valRel(e.v, C.estrategias.colPeriodo),
+    oe:      valRel(e.v, C.estrategias.colHijo)
   }));
 
   /* Responsables técnicos, con su líder */
   S.cat.respTecnicos = rt.map(x => ({
     id: x.id, label: x.label,
-    correo: String(val(x.v, C.responsables_tecnicos.correo) || "").trim(),
-    celular: String(val(x.v, C.responsables_tecnicos.celular) || "").trim(),
-    lider: String(val(x.v, C.responsables_tecnicos.lider.campo) || "").trim()
+    correo:  val(x.v, C.responsables_tecnicos.colCorreo),
+    celular: val(x.v, C.responsables_tecnicos.colCelular),
+    lider:   valRel(x.v, C.responsables_tecnicos.colLider)
   }));
 
   S.cat.respProceso = rp.map(x => ({
     id: x.id, label: x.label,
-    correo: String(val(x.v, C.responsables_proceso.correo) || "").trim(),
-    celular: String(val(x.v, C.responsables_proceso.celular) || "").trim()
+    correo:  val(x.v, C.responsables_proceso.colCorreo),
+    celular: val(x.v, C.responsables_proceso.colCelular),
+    unidad:  valRel(x.v, C.responsables_proceso.colUnidad)
   }));
 
+  /* Se resuelve el id de la unidad a su nombre, para poder cruzarlo con la
+     oficina elegida en el objetivo. */
+  S.cat.respProceso.forEach(r => {
+    const u = S.cat.unidades.find(x => coincideRel(r.unidad, x));
+    r.unidadNombre = u ? u.label : (esBasura(r.unidad) ? "" : r.unidad);
+  });
+
   /* Inventario de procesos: ruta completa, archivados marcados */
+  /* Los niveles NO se leen de los campos relacionales (se vacían al escribir
+     por API): se derivan partiendo el texto plano de "Ruta completa", con
+     formato  Tipo › N0 › N1 › N2 › N3 › Procedimiento.
+     Es el mismo método que usa Matriz de Indicadores. */
   const I = C.inventario_procesos;
-  const vistos = {};
+  const generico = /^(Tipo de proceso|Procesos? nivel [0-3]|Procedimiento|Ruta completa)$/i;
   S.cat.procesos = [];
   inv.forEach(r => {
-    const ruta = String(val(r.v, I.colRuta) || "").trim();
-    if(!ruta) return;
-    if(vistos[ruta]) return;
-    vistos[ruta] = 1;
+    const ruta = r.v[I.colRuta];
+    if(!ruta || generico.test(String(ruta).trim())) return;
+    const segs = String(ruta).split(/\s*[›>]\s*/).map(s => s.trim()).filter(Boolean);
+    if(segs.length < 2) return;
     const estado = norm(val(r.v, I.colArchivado) || "");
     S.cat.procesos.push({
       id: r.id,
-      ruta,
-      codigo: String(val(r.v, I.colCodigo) || "").trim(),
+      ruta: String(ruta).trim(),
+      tipo: segs[0] || "", n0: segs[1] || "", n1: segs[2] || "",
+      n2: segs[3] || "", n3: segs[4] || "", proc: segs[5] || "",
+      profundidad: segs.length,
       archivado: estado.indexOf(I.archivadoRegla.descartarSiContiene) >= 0
     });
   });
-  S.cat.procesos.sort((a, b) => (a.codigo || a.ruta).localeCompare(b.codigo || b.ruta, "es"));
 
   llenarFiltros();
 }
@@ -1323,10 +1399,6 @@ function abrirObjetivo(id){
   opciones("oCondicion", CONFIG.REGLAS.condiciones, o ? o.condicion : "Vigente", "— elige —");
   opciones("oPolitica", S.cat.politica.map(p => ({ v: p.label, t: p.label })), o ? o.politica : "", "— elige —");
   opciones("oOficina", CONFIG.CATALOGOS.oficinas.opciones, o ? o.oficina : (esGestor() ? "" : S.sesion.oficina), "— elige —");
-  opciones("oProceso", S.cat.procesos.map(p => ({
-    v: p.ruta, t: (p.codigo ? p.codigo + " — " : "") + p.ruta + (p.archivado ? "  (archivado)" : ""), tachado: p.archivado
-  })).filter(p => !p.tachado || (o && o.proceso === p.v)), o ? o.proceso : "", "— elige —");
-  opciones("oRespProc", S.cat.respProceso.map(r => r.label), o ? o.respProc : "", "— elige —");
 
   $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
   $("oIndicador").value = o ? o.indicador : "";
@@ -1341,13 +1413,100 @@ function abrirObjetivo(id){
   $("oRPCorreo").value = o ? o.rpCorreo : "";
   $("oRPCel").value = o ? o.rpCel : "";
 
+  cargarRuta(o ? o.proceso : "");
   refrescarEstrategias(o ? o.estrategia : "");
   mostrarOE(o ? o.oe : "");
-  refrescarTecnicos(o ? o.respTec : "");   // depende del responsable de proceso ya cargado
+  refrescarResponsables(o ? o.respProc : "");   // encadena oficina -> proceso -> técnico
+  refrescarTecnicos(o ? o.respTec : "");
   $("mObj").classList.add("on");
 }
 
-/* Estrategias filtradas por periodo */
+/* ==========================================================================
+   Cascada de procesos — mismo mecanismo que Matriz de Indicadores.
+   Tipo → N0 → N1 → N2 → N3 → Procedimiento, con la ruta armada en vivo.
+   ========================================================================== */
+const NIV = ["tipo", "n0", "n1", "n2", "n3", "proc"];
+const SEL = { tipo: "oTipo", n0: "oN0", n1: "oN1", n2: "oN2", n3: "oN3", proc: "oProcedimiento" };
+
+/* Opciones del siguiente nivel, filtradas por lo ya elegido arriba. */
+function opcionesNivel(filtros, nivel){
+  const set = new Set();
+  S.cat.procesos.forEach(p => {
+    if(p.archivado) return;
+    const ok = Object.keys(filtros).every(k => !filtros[k] || p[k] === filtros[k]);
+    if(ok && p[nivel]) set.add(p[nivel]);
+  });
+  return [...set].sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function resetNivel(clave){
+  const e = $(SEL[clave]);
+  e.innerHTML = '<option value="">— elige —</option>';
+  e.disabled = true;
+}
+
+function filtrosHasta(clave){
+  const f = {};
+  for(const k of NIV){
+    if(k === clave) break;
+    const v = $(SEL[k]).value;
+    if(v) f[k] = v;
+  }
+  return f;
+}
+
+/* Rellena un nivel y lo habilita si tiene opciones. */
+function llenarNivel(clave, valorActual){
+  const e = $(SEL[clave]);
+  const ops = opcionesNivel(filtrosHasta(clave), clave);
+  e.innerHTML = '<option value="">— elige —</option>' +
+    ops.map(x => '<option value="' + esc(x) + '"' + (x === valorActual ? " selected" : "") + ">" + esc(x) + "</option>").join("");
+  e.disabled = !ops.length;
+  return ops.length;
+}
+
+/* Al cambiar un nivel se limpian los de abajo y se rellena el siguiente. */
+function cambioNivel(clave){
+  const i = NIV.indexOf(clave);
+  for(let j = i + 1; j < NIV.length; j++) resetNivel(NIV[j]);
+  if($(SEL[clave]).value && i + 1 < NIV.length) llenarNivel(NIV[i + 1], "");
+  actualizarRuta();
+}
+
+NIV.forEach(k => $(SEL[k]).addEventListener("change", () => cambioNivel(k)));
+
+function actualizarRuta(){
+  const partes = NIV.map(k => $(SEL[k]).value).filter(Boolean);
+  const ruta = partes.join(" › ");
+  $("oRuta").textContent = ruta || "Selecciona la jerarquía arriba…";
+  $("oRuta").dataset.valor = ruta;
+  return ruta;
+}
+
+/* Reconstruye la cascada a partir de una ruta guardada. */
+function cargarRuta(ruta){
+  NIV.forEach(resetNivel);
+  llenarNivel("tipo", "");
+  if(!ruta){ actualizarRuta(); return; }
+  const segs = String(ruta).split(/\s*[›>]\s*/).map(s => s.trim()).filter(Boolean);
+  NIV.forEach((k, i) => {
+    if(i > 0 && !segs[i - 1]) return;
+    if(i > 0) llenarNivel(k, segs[i] || "");
+    const e = $(SEL[k]);
+    if(segs[i]){
+      /* Si el valor guardado ya no está en el inventario, se añade igual
+         para no perder el dato de un registro antiguo. */
+      if(!Array.from(e.options).some(o => o.value === segs[i])){
+        const op = document.createElement("option");
+        op.value = segs[i]; op.textContent = segs[i] + "  (ya no está en el inventario)";
+        e.appendChild(op);
+      }
+      e.value = segs[i];
+      e.disabled = false;
+    }
+  });
+  actualizarRuta();
+}
 $("oPeriodo").addEventListener("change", () => refrescarEstrategias(""));
 function refrescarEstrategias(valorActual){
   const per = $("oPeriodo").value;
@@ -1386,8 +1545,35 @@ function mostrarOE(txt){
   }
 }
 
-/* El responsable de proceso manda: completa su contacto y filtra los técnicos
-   a los que lo tienen como líder. */
+/* La oficina manda sobre el responsable de proceso, y este sobre el técnico.
+   Oficina → Responsable de proceso → Responsable técnico */
+$("oOficina").addEventListener("change", () => { refrescarResponsables(""); });
+
+function refrescarResponsables(valorActual){
+  const ofi = $("oOficina").value;
+  let arr = S.cat.respProceso, nota = "";
+  if(ofi){
+    const suyos = S.cat.respProceso.filter(r => r.unidadNombre && norm(r.unidadNombre) === norm(ofi));
+    const sinUnidad = S.cat.respProceso.filter(r => !r.unidadNombre);
+    if(suyos.length){
+      arr = suyos.concat(sinUnidad);
+      nota = suyos.length + " responsable(s) de " + ofi +
+             (sinUnidad.length ? " · y " + sinUnidad.length + " sin unidad asignada" : "");
+    }else{
+      nota = "Ningún responsable tiene asignada la unidad “" + ofi + "” en QuintaDB, así que se muestran todos.";
+    }
+  }
+  if(valorActual && !arr.some(r => r.label === valorActual)){
+    const orig = S.cat.respProceso.find(r => r.label === valorActual);
+    if(orig) arr = [orig].concat(arr);
+  }
+  opciones("oRespProc", arr.map(r => r.label), valorActual, "— elige —");
+  $("pistaRP").textContent = nota;
+  refrescarTecnicos("");
+}
+
+/* El responsable de proceso completa su contacto y filtra los técnicos
+   que lo tienen como líder. */
 $("oRespProc").addEventListener("change", () => {
   const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
   $("oRPCorreo").value = rp ? (rp.correo || "") : "";
@@ -1401,7 +1587,7 @@ function refrescarTecnicos(valorActual){
   const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
   let arr = S.cat.respTecnicos, nota = "";
   if(rp){
-    const suyos = S.cat.respTecnicos.filter(t => t.lider && (t.lider === rp.id || norm(t.lider) === norm(rp.label)));
+    const suyos = S.cat.respTecnicos.filter(t => coincideRel(t.lider, rp));
     const huerfanos = S.cat.respTecnicos.filter(t => !t.lider);
     if(suyos.length){
       arr = suyos.concat(huerfanos);
@@ -1450,7 +1636,7 @@ $("btnGuardarObj").onclick = async () => {
     politica: $("oPolitica").value,
     estrategia: $("oEstrategia").value,
     oe: $("pOE").dataset.valor || "",
-    proceso: $("oProceso").value,
+    proceso: actualizarRuta(),
     actividades: $("oActividades").innerHTML.trim(),
     recursos: $("oRecursos").innerHTML.trim(),
     indicador: $("oIndicador").value.trim(),
