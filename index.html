@@ -388,19 +388,20 @@ table.t tr:last-child td{border-bottom:0}
         </div>
 
         <div class="full">
-          <label for="oRespTec">Responsable técnico <span class="op">(al elegirlo se completan los contactos)</span></label>
-          <select id="oRespTec"></select>
-        </div>
-        <div><label for="oRTCorreo">Correo responsable técnico</label><input type="email" id="oRTCorreo"></div>
-        <div><label for="oRTCel">Celular responsable técnico</label><input type="text" id="oRTCel"></div>
-
-        <div class="full">
-          <label for="oRespProc">Responsable de proceso <span class="op">(propuesto desde el responsable técnico · editable)</span></label>
+          <label for="oRespProc">Responsable de proceso</label>
           <select id="oRespProc"></select>
           <div class="err" id="e_oRespProc"></div>
         </div>
         <div><label for="oRPCorreo">Correo responsable de proceso</label><input type="email" id="oRPCorreo"></div>
         <div><label for="oRPCel">Celular responsable de proceso</label><input type="text" id="oRPCel"></div>
+
+        <div class="full">
+          <label for="oRespTec">Responsable técnico <span class="op">(se filtra según el responsable de proceso)</span></label>
+          <select id="oRespTec"></select>
+          <div class="pista" id="pistaRT"></div>
+        </div>
+        <div><label for="oRTCorreo">Correo responsable técnico</label><input type="email" id="oRTCorreo"></div>
+        <div><label for="oRTCel">Celular responsable técnico</label><input type="text" id="oRTCel"></div>
       </div>
     </div>
     <div class="pie">
@@ -1325,7 +1326,6 @@ function abrirObjetivo(id){
   opciones("oProceso", S.cat.procesos.map(p => ({
     v: p.ruta, t: (p.codigo ? p.codigo + " — " : "") + p.ruta + (p.archivado ? "  (archivado)" : ""), tachado: p.archivado
   })).filter(p => !p.tachado || (o && o.proceso === p.v)), o ? o.proceso : "", "— elige —");
-  opciones("oRespTec", S.cat.respTecnicos.map(r => r.label), o ? o.respTec : "", "— elige —");
   opciones("oRespProc", S.cat.respProceso.map(r => r.label), o ? o.respProc : "", "— elige —");
 
   $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
@@ -1343,6 +1343,7 @@ function abrirObjetivo(id){
 
   refrescarEstrategias(o ? o.estrategia : "");
   mostrarOE(o ? o.oe : "");
+  refrescarTecnicos(o ? o.respTec : "");   // depende del responsable de proceso ya cargado
   $("mObj").classList.add("on");
 }
 
@@ -1385,27 +1386,45 @@ function mostrarOE(txt){
   }
 }
 
-/* Al elegir responsable técnico se completa el contacto y se propone el líder */
-$("oRespTec").addEventListener("change", () => {
-  const rt = S.cat.respTecnicos.find(x => x.label === $("oRespTec").value);
-  if(!rt) return;
-  $("oRTCorreo").value = rt.correo || "";
-  $("oRTCel").value = rt.celular || "";
-  if(rt.lider && !$("oRespProc").value){
-    const rp = S.cat.respProceso.find(x => x.id === rt.lider || norm(x.label) === norm(rt.lider));
-    if(rp){
-      $("oRespProc").value = rp.label;
-      $("oRPCorreo").value = rp.correo || "";
-      $("oRPCel").value = rp.celular || "";
-      toast("Responsable de proceso propuesto: " + rp.label + ". Puedes cambiarlo.");
-    }
-  }
-});
+/* El responsable de proceso manda: completa su contacto y filtra los técnicos
+   a los que lo tienen como líder. */
 $("oRespProc").addEventListener("change", () => {
   const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
-  if(!rp) return;
-  $("oRPCorreo").value = rp.correo || "";
-  $("oRPCel").value = rp.celular || "";
+  $("oRPCorreo").value = rp ? (rp.correo || "") : "";
+  $("oRPCel").value = rp ? (rp.celular || "") : "";
+  refrescarTecnicos("");
+});
+
+/* Técnicos del responsable de proceso elegido. Los que no tienen líder
+   asignado se muestran siempre, para no dejar a nadie fuera de la lista. */
+function refrescarTecnicos(valorActual){
+  const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
+  let arr = S.cat.respTecnicos, nota = "";
+  if(rp){
+    const suyos = S.cat.respTecnicos.filter(t => t.lider && (t.lider === rp.id || norm(t.lider) === norm(rp.label)));
+    const huerfanos = S.cat.respTecnicos.filter(t => !t.lider);
+    if(suyos.length){
+      arr = suyos.concat(huerfanos);
+      nota = suyos.length + " técnico(s) a cargo de " + rp.label +
+             (huerfanos.length ? " · y " + huerfanos.length + " sin líder asignado" : "");
+    }else{
+      nota = "Ningún técnico tiene a " + rp.label + " como líder en QuintaDB, así que se muestran todos.";
+    }
+  }
+  /* Si el valor guardado no está en la lista filtrada, se conserva igual:
+     no se pierde el dato de un registro antiguo. */
+  if(valorActual && !arr.some(t => t.label === valorActual)){
+    const orig = S.cat.respTecnicos.find(t => t.label === valorActual);
+    if(orig) arr = [orig].concat(arr);
+  }
+  opciones("oRespTec", arr.map(t => t.label), valorActual, "— elige —");
+  $("pistaRT").textContent = nota;
+}
+
+$("oRespTec").addEventListener("change", () => {
+  const rt = S.cat.respTecnicos.find(x => x.label === $("oRespTec").value);
+  $("oRTCorreo").value = rt ? (rt.correo || "") : "";
+  $("oRTCel").value = rt ? (rt.celular || "") : "";
 });
 
 /* Aviso si al recortar el plazo quedan hitos fuera */
