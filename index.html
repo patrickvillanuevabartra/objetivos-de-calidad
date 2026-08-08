@@ -5,55 +5,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Matriz Plan de Acción de Objetivos de Calidad — FI URP</title>
 <style>
+/* Identidad visual idéntica a Matriz de Indicadores y Riesgos:
+   IBM Plex Sans para texto, IBM Plex Mono para datos, verde institucional. */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
-  --verde:#0b5d3b; --verde-osc:#08422a; --verde-cl:#e8f2ed; --verde-med:#177a52;
-  --gris:#5b6770; --gris-cl:#8b959c; --linea:#dde3e0; --fondo:#f5f7f6;
-  --ambar:#b7791f; --ambar-bg:#fdf6e7; --ambar-ln:#edd9a8;
-  --rojo:#b02a2a; --rojo-bg:#fdecec; --rojo-ln:#f2c6c6;
-  --azul:#1d4e89; --azul-bg:#e9f0f8;
-  --r:9px;
+  --ink:#11161d; --slate:#3a4754; --mist:#6b7785; --line:#e2e6ea;
+  --paper:#f7f8fa; --card:#ffffff;
+  --brand:#0f8f5e; --brand-2:#0fa968;
+  --ok:#3a8c5f; --warn:#d97706; --bad:#c0392b;
+  --shadow:0 1px 2px rgba(16,22,29,.04),0 4px 16px rgba(16,22,29,.06);
+
+  /* alias usados por el resto de la hoja */
+  --verde:#0f8f5e; --verde-osc:#0b5e3f; --verde-cl:#e7f4ee; --verde-med:#0fa968;
+  --gris:#6b7785; --gris-cl:#9aa8a0; --linea:#e2e6ea; --fondo:#f7f8fa;
+  --ambar:#d97706; --ambar-bg:#fdf6e7; --ambar-ln:#f0dcb0;
+  --rojo:#c0392b; --rojo-bg:#fdecea; --rojo-ln:#f5cdc8;
+  --azul:#2c5e8f; --azul-bg:#e9f0f8;
+  --r:12px;
 }
 *{box-sizing:border-box}
+html{font-size:17px}
 html,body{margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fondo);color:#222d26;font-size:15px;line-height:1.5}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--paper);
+  line-height:1.55;-webkit-font-smoothing:antialiased;zoom:1.22}
+h1,h2,h3{font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:700;letter-spacing:-.01em;line-height:1.2;margin:0}
+.mono{font-family:'IBM Plex Mono',monospace}
 button,input,select,textarea{font-family:inherit;font-size:14px}
 
 /* ---------- login ---------- */
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--verde) 0%,var(--verde-osc) 100%)}
-#login .caja{background:#fff;border-radius:14px;padding:32px 30px;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
-#login h1{margin:0 0 4px;font-size:19px;color:var(--verde)}
-#login p.sub{margin:0 0 22px;font-size:13px;color:var(--gris)}
-#login label{display:block;font-weight:600;font-size:13px;margin:0 0 5px}
-#login input{width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:7px;margin-bottom:14px}
-#login button{width:100%;background:var(--verde);color:#fff;border:0;border-radius:7px;padding:11px;font-weight:600;cursor:pointer}
-#login button:hover{background:var(--verde-osc)}
-#login button:disabled{background:#9aa5a0;cursor:not-allowed}
+#login{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0f8f5e,#0b5e3f);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+#login .caja{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:38px 34px;width:100%;max-width:400px}
+#login .marca{text-align:center;margin-bottom:22px}
+#login .marca .ico{width:54px;height:54px;border-radius:12px;background:#0f8f5e;color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 14px}
+#login h2{margin:0;font-size:19px;color:#1a2b22}
+#login .marca p{margin:6px 0 0;font-size:13px;color:#6b7d74;line-height:1.45}
+#login .grupo{display:flex;flex-direction:column;gap:14px}
+#login label{display:block;font-size:13px;font-weight:600;color:#1a2b22;margin-bottom:5px}
+#login input{width:100%;padding:11px 13px;border:1px solid #d4ddd7;border-radius:9px;font-size:14px}
+#login input#pwd{padding-right:42px}
+#login .ojo{position:absolute;top:50%;right:8px;transform:translateY(-50%);background:none;border:0;
+  cursor:pointer;padding:4px;font-size:17px;line-height:1;color:#5a6b62}
+#login button.entrar{margin-top:6px;padding:12px;background:#0f8f5e;color:#fff;border:0;border-radius:9px;
+  font-size:15px;font-weight:600;cursor:pointer;width:100%}
+#login button.entrar:disabled{background:#8fb9a7;cursor:not-allowed}
+#login .pie{margin:18px 0 0;font-size:11px;color:#9aa8a0;text-align:center}
+#loginErr{display:none;font-size:13px;color:#c0392b;background:#fdecea;border-radius:8px;padding:9px 11px}
 
 /* ---------- estructura ---------- */
 #app{display:none}
-header.top{background:var(--verde);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-header.top .logo{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;flex:0 0 auto}
-header.top h1{margin:0;font-size:17px;font-weight:600}
-header.top p{margin:1px 0 0;font-size:12px;opacity:.85}
-header.top .der{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
-header.top .chip{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px;font-size:12px}
-header.top button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:13px}
-header.top button:hover{background:rgba(255,255,255,.28)}
-nav.tabs{background:#fff;border-bottom:1px solid var(--linea);padding:0 22px;display:flex;gap:4px;overflow-x:auto}
-nav.tabs button{background:none;border:0;padding:13px 17px;cursor:pointer;font-weight:600;color:var(--gris);border-bottom:3px solid transparent;white-space:nowrap}
-nav.tabs button.on{color:var(--verde);border-bottom-color:var(--verde)}
-main{max-width:1240px;margin:0 auto;padding:20px}
-.vista{display:none}
+header.top{background:var(--brand);color:#fff;padding:0;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+header.top .bar{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:20px}
+header.top .logo{display:flex;align-items:center;gap:11px}
+header.top .logo-mark{width:30px;height:30px;border:2px solid #fff;border-radius:7px;display:grid;place-items:center;font-weight:600;font-size:16px;flex:none}
+header.top .logo b{font-weight:600;font-size:18px;letter-spacing:-.01em}
+header.top .logo span{display:block;font-size:11px;opacity:.7;font-weight:400;letter-spacing:.02em}
+header.top nav{margin-left:auto;display:flex;gap:2px;align-items:center}
+header.top nav button{background:transparent;border:0;color:#fff;opacity:.72;font-size:14px;font-weight:500;
+  padding:9px 16px;border-radius:8px;cursor:pointer;transition:.15s}
+header.top nav button:hover{opacity:1;background:rgba(255,255,255,.08)}
+header.top nav button.on{opacity:1;background:rgba(255,255,255,.16)}
+header.top .chip{font-size:12px;opacity:.85;padding:0 8px;white-space:nowrap}
+main{max-width:1280px;margin:0 auto;padding:28px 24px 80px}
+.vista{display:none;animation:fade .25s ease}
 .vista.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.conn{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--mist);margin-bottom:20px;
+  padding:9px 14px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mist);flex:none}
+.dot.on{background:var(--ok)} .dot.off{background:var(--bad)}
+.page-head{margin-bottom:24px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-2);margin-bottom:6px}
+.page-head h1{font-size:30px;color:var(--ink)}
+.page-head p{color:var(--mist);font-size:15px;margin-top:6px;max-width:60ch}
 
 /* ---------- filtros ---------- */
-.filtros{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filtros{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--shadow)}
 .filtros .campo{flex:1;min-width:160px}
 .filtros label{display:block;font-size:11.5px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.filtros select,.filtros input{width:100%;padding:8px 10px;border:1px solid var(--linea);border-radius:7px;background:#fff}
+.filtros select,.filtros input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
 
 /* ---------- botones ---------- */
-.btn{background:var(--verde);color:#fff;border:0;border-radius:7px;padding:9px 16px;font-weight:600;cursor:pointer}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:9px;padding:10px 18px;font-weight:600;cursor:pointer;transition:.15s}
 .btn:hover{background:var(--verde-osc)}
 .btn:disabled{background:#9aa5a0;cursor:not-allowed}
 .btn.sec{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}
@@ -65,7 +99,7 @@ main{max-width:1240px;margin:0 auto;padding:20px}
 .ico:hover{background:var(--verde-cl);border-color:var(--verde)}
 
 /* ---------- tarjetas de objetivo ---------- */
-.obj{background:#fff;border:1px solid var(--linea);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.obj{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
 .obj .cab{padding:13px 16px;display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .obj .cab:hover{background:#fafcfb}
 .obj .tit{flex:1;min-width:0}
@@ -90,7 +124,7 @@ main{max-width:1240px;margin:0 auto;padding:20px}
 
 /* ---------- tablas internas ---------- */
 table.t{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;background:#fff}
-table.t th{background:var(--verde-cl);color:var(--verde-osc);text-align:left;padding:7px 9px;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+table.t th{background:var(--paper);color:var(--slate);text-align:left;padding:9px 11px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--line)}
 table.t td{padding:7px 9px;border-bottom:1px solid #eef2f0;vertical-align:top}
 table.t tr:last-child td{border-bottom:0}
 .subtit{font-size:12px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 4px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
@@ -100,7 +134,7 @@ table.t tr:last-child td{border-bottom:0}
 /* ---------- modal ---------- */
 .modal{position:fixed;inset:0;background:rgba(12,25,20,.55);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;z-index:50}
 .modal.on{display:flex}
-.modal .caja{background:#fff;border-radius:12px;width:100%;max-width:920px;margin:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.modal .caja{background:#fff;border-radius:16px;width:100%;max-width:920px;margin:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
 .modal .cab{padding:18px 22px;border-bottom:1px solid var(--linea);display:flex;align-items:flex-start;gap:14px;position:sticky;top:0;background:#fff;border-radius:12px 12px 0 0;z-index:2}
 .modal .cab h2{margin:0;font-size:16px;color:var(--verde);flex:1}
 .modal .cab .et{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
@@ -114,7 +148,7 @@ table.t tr:last-child td{border-bottom:0}
 .rej .full{grid-column:1/-1}
 .f label{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
 .f label .op{font-weight:400;color:var(--gris);font-size:12px}
-.f input,.f select,.f textarea{width:100%;padding:8px 10px;border:1px solid var(--linea);border-radius:7px;background:#fff}
+.f input,.f select,.f textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
 .f textarea{min-height:70px;resize:vertical}
 .f input:focus,.f select:focus,.f textarea:focus,.rte:focus{outline:2px solid var(--verde);outline-offset:-1px;border-color:var(--verde)}
 .f input.mal,.f select.mal{border-color:var(--rojo);background:var(--rojo-bg)}
@@ -138,15 +172,15 @@ table.t tr:last-child td{border-bottom:0}
 
 /* ---------- tablero ---------- */
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px}
-.kpi{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px}
-.kpi .n{font-size:26px;font-weight:700;color:var(--verde);line-height:1.1}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:500;color:var(--brand);line-height:1.15}
 .kpi .n.r{color:var(--rojo)} .kpi .n.a{color:var(--ambar)}
 .kpi .e{font-size:11.5px;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;font-weight:600}
-.tarj{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
-.tarj h3{margin:0 0 10px;font-size:13px;color:var(--verde);text-transform:uppercase;letter-spacing:.5px}
+.tarj{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
+.tarj h3{margin:0 0 12px;font-size:12px;font-weight:600;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em}
 .bar2{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:13px}
 .bar2 .n{flex:0 0 46%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar2 .v{flex:0 0 46px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.bar2 .v{flex:0 0 52px;text-align:right;font-weight:500;font-family:'IBM Plex Mono',monospace;font-size:13px}
 
 /* ---------- varios ---------- */
 .cargando{text-align:center;padding:44px;color:var(--gris)}
@@ -169,39 +203,73 @@ table.t tr:last-child td{border-bottom:0}
 <!-- ==================== LOGIN ==================== -->
 <div id="login">
   <div class="caja">
-    <h1>Matriz Plan de Acción de Objetivos de Calidad</h1>
-    <p class="sub">Facultad de Ingeniería URP · SGOE ISO 21001</p>
-    <div class="msg mal" id="loginErr" style="display:none"></div>
-    <label for="usr">Usuario</label>
-    <input type="text" id="usr" autocomplete="username">
-    <label for="pwd">Contraseña</label>
-    <input type="password" id="pwd" autocomplete="current-password">
-    <button id="btnEntrar">Entrar</button>
+    <div class="marca">
+      <div class="ico">O</div>
+      <h2>Matriz Plan de Acción de Objetivos de Calidad</h2>
+      <p>Facultad de Ingeniería · URP<br>Sistema de Gestión para Organizaciones Educativas (SGOE)<br>ISO 21001</p>
+    </div>
+    <div class="grupo">
+      <div>
+        <label for="usr">Usuario</label>
+        <input type="text" id="usr" autocomplete="username">
+      </div>
+      <div>
+        <label for="pwd">Contraseña</label>
+        <div style="position:relative">
+          <input type="password" id="pwd" autocomplete="current-password">
+          <button type="button" class="ojo" id="verPwd" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña">👁️</button>
+        </div>
+      </div>
+      <div id="loginErr"></div>
+      <button class="entrar" id="btnEntrar">Iniciar sesión</button>
+    </div>
+    <p class="pie">Acceso restringido. Cada usuario solo puede editar los registros de su unidad.</p>
   </div>
 </div>
 
 <!-- ==================== APP ==================== -->
 <div id="app">
   <header class="top">
-    <div class="logo">Q</div>
-    <div>
-      <h1>Matriz Plan de Acción de Objetivos de Calidad</h1>
-      <p>Facultad de Ingeniería URP · SGOE ISO 21001</p>
-    </div>
-    <div class="der">
-      <span class="chip" id="chipUsr"></span>
-      <button id="btnSalir">Salir</button>
+    <div class="bar">
+      <div class="logo">
+        <div class="logo-mark">O</div>
+        <div>
+          <b>Matriz Plan de Acción de Objetivos de Calidad</b>
+          <span>Facultad de Ingeniería · URP — Sistema de Gestión para Organizaciones Educativas (SGOE)<br>ISO 21001</span>
+        </div>
+      </div>
+      <nav>
+        <button class="on" data-v="tablero">Tablero</button>
+        <button data-v="objetivos">Objetivos de calidad</button>
+        <span class="chip" id="chipUsr"></span>
+        <button id="btnSalir">Salir</button>
+      </nav>
     </div>
   </header>
 
-  <nav class="tabs">
-    <button class="on" data-v="objetivos">Objetivos</button>
-    <button data-v="tablero">Tablero</button>
-  </nav>
-
   <main>
+    <div class="conn" id="conn"><span class="dot" id="connDot"></span><span id="connText">Conectando con QuintaDB…</span></div>
+
+    <!-- ---------- tablero ---------- -->
+    <section class="vista on" id="vTablero">
+      <div class="page-head">
+        <div class="eyebrow">Seguimiento</div>
+        <h1>Tablero de objetivos de calidad</h1>
+        <p>Avance de los objetivos del SGOE, calculado a partir de los hitos y sus reportes de avance.</p>
+      </div>
+      <div class="filtros">
+        <div class="campo"><label for="tPeriodo">Periodo</label><select id="tPeriodo"></select></div>
+      </div>
+      <div id="tablero"></div>
+    </section>
+
     <!-- ---------- objetivos ---------- -->
-    <section class="vista on" id="vObjetivos">
+    <section class="vista" id="vObjetivos">
+      <div class="page-head">
+        <div class="eyebrow">Registro</div>
+        <h1>Objetivos de calidad</h1>
+        <p>Cada objetivo se descompone en hitos, y cada hito se reporta con avances fechados dentro de su plazo.</p>
+      </div>
       <div class="filtros">
         <div class="campo"><label for="fPeriodo">Periodo</label><select id="fPeriodo"></select></div>
         <div class="campo"><label for="fOficina">Oficina</label><select id="fOficina"></select></div>
@@ -211,14 +279,6 @@ table.t tr:last-child td{border-bottom:0}
         <button class="btn" id="btnNuevo">+ Nuevo objetivo</button>
       </div>
       <div id="lista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
-    </section>
-
-    <!-- ---------- tablero ---------- -->
-    <section class="vista" id="vTablero">
-      <div class="filtros">
-        <div class="campo"><label for="tPeriodo">Periodo</label><select id="tPeriodo"></select></div>
-      </div>
-      <div id="tablero"></div>
     </section>
   </main>
 </div>
@@ -753,9 +813,17 @@ $("btnEntrar").onclick = async () => {
     $("loginErr").style.display = "block";
     $("loginErr").textContent = e.message;
   }
-  b.disabled = false; b.textContent = "Entrar";
+  b.disabled = false; b.textContent = "Iniciar sesión";
 };
 $("pwd").addEventListener("keydown", e => { if(e.key === "Enter") $("btnEntrar").click(); });
+$("usr").addEventListener("keydown", e => { if(e.key === "Enter") $("pwd").focus(); });
+$("verPwd").onclick = () => {
+  const i = $("pwd");
+  const ver = i.type === "password";
+  i.type = ver ? "text" : "password";
+  $("verPwd").textContent = ver ? "🙈" : "👁️";
+  i.focus();
+};
 $("btnSalir").onclick = () => location.reload();
 
 const esAdmin  = () => S.sesion.rol === "Administrador";
@@ -769,11 +837,18 @@ function puedeEditar(obj){
 /* ==========================================================================
    Carga inicial
    ========================================================================== */
+function setConn(ok, texto){
+  $("connDot").className = "dot " + (ok ? "on" : "off");
+  $("connText").textContent = ok ? ("Conectado a QuintaDB · datos en vivo" + (texto ? " · " + texto : "")) : ("Sin conexión: " + (texto || "revisa PROXY_URL"));
+}
+
 async function arrancar(){
   try{
     await cargarCatalogos();
     await recargar();
+    setConn(true, S.objetivos.length + " objetivos · " + S.hitos.length + " hitos · " + S.reportes.length + " reportes");
   }catch(e){
+    setConn(false, e.message);
     $("lista").innerHTML = '<div class="msg mal">No se pudo cargar: ' + esc(e.message) + "</div>";
   }
 }
@@ -1223,8 +1298,8 @@ document.querySelectorAll(".modal").forEach(m => m.onclick = e => { if(e.target 
 document.addEventListener("keydown", e => {
   if(e.key === "Escape") document.querySelectorAll(".modal.on").forEach(m => m.classList.remove("on"));
 });
-document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
-  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("on"));
+document.querySelectorAll("header.top nav button[data-v]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("header.top nav button[data-v]").forEach(x => x.classList.remove("on"));
   b.classList.add("on");
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("on"));
   $("v" + b.dataset.v.charAt(0).toUpperCase() + b.dataset.v.slice(1)).classList.add("on");
@@ -1826,53 +1901,129 @@ function pintarTablero(){
   const arr = S.objetivos.filter(o => !per || o.periodo === per);
   if(!arr.length){ $("tablero").innerHTML = '<div class="vacio">Sin objetivos en este periodo.</div>'; return; }
 
-  let cumplidos = 0, criticos = 0, buenos = 0, sinHitos = 0, vencidos = 0, porVencer = 0;
+  let cumplidos = 0, criticos = 0, buenos = 0, sinHitos = 0, vencidos = 0, porVencer = 0, sumaAv = 0, conAv = 0;
   arr.forEach(o => {
     const p = progresoObjetivo(o.id), d = dias(HOY, o.fv);
     if(p == null) sinHitos++;
-    else if(p >= 100) cumplidos++;
-    else if(p < 50) criticos++;
-    else buenos++;
+    else{
+      sumaAv += p; conAv++;
+      if(p >= 100) cumplidos++;
+      else if(p < 50) criticos++;
+      else buenos++;
+    }
     if(d != null && d < 0 && !(p != null && p >= 100)) vencidos++;
     else if(d != null && d >= 0 && d <= CONFIG.REGLAS.alertas.porVencer) porVencer++;
   });
   const T = arr.length, pc = n => T ? Math.round(n * 1000 / T) / 10 : 0;
+  const avPromedio = conAv ? red1(sumaAv / conAv) : null;
+
+  /* Hitos y reportes del periodo */
+  const idsObj = {}; arr.forEach(o => idsObj[o.id] = 1);
+  const hitosPer = S.hitos.filter(h => idsObj[h.objetivoRef]);
+  const repsPer = S.reportes.filter(r => idsObj[r.objetivoRef] || hitosPer.some(h => h.id === r.hitoRef));
+  const hitosCerrados = hitosPer.filter(h => progresoHito(h.id) >= 100).length;
+  const extemp = repsPer.filter(r => {
+    const h = S.hitos.find(x => x.id === r.hitoRef);
+    if(!h) return false;
+    const d = dias(h.fv, r.fecha);
+    return d != null && d > 0;
+  }).length;
+  const costoTotal = hitosPer.reduce((n, h) => n + (h.costo || 0), 0);
 
   let h = '<div class="kpis">' +
     kpi(T, "Total objetivos", "") +
-    kpi(cumplidos + " (" + pc(cumplidos) + "%)", "Cumplidos", "") +
-    kpi(buenos + " (" + pc(buenos) + "%)", "Avance bueno ≥50%", "a") +
-    kpi(criticos + " (" + pc(criticos) + "%)", "Avance crítico <50%", "r") +
-    kpi(vencidos + " (" + pc(vencidos) + "%)", "Vencidos", "r") +
-    kpi(porVencer + " (" + pc(porVencer) + "%)", "Por vencer ≤30 d", "a") +
-    kpi(sinHitos, "Sin hitos cargados", "") +
+    kpi(avPromedio == null ? "—" : avPromedio + "%", "Avance promedio", avPromedio == null ? "" : (avPromedio < 50 ? "r" : (avPromedio < 100 ? "a" : ""))) +
+    kpi(cumplidos + " · " + pc(cumplidos) + "%", "Cumplidos", "") +
+    kpi(buenos + " · " + pc(buenos) + "%", "Avance bueno ≥50%", "a") +
+    kpi(criticos + " · " + pc(criticos) + "%", "Avance crítico <50%", "r") +
+    kpi(vencidos + " · " + pc(vencidos) + "%", "Vencidos", "r") +
+    kpi(porVencer + " · " + pc(porVencer) + "%", "Por vencer ≤30 d", "a") +
+    kpi(sinHitos, "Sin hitos cargados", sinHitos ? "a" : "") +
     "</div>";
+
+  /* Segunda fila: hitos y reportes */
+  h += '<div class="kpis">' +
+    kpi(hitosPer.length, "Hitos programados", "") +
+    kpi(hitosCerrados + " de " + hitosPer.length, "Hitos al 100%", "") +
+    kpi(repsPer.length, "Reportes de avance", "") +
+    kpi(extemp, "Reportes extemporáneos", extemp ? "a" : "") +
+    kpi(costoTotal ? "S/ " + costoTotal.toLocaleString("es-PE") : "—", "Costo programado", "") +
+    "</div>";
+
+  /* Distribución por condición */
+  const porCond = {};
+  CONFIG.REGLAS.condiciones.forEach(c => porCond[c] = 0);
+  arr.forEach(o => { const c = o.condicion || "(sin condición)"; porCond[c] = (porCond[c] || 0) + 1; });
+  h += '<div class="tarj"><h3>Objetivos por condición</h3>' +
+    Object.keys(porCond).map(c => {
+      const n = porCond[c], p = pc(n);
+      return '<div class="bar2"><div class="n">' + esc(c) + "</div>" +
+        '<div class="barra" style="flex:1"><i style="width:' + p + '%"></i></div>' +
+        '<div class="v">' + n + "</div></div>";
+    }).join("") + "</div>";
 
   /* Progreso por objetivo */
   const orden = arr.slice().sort((a, b) => (progresoObjetivo(a.id) || 0) - (progresoObjetivo(b.id) || 0));
-  h += '<div class="tarj"><h3>Progreso por objetivo</h3>' + orden.map(o => {
+  h += '<div class="tarj"><h3>Progreso por objetivo</h3>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De menor a mayor: los objetivos que necesitan atención aparecen primero.</p>' +
+    orden.map(o => {
     const p = progresoObjetivo(o.id), sem = semaforo(p);
     return '<div class="bar2"><div class="n" title="' + esc(sinHtml(o.objetivo)) + '">' + esc(sinHtml(o.objetivo).slice(0, 70)) + "</div>" +
       '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (p || 0) + '%"></i></div>' +
       '<div class="v">' + (p == null ? "—" : p + "%") + "</div></div>";
   }).join("") + "</div>";
 
-  /* Por oficina */
+  /* Ranking por oficina: de menor a mayor avance, las rezagadas arriba */
   const porOfi = {};
   arr.forEach(o => {
     const k = o.oficina || "(sin oficina)";
-    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0 };
-    porOfi[k].n++;
-    const p = progresoObjetivo(o.id);
-    if(p != null){ porOfi[k].suma += p; porOfi[k].con++; }
+    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0, cumpl: 0, venc: 0, sin: 0, crit: 0 };
+    const x = porOfi[k];
+    x.n++;
+    const p = progresoObjetivo(o.id), d = dias(HOY, o.fv);
+    if(p == null) x.sin++;
+    else{
+      x.suma += p; x.con++;
+      if(p >= 100) x.cumpl++;
+      else if(p < 50) x.crit++;
+    }
+    if(d != null && d < 0 && !(p != null && p >= 100)) x.venc++;
   });
-  h += '<div class="tarj"><h3>Avance promedio por oficina</h3>' +
-    Object.keys(porOfi).sort().map(k => {
-      const x = porOfi[k], prom = x.con ? red1(x.suma / x.con) : null, sem = semaforo(prom);
-      return '<div class="bar2"><div class="n">' + esc(k) + " <span style=\"color:var(--gris-cl)\">(" + x.n + ")</span></div>" +
-        '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (prom || 0) + '%"></i></div>' +
-        '<div class="v">' + (prom == null ? "—" : prom + "%") + "</div></div>";
-    }).join("") + "</div>";
+
+  const ranking = Object.keys(porOfi).map(k => {
+    const x = porOfi[k];
+    return { ofi: k, n: x.n, cumpl: x.cumpl, venc: x.venc, sin: x.sin, crit: x.crit,
+             prom: x.con ? red1(x.suma / x.con) : null };
+  }).sort((a, b) => {
+    /* Las oficinas sin ningún hito cargado van al final: no hay nada que medir */
+    if(a.prom == null && b.prom == null) return a.ofi.localeCompare(b.ofi, "es");
+    if(a.prom == null) return 1;
+    if(b.prom == null) return -1;
+    if(a.prom !== b.prom) return b.prom - a.prom;   // mayor a menor
+    return a.venc - b.venc;                          // a igual avance, menos vencidos arriba
+  });
+
+  h += '<div class="tarj"><h3>Ranking de oficinas por avance</h3>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De mayor a menor avance promedio. Las oficinas sin hitos cargados quedan al final, porque todavía no hay avance que medir.</p>' +
+    '<table class="t"><thead><tr><th style="width:34px">#</th><th>Oficina</th><th style="width:34%">Avance</th>' +
+    "<th>Obj.</th><th>Cumpl.</th><th>Crít.</th><th>Venc.</th><th>Sin hitos</th></tr></thead><tbody>" +
+    ranking.map((x, i) => {
+      const sem = semaforo(x.prom);
+      const pos = x.prom == null ? "—" : (i + 1);
+      return "<tr>" +
+        '<td style="font-family:\'IBM Plex Mono\',monospace;color:var(--mist)">' + pos + "</td>" +
+        "<td><b>" + esc(x.ofi) + "</b></td>" +
+        '<td><div style="display:flex;align-items:center;gap:9px">' +
+          '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (x.prom || 0) + '%"></i></div>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;flex:0 0 46px;text-align:right">' +
+          (x.prom == null ? "—" : x.prom + "%") + "</span></div></td>" +
+        "<td>" + x.n + "</td>" +
+        "<td>" + (x.cumpl ? '<span class="tag v">' + x.cumpl + "</span>" : "—") + "</td>" +
+        "<td>" + (x.crit ? '<span class="tag r">' + x.crit + "</span>" : "—") + "</td>" +
+        "<td>" + (x.venc ? '<span class="tag r">' + x.venc + "</span>" : "—") + "</td>" +
+        "<td>" + (x.sin ? '<span class="tag a">' + x.sin + "</span>" : "—") + "</td>" +
+      "</tr>";
+    }).join("") + "</tbody></table></div>";
 
   /* Hitos vencidos sin cerrar */
   const pendientes = [];
@@ -1883,11 +2034,27 @@ function pintarTablero(){
   pendientes.sort((a, b) => b.d - a.d);
   h += '<div class="tarj"><h3>Hitos vencidos sin cerrar (' + pendientes.length + ")</h3>";
   h += pendientes.length ?
-    '<table class="t"><thead><tr><th>Hito</th><th>Objetivo</th><th>Venció</th><th>Días</th><th>Progreso</th></tr></thead><tbody>' +
-    pendientes.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" + esc(sinHtml(x.o.objetivo).slice(0, 60)) +
-      "</td><td>" + verFecha(x.hi.fv) + '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
+    '<table class="t"><thead><tr><th>Hito</th><th>Objetivo</th><th>Responsable</th><th>Venció</th><th>Días</th><th>Progreso</th></tr></thead><tbody>' +
+    pendientes.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" + esc(sinHtml(x.o.objetivo).slice(0, 55)) +
+      "</td><td>" + esc(x.o.respTec || x.o.respProc || "—") + "</td><td>" + verFecha(x.hi.fv) +
+      '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
     "</tbody></table>" :
-    '<div class="vacio">Ningún hito vencido pendiente. </div>';
+    '<div class="vacio">Ningún hito vencido pendiente.</div>';
+  h += "</div>";
+
+  /* Próximos vencimientos */
+  const prox = arr.filter(o => { const d = dias(HOY, o.fv); return d != null && d >= 0 && d <= 60; })
+    .sort((a, b) => dias(HOY, a.fv) - dias(HOY, b.fv));
+  h += '<div class="tarj"><h3>Objetivos que vencen en los próximos 60 días (' + prox.length + ")</h3>";
+  h += prox.length ?
+    '<table class="t"><thead><tr><th>Objetivo</th><th>Oficina</th><th>Vence</th><th>Faltan</th><th>Avance</th></tr></thead><tbody>' +
+    prox.map(o => {
+      const d = dias(HOY, o.fv), p = progresoObjetivo(o.id), sem = semaforo(p);
+      return "<tr><td>" + esc(sinHtml(o.objetivo).slice(0, 60)) + "</td><td>" + esc(o.oficina || "—") +
+        "</td><td>" + verFecha(o.fv) + '</td><td><span class="tag ' + (d <= 30 ? "a" : "z") + '">' + d + " d</span></td>" +
+        '<td><span class="tag ' + sem.clase + '">' + (p == null ? "sin hitos" : p + "%") + "</span></td></tr>";
+    }).join("") + "</tbody></table>" :
+    '<div class="vacio">Ningún objetivo vence en los próximos 60 días.</div>';
   h += "</div>";
 
   $("tablero").innerHTML = h;
