@@ -163,6 +163,7 @@ table.t tr:last-child td{border-bottom:0}
 .rte{border:1px solid var(--linea);border-radius:0 0 7px 7px;padding:9px 11px;min-height:80px;background:#fff;overflow-y:auto;max-height:260px}
 .rtebar{display:flex;gap:2px;border:1px solid var(--linea);border-bottom:0;border-radius:7px 7px 0 0;background:#f7faf9;padding:4px}
 .rtebar button{background:none;border:0;padding:4px 9px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--gris)}
+.rtebar .sep{width:1px;background:var(--line);margin:3px 4px;align-self:stretch}
 .rtebar button:hover{background:var(--verde-cl);color:var(--verde)}
 .ruta.mal{border-color:var(--bad);background:var(--rojo-bg)}
 .ruta{font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--paper);border:1px dashed var(--line);
@@ -456,10 +457,17 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="full">
           <label>Actividades a realizar</label>
           <div class="rtebar" data-para="iActividades">
-            <button type="button" data-cmd="bold"><b>B</b></button>
-            <button type="button" data-cmd="italic"><i>I</i></button>
-            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
-            <button type="button" data-cmd="removeFormat">Limpiar</button>
+            <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="Subrayado" style="text-decoration:underline">U</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="insertUnorderedList" title="Viñetas">•≡</button>
+            <button type="button" data-cmd="insertOrderedList" title="Numeración">1.</button>
+            <span class="sep"></span>
+            <button type="button" data-enlace title="Insertar enlace">🔗</button>
+            <button type="button" data-cmd="unlink" title="Quitar enlace">⛓️</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="removeFormat" title="Quitar formato">Limpiar</button>
           </div>
           <div class="rte" id="iActividades" contenteditable="true"></div>
         </div>
@@ -467,10 +475,17 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="full">
           <label>Recursos requeridos</label>
           <div class="rtebar" data-para="iRecursos">
-            <button type="button" data-cmd="bold"><b>B</b></button>
-            <button type="button" data-cmd="italic"><i>I</i></button>
-            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
-            <button type="button" data-cmd="removeFormat">Limpiar</button>
+            <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="Subrayado" style="text-decoration:underline">U</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="insertUnorderedList" title="Viñetas">•≡</button>
+            <button type="button" data-cmd="insertOrderedList" title="Numeración">1.</button>
+            <span class="sep"></span>
+            <button type="button" data-enlace title="Insertar enlace">🔗</button>
+            <button type="button" data-cmd="unlink" title="Quitar enlace">⛓️</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="removeFormat" title="Quitar formato">Limpiar</button>
           </div>
           <div class="rte" id="iRecursos" contenteditable="true"></div>
         </div>
@@ -560,6 +575,15 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="aviso" id="avExtemp"></div>
         </div>
         <div>
+          <label for="rTipoMed">Tipo de medición</label>
+          <select id="rTipoMed">
+            <option value="Parcial">Parcial (corte / avance en curso)</option>
+            <option value="Cierre">De cierre (fin del plazo del hito)</option>
+          </select>
+          <div class="aviso" id="avCierre"></div>
+          <div class="pista" id="pistaTipoMed"></div>
+        </div>
+        <div>
           <label for="rEstado">Estado del hito</label>
           <select id="rEstado"></select>
           <div class="err" id="e_rEstado"></div>
@@ -567,10 +591,17 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="full">
           <label>Avance (descripción)</label>
           <div class="rtebar" data-para="rAvance">
-            <button type="button" data-cmd="bold"><b>B</b></button>
-            <button type="button" data-cmd="italic"><i>I</i></button>
-            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
-            <button type="button" data-cmd="removeFormat">Limpiar</button>
+            <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="Subrayado" style="text-decoration:underline">U</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="insertUnorderedList" title="Viñetas">•≡</button>
+            <button type="button" data-cmd="insertOrderedList" title="Numeración">1.</button>
+            <span class="sep"></span>
+            <button type="button" data-enlace title="Insertar enlace">🔗</button>
+            <button type="button" data-cmd="unlink" title="Quitar enlace">⛓️</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="removeFormat" title="Quitar formato">Limpiar</button>
           </div>
           <div class="rte" id="rAvance" contenteditable="true"></div>
           <div class="err" id="e_rAvance"></div>
@@ -1085,6 +1116,7 @@ async function recargar(){
     fecha:   val(r.v, R.fecha_ejecucion),
     avance:  r.v[R.avance.col] || "",
     estado:  val(r.v, R.estado_hito),
+    tipoMed: R.tipo_medicion ? val(r.v, R.tipo_medicion) : "",
     pct:     num(val(r.v, R.contribucion)),   // ahora es el % ACUMULADO
     dificultades: val(r.v, R.dificultades),
     obs:     val(r.v, R.observacion),
@@ -1337,7 +1369,7 @@ function bloqueIndicador(o, ind, editable){
     return h;
   }
 
-  h += '<table class="t"><thead><tr><th style="width:28%">Hito</th><th>Part.</th><th>Plazo</th><th>Avance</th><th>Estado</th><th>Rep.</th><th></th></tr></thead><tbody>';
+  h += '<table class="t"><thead><tr><th style="width:28%">Hito</th><th>Part.</th><th>Plazo</th><th>Avance</th><th>Estado</th><th>Reportes</th><th></th></tr></thead><tbody>';
   hs.forEach(hi => {
     const ph = red1(progresoHito(hi.id)), eh = estadoHito(hi.id), rs = reportesDe(hi.id);
     const d = dias(HOY, hi.fv);
@@ -1420,11 +1452,33 @@ function malPlazoHito(ind, hi){
 /* ==========================================================================
    Editor de texto enriquecido y navegación
    ========================================================================== */
+/* Barra del editor enriquecido. El botón 🔗 aplica el enlace sobre la
+   selección; si no hay nada seleccionado, inserta la propia dirección.
+   Se usa onmousedown para no perder la selección al hacer clic. */
 document.querySelectorAll(".rtebar").forEach(bar => {
-  bar.querySelectorAll("button").forEach(b => {
-    b.onclick = () => { $(bar.dataset.para).focus(); document.execCommand(b.dataset.cmd, false, null); };
+  const destino = () => $(bar.dataset.para);
+  bar.querySelectorAll("button[data-cmd]").forEach(b => {
+    b.onmousedown = ev => {
+      ev.preventDefault();
+      destino().focus();
+      document.execCommand(b.dataset.cmd, false, null);
+    };
   });
+  const btnEnlace = bar.querySelector("button[data-enlace]");
+  if(btnEnlace) btnEnlace.onmousedown = ev => { ev.preventDefault(); insertarEnlace(destino()); };
 });
+
+function insertarEnlace(area){
+  if(!area) return;
+  area.focus();
+  const url = prompt("Pega la dirección del enlace (debe empezar con https://):", "https://");
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)){ toast("El enlace debe empezar con http:// o https://", true); return; }
+  const sel = window.getSelection();
+  if(sel && sel.toString()) document.execCommand("createLink", false, url);
+  else document.execCommand("insertHTML", false,
+    '<a href="' + url.replace(/"/g, "%22") + '" target="_blank" rel="noopener">' + esc(url) + "</a>");
+}
 document.querySelectorAll("[data-cierra]").forEach(b => b.onclick = () => $(b.dataset.cierra).classList.remove("on"));
 document.querySelectorAll(".modal").forEach(m => m.onclick = e => { if(e.target === m) m.classList.remove("on"); });
 document.addEventListener("keydown", e => {
@@ -1979,6 +2033,8 @@ function abrirReporte(hitoId, repId){
     (ind ? '<div style="margin-top:3px;color:var(--mist)">Indicador: ' + esc(sinHtml(ind.indicador)) + "</div>" : "");
 
   opciones("rEstado", CONFIG.REPORTES.ESTADOS, r ? r.estado : "", "— elige —");
+  $("rTipoMed").value = (r && r.tipoMed === "Cierre") ? "Cierre" : "Parcial";
+  pistaTipoMedicion();
   $("rFecha").value = r ? iso(r.fecha) : "";
   $("rFecha").min = iso(hi.fi);
   $("rAvance").innerHTML = r ? r.avance : "";
@@ -2012,13 +2068,35 @@ $("rFecha").addEventListener("change", () => {
 
 /* Marcar Ejecutado fuerza el 100%, y el 100% propone Ejecutado. */
 $("rEstado").addEventListener("change", () => {
-  if($("rEstado").value === "Ejecutado"){ $("rAvancePct").value = 100; revisarAvance(); }
+  if($("rEstado").value === "Ejecutado"){
+    $("rAvancePct").value = 100;
+    $("rTipoMed").value = "Cierre";      // cerrar el hito es una medición de cierre
+    revisarAvance();
+  }
+  pistaTipoMedicion();
 });
+$("rTipoMed").addEventListener("change", pistaTipoMedicion);
+
+/* Explica qué implica cada tipo, sin obligar a nada. */
+function pistaTipoMedicion(){
+  const cierre = $("rTipoMed").value === "Cierre";
+  $("pistaTipoMed").textContent = cierre
+    ? "Medición final del hito: el avance declarado es el resultado definitivo."
+    : "Corte intermedio: habrá más reportes después de este.";
+  if(!CONFIG.REPORTES.F.tipo_medicion)
+    $("pistaTipoMed").textContent += "  ⚠ No se guarda: falta el campo en QuintaDB.";
+  /* Un cierre por debajo del 100% significa que el hito se da por terminado
+     sin completarse. Es válido, pero conviene que sea deliberado. */
+  const pct = num($("rAvancePct").value);
+  aviso("avCierre", (cierre && pct > 0 && pct < 100) ?
+    "Cierre con " + red1(pct) + "%: el hito quedará cerrado sin llegar al 100%. Si aún falta trabajo, márcalo como Parcial." : "");
+}
 $("rAvancePct").addEventListener("input", revisarAvance);
 function revisarAvance(){
   const pct = num($("rAvancePct").value);
   const previo = num($("rAnterior").dataset.pct);
   if(pct >= 100 && $("rEstado").value === "En Proceso") $("rEstado").value = "Ejecutado";
+  pistaTipoMedicion();
   aviso("avRetroceso", (previo && pct < previo) ?
     "Este reporte declara menos avance que el anterior (" + red1(previo) + "% → " + red1(pct) +
     "%). Es válido si estás corrigiendo una sobrestimación, pero revisa que no sea un error." : "");
@@ -2123,6 +2201,7 @@ $("btnGuardarRep").onclick = async () => {
   const d = {
     fecha: $("rFecha").value, estado: $("rEstado").value,
     avance: $("rAvance").innerHTML.trim(), pct: num($("rAvancePct").value),
+    tipoMed: $("rTipoMed").value,
     dificultades: $("rDificultades").value.trim(), obs: $("rObs").value.trim(),
     enlaces: leerEnlacesForm(), acciones: leerAccionesForm()
   };
@@ -2156,6 +2235,7 @@ $("btnGuardarRep").onclick = async () => {
   v[R.fecha_ejecucion.id] = d.fecha;
   v[R.avance.id] = d.avance;
   v[R.estado_hito.id] = d.estado;
+  if(R.tipo_medicion) v[R.tipo_medicion.id] = d.tipoMed;
   v[R.contribucion.id] = d.pct;          // el campo guarda ahora el acumulado
   v[R.dificultades.id] = d.dificultades;
   v[R.observacion.id] = d.obs;
