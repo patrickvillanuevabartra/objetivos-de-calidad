@@ -150,6 +150,7 @@ table.t tr:last-child td{border-bottom:0}
 .rej{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
 .rej .full{grid-column:1/-1}
 .f label{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+.f .req{color:var(--bad);font-weight:700;margin-left:1px}
 .f label .op{font-weight:400;color:var(--gris);font-size:12px}
 .f input,.f select,.f textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
 .f textarea{min-height:70px;resize:vertical}
@@ -340,53 +341,53 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div id="mObjMsg"></div>
       <div class="rej">
         <div class="full">
-          <label for="oObjetivo">Objetivo del sistema de gestión de la calidad</label>
+          <label for="oObjetivo">Objetivo del sistema de gestión de la calidad <b class="req">*</b></label>
           <textarea id="oObjetivo"></textarea>
           <div class="err" id="e_oObjetivo"></div>
           <div class="pista">Los indicadores, metas y plazos se cargan aparte: un objetivo puede medirse con varios.</div>
         </div>
 
         <div>
-          <label for="oPeriodo">Periodo</label>
+          <label for="oPeriodo">Periodo <b class="req">*</b></label>
           <select id="oPeriodo"></select>
           <div class="err" id="e_oPeriodo"></div>
         </div>
         <div>
-          <label for="oCondicion">Condición</label>
+          <label for="oCondicion">Condición <b class="req">*</b></label>
           <select id="oCondicion"></select>
           <div class="err" id="e_oCondicion"></div>
         </div>
 
         <div class="full">
-          <label>Compromisos de la política de calidad que atiende <span class="op">(puedes marcar varios)</span></label>
+          <label>Compromisos de la política de calidad que atiende <b class="req">*</b> <span class="op">(puedes marcar varios)</span></label>
           <div class="chklist" id="oPolitica"></div>
           <div class="err" id="e_oPolitica"></div>
         </div>
 
         <div class="full">
-          <label>Estrategia <span class="op">(puedes marcar varias · se filtran por el periodo elegido)</span></label>
+          <label>Estrategia <b class="req">*</b> <span class="op">(puedes marcar varias · se filtran por el periodo elegido)</span></label>
           <div class="chklist" id="oEstrategia"></div>
           <div class="err" id="e_oEstrategia"></div>
           <div class="panel" id="pOE" style="display:none"></div>
         </div>
 
         <div class="full">
-          <label for="oOficina">Oficina o área responsable</label>
+          <label for="oOficina">Oficina o área responsable <b class="req">*</b></label>
           <select id="oOficina"></select>
           <div class="err" id="e_oOficina"></div>
         </div>
 
         <div class="full">
-          <label for="oRespProc">Responsable de proceso <span class="op">(se filtra según la oficina)</span></label>
+          <label for="oRespProc">Responsable de proceso <b class="req">*</b> <span class="op">(se filtra según la oficina)</span></label>
           <select id="oRespProc"></select>
           <div class="err" id="e_oRespProc"></div>
           <div class="pista" id="pistaRP"></div>
         </div>
-        <div><label for="oRPCorreo">Correo responsable de proceso</label><input type="email" id="oRPCorreo"></div>
-        <div><label for="oRPCel">Celular responsable de proceso</label><input type="text" id="oRPCel"></div>
+        <div><label for="oRPCorreo">Correo responsable de proceso <b class="req">*</b></label><input type="email" id="oRPCorreo"><div class="err" id="e_oRPCorreo"></div></div>
+        <div><label for="oRPCel">Celular responsable de proceso <b class="req">*</b></label><input type="text" id="oRPCel"><div class="err" id="e_oRPCel"></div></div>
       </div>
     </div>
-    <div class="pie">
+    <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
       <button class="btn sec" data-cierra="mObj">Cancelar</button>
       <button class="btn" id="btnGuardarObj">Guardar objetivo</button>
     </div>
@@ -419,7 +420,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             <div><label for="oN3">Proceso nivel 3</label><select id="oN3" disabled></select></div>
             <div><label for="oProcedimiento">Procedimiento</label><select id="oProcedimiento" disabled></select></div>
             <div class="full">
-              <label>Ruta del proceso</label>
+              <label>Ruta del proceso <b class="req">*</b></label>
               <div class="ruta" id="oRuta">Selecciona la jerarquía arriba…</div>
               <div class="err" id="e_oRuta"></div>
             </div>
@@ -427,35 +428,36 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
 
         <div class="full">
-          <label for="iIndicador">Indicador</label>
+          <label for="iIndicador">Indicador <b class="req">*</b></label>
           <textarea id="iIndicador"></textarea>
           <div class="err" id="e_iIndicador"></div>
         </div>
         <div class="full">
-          <label for="iFormula">Fórmula</label>
+          <label for="iFormula">Fórmula <b class="req">*</b></label>
           <textarea id="iFormula"></textarea>
+          <div class="err" id="e_iFormula"></div>
         </div>
         <div class="full">
-          <label for="iMeta">Meta</label>
+          <label for="iMeta">Meta <b class="req">*</b></label>
           <textarea id="iMeta" style="min-height:50px"></textarea>
           <div class="err" id="e_iMeta"></div>
           <div class="pista">Texto libre, tal como se maneja hoy: 100%, 1 proyecto, 2 procesos misionales…</div>
         </div>
 
         <div>
-          <label for="iFI">F.I. Meta</label>
+          <label for="iFI">F.I. Meta <b class="req">*</b></label>
           <input type="date" id="iFI">
           <div class="err" id="e_iFI"></div>
         </div>
         <div>
-          <label for="iFV">F.V. Meta</label>
+          <label for="iFV">F.V. Meta <b class="req">*</b></label>
           <input type="date" id="iFV">
           <div class="err" id="e_iFV"></div>
           <div class="aviso" id="avFechasInd"></div>
         </div>
 
         <div class="full">
-          <label>Actividades a realizar</label>
+          <label>Actividades a realizar <b class="req">*</b></label>
           <div class="rtebar" data-para="iActividades">
             <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
             <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
@@ -470,10 +472,11 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             <button type="button" data-cmd="removeFormat" title="Quitar formato">Limpiar</button>
           </div>
           <div class="rte" id="iActividades" contenteditable="true"></div>
+          <div class="err" id="e_iActividades"></div>
         </div>
 
         <div class="full">
-          <label>Recursos requeridos</label>
+          <label>Recursos requeridos <b class="req">*</b></label>
           <div class="rtebar" data-para="iRecursos">
             <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
             <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
@@ -488,18 +491,20 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             <button type="button" data-cmd="removeFormat" title="Quitar formato">Limpiar</button>
           </div>
           <div class="rte" id="iRecursos" contenteditable="true"></div>
+          <div class="err" id="e_iRecursos"></div>
         </div>
 
         <div class="full">
-          <label for="oRespTec">Responsable técnico <span class="op">(se filtra según el responsable de proceso del objetivo)</span></label>
+          <label for="oRespTec">Responsable técnico <b class="req">*</b> <span class="op">(se filtra según el responsable de proceso del objetivo)</span></label>
           <select id="oRespTec"></select>
+          <div class="err" id="e_oRespTec"></div>
           <div class="pista" id="pistaRT"></div>
         </div>
-        <div><label for="oRTCorreo">Correo responsable técnico</label><input type="email" id="oRTCorreo"></div>
-        <div><label for="oRTCel">Celular responsable técnico</label><input type="text" id="oRTCel"></div>
+        <div><label for="oRTCorreo">Correo responsable técnico <b class="req">*</b></label><input type="email" id="oRTCorreo"><div class="err" id="e_oRTCorreo"></div></div>
+        <div><label for="oRTCel">Celular responsable técnico <b class="req">*</b></label><input type="text" id="oRTCel"><div class="err" id="e_oRTCel"></div></div>
       </div>
     </div>
-    <div class="pie">
+    <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
       <button class="btn sec" data-cierra="mInd">Cancelar</button>
       <button class="btn" id="btnGuardarInd">Guardar indicador</button>
     </div>
@@ -521,33 +526,34 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div class="panel" id="pHitoInd"></div>
       <div class="rej" style="margin-top:13px">
         <div class="full">
-          <label for="hNombre">Hito</label>
+          <label for="hNombre">Hito <b class="req">*</b></label>
           <input type="text" id="hNombre">
           <div class="err" id="e_hNombre"></div>
         </div>
         <div>
-          <label for="hPart">% participación</label>
+          <label for="hPart">% participación <b class="req">*</b></label>
           <input type="number" id="hPart" min="0" max="100" step="0.01">
           <div class="err" id="e_hPart"></div>
           <div class="aviso" id="avPart"></div>
         </div>
         <div>
-          <label for="hCosto">Costo <span class="op">(opcional)</span></label>
+          <label for="hCosto">Costo <b class="req">*</b> <span class="op">(si no tiene, pon 0)</span></label>
           <input type="number" id="hCosto" min="0" step="0.01">
+          <div class="err" id="e_hCosto"></div>
         </div>
         <div>
-          <label for="hFI">F.I. hito</label>
+          <label for="hFI">F.I. hito <b class="req">*</b></label>
           <input type="date" id="hFI">
           <div class="err" id="e_hFI"></div>
         </div>
         <div>
-          <label for="hFV">F.V. hito</label>
+          <label for="hFV">F.V. hito <b class="req">*</b></label>
           <input type="date" id="hFV">
           <div class="err" id="e_hFV"></div>
         </div>
       </div>
     </div>
-    <div class="pie">
+    <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
       <button class="btn sec" data-cierra="mHito">Cancelar</button>
       <button class="btn" id="btnGuardarHito">Guardar hito</button>
     </div>
@@ -569,13 +575,13 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div class="panel" id="pRepHito"></div>
       <div class="rej" style="margin-top:13px">
         <div>
-          <label for="rFecha">Fecha de ejecución o reporte</label>
+          <label for="rFecha">Fecha de ejecución o reporte <b class="req">*</b></label>
           <input type="date" id="rFecha">
           <div class="err" id="e_rFecha"></div>
           <div class="aviso" id="avExtemp"></div>
         </div>
         <div>
-          <label for="rTipoMed">Tipo de medición</label>
+          <label for="rTipoMed">Tipo de medición <b class="req">*</b></label>
           <select id="rTipoMed">
             <option value="Parcial">Parcial (corte / avance en curso)</option>
             <option value="Cierre">De cierre (fin del plazo del hito)</option>
@@ -584,12 +590,12 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="pista" id="pistaTipoMed"></div>
         </div>
         <div>
-          <label for="rEstado">Estado del hito</label>
+          <label for="rEstado">Estado del hito <b class="req">*</b></label>
           <select id="rEstado"></select>
           <div class="err" id="e_rEstado"></div>
         </div>
         <div class="full">
-          <label>Avance (descripción)</label>
+          <label>Avance (descripción) <b class="req">*</b></label>
           <div class="rtebar" data-para="rAvance">
             <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
             <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
@@ -607,7 +613,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="err" id="e_rAvance"></div>
         </div>
         <div>
-          <label for="rAvancePct">% de avance acumulado del hito</label>
+          <label for="rAvancePct">% de avance acumulado del hito <b class="req">*</b></label>
           <input type="number" id="rAvancePct" min="0" max="100" step="0.01">
           <div class="err" id="e_rAvancePct"></div>
           <div class="aviso" id="avRetroceso"></div>
@@ -626,8 +632,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <textarea id="rObs"></textarea>
         </div>
         <div class="full">
-          <label>Evidencias <span class="op">(enlaces a SharePoint/Drive · puedes agregar varias)</span></label>
+          <label>Evidencias <b class="req">*</b> <span class="op">(enlaces a SharePoint/Drive · puedes agregar varias)</span></label>
           <div id="rEnlaces"></div>
+          <div class="err" id="e_rEnlaces"></div>
           <button type="button" class="btn sec mini" id="btnAddEnlace">+ Añadir enlace</button>
         </div>
       </div>
@@ -635,7 +642,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div class="subtit">Próximas acciones <button type="button" class="btn sec mini" id="btnAddAccion">+ Añadir acción</button></div>
       <div id="rAcciones"></div>
     </div>
-    <div class="pie">
+    <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
       <button class="btn sec" data-cierra="mRep">Cancelar</button>
       <button class="btn" id="btnGuardarRep">Guardar reporte</button>
     </div>
@@ -1710,7 +1717,10 @@ $("btnGuardarObj").onclick = async () => {
   if(!d.condicion){ error("oCondicion", "Elige la condición."); mal = true; }
   if(!d.politica){ error("oPolitica", "Marca al menos un compromiso de política."); mal = true; }
   if(!d.oficina){ error("oOficina", "Elige la oficina responsable."); mal = true; }
+  if(!d.estrategia){ error("oEstrategia", "Marca al menos una estrategia."); mal = true; }
   if(!d.respProc){ error("oRespProc", "Elige el responsable de proceso."); mal = true; }
+  if(!d.rpCorreo){ error("oRPCorreo", "Falta el correo del responsable de proceso."); mal = true; }
+  if(!d.rpCel){ error("oRPCel", "Falta el celular del responsable de proceso."); mal = true; }
   if(mal){ msg("mObjMsg", "Revisa los campos marcados.", "mal"); return; }
 
   const F = CONFIG.MATRIZ.F, E = CONFIG.ESPEJO;
@@ -1852,7 +1862,13 @@ $("btnGuardarInd").onclick = async () => {
   let mal = false;
   if(!d.proceso){ error("oRuta", "Elige el proceso que mide este indicador."); mal = true; }
   if(!d.indicador){ error("iIndicador", "Escribe el indicador."); mal = true; }
+  if(!d.formula){ error("iFormula", "Escribe la fórmula de cálculo."); mal = true; }
   if(!d.meta){ error("iMeta", "Escribe la meta."); mal = true; }
+  if(!sinHtml(d.actividades)){ error("iActividades", "Describe las actividades a realizar."); mal = true; }
+  if(!sinHtml(d.recursos)){ error("iRecursos", "Indica los recursos requeridos."); mal = true; }
+  if(!d.respTec){ error("oRespTec", "Elige el responsable técnico."); mal = true; }
+  if(!d.rtCorreo){ error("oRTCorreo", "Falta el correo del responsable técnico."); mal = true; }
+  if(!d.rtCel){ error("oRTCel", "Falta el celular del responsable técnico."); mal = true; }
   if(!d.fi){ error("iFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("iFV", "Falta la fecha de vencimiento."); mal = true; }
   if(d.fi && d.fv && fecha(d.fv) < fecha(d.fi)){ error("iFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
@@ -1962,6 +1978,7 @@ $("btnGuardarHito").onclick = async () => {
   if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
   if(!d.fi){ error("hFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("hFV", "Falta la fecha de vencimiento."); mal = true; }
+  if($("hCosto").value === ""){ error("hCosto", "Indica el costo. Si no tiene, pon 0."); mal = true; }
 
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi = fecha(d.fi), hv = fecha(d.fv);
   if(hi && hv && hv < hi){ error("hFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
@@ -2032,9 +2049,11 @@ function abrirReporte(hitoId, repId){
     " · participación en el indicador: <b>" + red1(hi.part) + "%</b></div>" +
     (ind ? '<div style="margin-top:3px;color:var(--mist)">Indicador: ' + esc(sinHtml(ind.indicador)) + "</div>" : "");
 
-  opciones("rEstado", CONFIG.REPORTES.ESTADOS, r ? r.estado : "", "— elige —");
-  $("rTipoMed").value = (r && r.tipoMed === "Cierre") ? "Cierre" : "Parcial";
-  pistaTipoMedicion();
+  /* Si el reporte es antiguo y no tiene tipo guardado, se deduce del estado. */
+  $("rTipoMed").value = r
+    ? (r.tipoMed || (r.estado === "Ejecutado" ? "Cierre" : "Parcial"))
+    : "Parcial";
+  aplicarTipoMedicion();
   $("rFecha").value = r ? iso(r.fecha) : "";
   $("rFecha").min = iso(hi.fi);
   $("rAvance").innerHTML = r ? r.avance : "";
@@ -2067,15 +2086,22 @@ $("rFecha").addEventListener("change", () => {
 });
 
 /* Marcar Ejecutado fuerza el 100%, y el 100% propone Ejecutado. */
-$("rEstado").addEventListener("change", () => {
-  if($("rEstado").value === "Ejecutado"){
-    $("rAvancePct").value = 100;
-    $("rTipoMed").value = "Cierre";      // cerrar el hito es una medición de cierre
-    revisarAvance();
-  }
+/* El tipo de medición manda sobre el estado:
+   Parcial → el hito sigue En Proceso · Cierre → el hito queda Ejecutado.
+   El selector de estado queda bloqueado para que no se contradigan. */
+$("rTipoMed").addEventListener("change", aplicarTipoMedicion);
+
+function aplicarTipoMedicion(){
+  const cierre = $("rTipoMed").value === "Cierre";
+  const estado = cierre ? "Ejecutado" : "En Proceso";
+  opciones("rEstado", [estado], estado, "");
+  $("rEstado").value = estado;
+  $("rEstado").disabled = true;
+  /* Un cierre suele ser el 100%, así que se propone, pero se puede corregir:
+     un hito puede cerrarse con menos si venció sin completarse. */
+  if(cierre && !num($("rAvancePct").value)) $("rAvancePct").value = 100;
   pistaTipoMedicion();
-});
-$("rTipoMed").addEventListener("change", pistaTipoMedicion);
+}
 
 /* Explica qué implica cada tipo, sin obligar a nada. */
 function pistaTipoMedicion(){
@@ -2095,7 +2121,6 @@ $("rAvancePct").addEventListener("input", revisarAvance);
 function revisarAvance(){
   const pct = num($("rAvancePct").value);
   const previo = num($("rAnterior").dataset.pct);
-  if(pct >= 100 && $("rEstado").value === "En Proceso") $("rEstado").value = "Ejecutado";
   pistaTipoMedicion();
   aviso("avRetroceso", (previo && pct < previo) ?
     "Este reporte declara menos avance que el anterior (" + red1(previo) + "% → " + red1(pct) +
@@ -2210,16 +2235,14 @@ $("btnGuardarRep").onclick = async () => {
   if(!d.fecha){ error("rFecha", "Falta la fecha del reporte."); mal = true; }
   if(!d.estado){ error("rEstado", "Elige el estado del hito."); mal = true; }
   if(!sinHtml(d.avance)){ error("rAvance", "Describe el avance."); mal = true; }
-  if(d.pct < 0 || d.pct > 100){ error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true; }
-  if(!d.pct && d.pct !== 0){ error("rAvancePct", "Indica el % de avance acumulado."); mal = true; }
+  if($("rAvancePct").value === ""){ error("rAvancePct", "Indica el % de avance acumulado."); mal = true; }
+  else if(d.pct < 0 || d.pct > 100){ error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true; }
+  if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
 
   const antes = dias(d.fecha, hi.fi);
   if(antes != null && antes > 0){
     error("rFecha", "El hito empieza el " + verFecha(hi.fi) + ". No se puede reportar avance antes de esa fecha.");
     mal = true;
-  }
-  if(d.estado === "Ejecutado" && d.pct < 100){
-    error("rAvancePct", "Si el hito está Ejecutado, el avance acumulado debe ser 100%."); mal = true;
   }
 
   const fuera = ind ? d.acciones.filter(a => { const x = dias(ind.fv, a.fecha); return x != null && x > 0; }) : [];
