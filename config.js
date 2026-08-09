@@ -197,7 +197,9 @@ const CONFIG = {
       estado_hito:      { id: "dcK0BcGmnfW5jnkSo9nCkM", type: "radio", col: "Estado del hito" }, // oblig.
       contribucion:     { id: "cTtSkeyKXeWQRdKSkJFCkM", type: "float", col: "Contribución al progreso del hito" }, // oblig.
       dificultades:     { id: "ddRhNcJCjcWOJdJZxcJmof", type: "text", col: "Dificultades"  },
-      observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text", col: "Observación"  }
+      observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text", col: "Observación"  },
+      // Parcial = corte intermedio · Cierre = medición final del hito
+      tipo_medicion:    { id: "aEW5NdOCnltOoPW4xdUCo9", type: "select", col: "Tipo de medición" }
     },
 
     // Literales EXACTOS del radio. Mandar con esta capitalización o se
