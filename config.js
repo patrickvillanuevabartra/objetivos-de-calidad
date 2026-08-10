@@ -108,7 +108,12 @@ const CONFIG = {
       proceso:     { id: "bysmokphvcQ4ksW53dH8kw", type: "text",   col: "Proceso (ruta)" },
       resp_tecnico:        { id: "dcMIJcSSnjW64MmLrasmo2", type: "string", col: "Responsable técnico (texto)" },
       resp_tecnico_correo: { id: "dcUSo8WOfcHykzWPytCSot", type: "email",  col: "Correo responsable técnico" },
-      resp_tecnico_celular:{ id: "ddUSkaWPLpzA3dPmoeWOX2", type: "phone",  col: "Celular responsable técnico" }
+      resp_tecnico_celular:{ id: "ddUSkaWPLpzA3dPmoeWOX2", type: "phone",  col: "Celular responsable técnico" },
+      // Medición del indicador: la fórmula produce el valor alcanzado.
+      // `variables` guarda el JSON de los números usados, para poder reabrir
+      // el indicador y corregir uno sin volver a teclear todos.
+      valor_alcanzado:     { id: "bYWOBdImnhW6pdJCo9W5jL", type: "float", col: "Valor alcanzado" },
+      variables:           { id: "aFp2r2WQfjFikXW4jmsCka", type: "text",  col: "Variables de cálculo" }
     },
     // Vínculo al objetivo padre: guarda su _qid.
     ESPEJO: {
