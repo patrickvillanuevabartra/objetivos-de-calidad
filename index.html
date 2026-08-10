@@ -205,6 +205,16 @@ table.t tr:last-child td{border-bottom:0}
 @media (max-width:720px){ .rej{grid-template-columns:1fr} main{padding:14px} .obj .cab{flex-wrap:wrap} }
 @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
 
+/* ---------- calculadora de la fórmula ---------- */
+.varsbox{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.varsref{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);margin-bottom:11px;
+  padding-bottom:9px;border-bottom:1px dashed var(--line);word-break:break-word}
+.varsres{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);display:flex;align-items:center;
+  gap:9px;flex-wrap:wrap;font-size:13px;color:var(--mist)}
+.varsres b{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--brand)}
+.varsres .btn{margin-left:auto}
+.varsres .btn + .btn{margin-left:0}
+
 /* ---------- lista de casillas ---------- */
 .chklist{border:1px solid var(--line);border-radius:9px;background:#fff;max-height:210px;overflow-y:auto;padding:4px}
 .chklist label{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;border-radius:7px;cursor:pointer;
@@ -437,6 +447,25 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <textarea id="iFormula"></textarea>
           <div class="err" id="e_iFormula"></div>
         </div>
+        <div class="full" id="cajaMedicion" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
+            Medición del indicador
+          </div>
+          <div class="pista" id="pistaMedicion" style="margin:0 0 10px"></div>
+          <div class="rej" id="varsGrid" style="gap:10px"></div>
+          <div class="rej" style="gap:10px;margin-top:10px">
+            <div>
+              <label for="iValor">Valor alcanzado</label>
+              <input type="number" id="iValor" step="any">
+              <div class="err" id="e_iValor"></div>
+            </div>
+            <div>
+              <label>Comparación con la meta</label>
+              <div class="ruta" id="cmpMeta" style="min-height:38px">—</div>
+            </div>
+          </div>
+        </div>
+
         <div class="full">
           <label for="iMeta">Meta <b class="req">*</b></label>
           <textarea id="iMeta" style="min-height:50px"></textarea>
@@ -612,6 +641,18 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="rte" id="rAvance" contenteditable="true"></div>
           <div class="err" id="e_rAvance"></div>
         </div>
+        <div class="full" id="rVarsBox" style="display:none">
+          <div class="varsbox">
+            <div class="varsref" id="rFormulaRef"></div>
+            <div class="rej" id="rVarsGrid" style="gap:10px"></div>
+            <div class="varsres">
+              Valor calculado: <b id="rValorCalc">—</b>
+              <button type="button" class="btn sec mini" id="btnLimpiarVars">Limpiar</button>
+              <button type="button" class="btn sec mini" id="btnUsarCalc">Usar como % de avance</button>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label for="rAvancePct">% de avance acumulado del hito <b class="req">*</b></label>
           <input type="number" id="rAvancePct" min="0" max="100" step="0.01">
@@ -1101,7 +1142,9 @@ async function recargar(){
     proceso:     r.v[NI.proceso.col] || "",
     respTec:     val(r.v, NI.resp_tecnico),
     rtCorreo:    val(r.v, NI.resp_tecnico_correo),
-    rtCel:       val(r.v, NI.resp_tecnico_celular)
+    rtCel:       val(r.v, NI.resp_tecnico_celular),
+    valor:       val(r.v, NI.valor_alcanzado),
+    variables:   r.v[NI.variables.col] || ""
   }));
 
   const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
@@ -1349,9 +1392,10 @@ function bloqueIndicador(o, ind, editable){
       '<div style="flex:1;min-width:0">' +
         "<b>" + esc(ind.indicador || "(sin indicador)") + "</b>" +
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
-          "Meta: <b>" + esc(ind.meta || "—") + "</b> · " + verFecha(ind.fi) + " → " + verFecha(ind.fv) +
+          "Meta: <b>" + esc(ind.meta || "—") + "</b>" + medicionHtml(ind) + " · " + verFecha(ind.fi) + " → " + verFecha(ind.fv) +
           (ind.respTec ? " · " + esc(ind.respTec) : "") + "</div>" +
         (ind.proceso ? '<div style="font-size:12px;color:var(--mist);margin-top:2px">' + esc(ind.proceso) + "</div>" : "") +
+        brechaHtml(ind) +
       "</div>" +
       '<div style="flex:0 0 130px;text-align:right">' +
         '<div style="font-weight:700;font-size:13px">' + (p == null ? "—" : p + "%") + "</div>" +
@@ -1411,6 +1455,57 @@ function bloqueIndicador(o, ind, editable){
   });
   h += "</tbody></table></div>";
   return h;
+}
+
+/* Compara EJECUCIÓN (hitos) contra LOGRO (fórmula vs meta).
+   Que los hitos estén al 100% significa que se hizo lo planificado; que el
+   indicador llegue a su meta significa que lo planificado sirvió. Cuando
+   divergen, ahí está la señal para la mejora continua. */
+const UMBRAL_LOGRO = 80;   // por debajo de este % de la meta se considera brecha
+
+function logroIndicador(ind){
+  if(ind.valor === "" || ind.valor == null) return null;
+  const meta = metaNumerica(ind.meta);
+  if(meta === null || meta === 0) return null;
+  return red1(num(ind.valor) / meta * 100);
+}
+
+function brechaIndicador(ind){
+  const ejec = progresoIndicador(ind.id);      // % de ejecución, de los hitos
+  const logro = logroIndicador(ind);           // % de la meta, de la fórmula
+  if(ejec == null || logro == null) return null;
+  if(ejec >= 100 && logro < UMBRAL_LOGRO)
+    return { tipo: "corto", ejec, logro,
+      txt: "Ejecutado al 100%, pero solo " + logro + "% de la meta" };
+  if(ejec < 100 && logro >= 100)
+    return { tipo: "sobra", ejec, logro,
+      txt: "Meta alcanzada con " + red1(ejec) + "% de ejecución" };
+  return null;
+}
+
+/* Valor alcanzado junto a la meta, con su % de logro si la meta es numérica.
+   Ojo: esto es LOGRO del indicador, distinto del avance de ejecución que
+   sale de los hitos. Un indicador puede estar 100% ejecutado y no cumplir. */
+function medicionHtml(ind){
+  if(ind.valor === "" || ind.valor == null) return "";
+  const valor = num(ind.valor), meta = metaNumerica(ind.meta);
+  if(meta === null || meta === 0)
+    return ' · alcanzado <b>' + red1(valor) + "</b>";
+  const pct = red1(valor / meta * 100), sem = semaforo(Math.min(pct, 100));
+  return " · alcanzado <b>" + red1(valor) + '</b> <span class="tag ' + sem.clase + '">' + pct + "% de la meta</span>";
+}
+
+function brechaHtml(ind){
+  const b = brechaIndicador(ind);
+  if(!b) return "";
+  const clase = b.tipo === "corto" ? "r" : "z";
+  const icono = b.tipo === "corto" ? "⚠" : "ℹ";
+  const nota = b.tipo === "corto"
+    ? "Las actividades se completaron pero no bastaron para mover el indicador. Revisa si el plan necesita reformularse."
+    : "El indicador llegó a la meta antes de terminar el plan. Puede que sobren actividades.";
+  return '<div class="tag ' + clase + '" style="margin-top:6px;white-space:normal;text-transform:none;letter-spacing:0;' +
+    'font-weight:600;padding:6px 10px;line-height:1.4">' + icono + " " + esc(b.txt) +
+    '<div style="font-weight:400;margin-top:2px;opacity:.85">' + esc(nota) + "</div></div>";
 }
 
 function ficha(t, v){
@@ -1805,6 +1900,11 @@ function abrirIndicador(objId, indId){
   $("oRTCorreo").value = ind ? ind.rtCorreo : "";
   $("oRTCel").value = ind ? ind.rtCel : "";
 
+  $("iValor").value = ind && ind.valor !== "" ? ind.valor : "";
+  let guardadas = {};
+  if(ind && ind.variables){ try{ guardadas = JSON.parse(ind.variables) || {}; }catch(e){ guardadas = {}; } }
+  construirVariables(ind ? ind.formula : "", guardadas);
+
   cargarRuta(ind ? ind.proceso : "");
   refrescarTecnicos(ind ? ind.respTec : "");
   $("mInd").classList.add("on");
@@ -1857,6 +1957,7 @@ $("btnGuardarInd").onclick = async () => {
     meta: $("iMeta").value.trim(), fi: $("iFI").value, fv: $("iFV").value,
     actividades: $("iActividades").innerHTML.trim(), recursos: $("iRecursos").innerHTML.trim(),
     proceso: actualizarRuta(), respTec: $("oRespTec").value,
+    valor: $("iValor").value, variables: leerVariables(),
     rtCorreo: $("oRTCorreo").value.trim(), rtCel: $("oRTCel").value.trim()
   };
   let mal = false;
@@ -1899,6 +2000,8 @@ $("btnGuardarInd").onclick = async () => {
   v[NI.resp_tecnico.id] = d.respTec;
   v[NI.resp_tecnico_correo.id] = d.rtCorreo;
   v[NI.resp_tecnico_celular.id] = d.rtCel;
+  if(d.valor !== "") v[NI.valor_alcanzado.id] = num(d.valor);
+  v[NI.variables.id] = Object.keys(d.variables).length ? JSON.stringify(d.variables) : "";
   v[NE.objetivo_ref.id] = S.ctxObj.id;
 
   const b = $("btnGuardarInd");
@@ -1925,6 +2028,137 @@ async function eliminarIndicador(id){
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
 }
+
+/* ==========================================================================
+   Medición del indicador — mismo mecanismo que Matriz de Indicadores.
+   La fórmula es texto libre. Se detectan como variables los tramos con
+   letras que quedan entre operadores, paréntesis y números.
+   ========================================================================== */
+let VARS = [];   // [{nombre, key}]
+
+function normalizarFormula(f){
+  /* Se llama DESPUÉS de sustituir los nombres, para no dañar variables
+     que contengan una "x" o un "÷" dentro del texto. */
+  return String(f || "")
+    .replace(/×/g, "*").replace(/÷/g, "/")
+    .replace(/[−–]/g, "-")
+    .replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2")   // "5 x 3" → "5*3"
+    .replace(/,/g, ".");                              // coma decimal
+}
+
+function detectarVariables(formula){
+  if(!formula || !formula.trim()) return [];
+  const trozos = String(formula)
+    .split(/[()+\-*/×÷=%]|\b\d+(?:[.,]\d+)?\b/)
+    .map(s => s.trim()).filter(Boolean);
+  const vistos = new Set(), out = [];
+  trozos.forEach(t => {
+    const nombre = t.replace(/^[^\wÁÉÍÓÚÑáéíóúñ°%]+|[^\wÁÉÍÓÚÑáéíóúñ°%]+$/g, "").trim();
+    if(nombre && /[a-zA-ZÁÉÍÓÚÑáéíóúñ]/.test(nombre) && !vistos.has(nombre.toLowerCase())){
+      vistos.add(nombre.toLowerCase());
+      out.push({ nombre, key: "v" + out.length });
+    }
+  });
+  return out;
+}
+
+/* Construye las casillas. Sin variables detectables, el valor se escribe
+   a mano: es el caso de un indicador que es solo un conteo. */
+function construirVariables(formula, valores){
+  VARS = detectarVariables(formula);
+  const grid = $("varsGrid"), campo = $("iValor");
+  if(!VARS.length){
+    grid.innerHTML = "";
+    campo.readOnly = false;
+    campo.style.background = "";
+    campo.placeholder = "escribe el valor";
+    $("pistaMedicion").textContent = formula && formula.trim()
+      ? "La fórmula no tiene variables que separar, así que el valor se escribe directamente."
+      : "Sin fórmula: el valor alcanzado se escribe directamente.";
+    compararConMeta();
+    return;
+  }
+  grid.innerHTML = VARS.map(v =>
+    "<div><label>" + esc(v.nombre) + '</label><input type="number" step="any" data-vk="' +
+    v.key + '" placeholder="0"></div>').join("");
+  VARS.forEach(v => {
+    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
+    if(valores && valores[v.nombre] != null) inp.value = valores[v.nombre];
+    inp.addEventListener("input", calcularValor);
+  });
+  campo.readOnly = true;
+  campo.style.background = "var(--paper)";
+  campo.placeholder = "se calcula con la fórmula";
+  $("pistaMedicion").textContent = VARS.length === 1
+    ? "Escribe el valor de la variable detectada y el resultado se calcula solo."
+    : "Escribe los " + VARS.length + " valores y el resultado se calcula solo.";
+  calcularValor();
+}
+
+function calcularValor(){
+  if(!VARS.length){ compararConMeta(); return; }
+  const grid = $("varsGrid");
+  let expr = String($("iFormula").value || ""), faltan = false, alguno = false;
+  /* Los nombres más largos se sustituyen primero, para que "Total de
+     docentes" no se rompa al reemplazar "docentes". */
+  [...VARS].sort((a, b) => b.nombre.length - a.nombre.length).forEach(v => {
+    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
+    const val = (inp && inp.value !== "") ? parseFloat(inp.value) : null;
+    if(val === null || isNaN(val)) faltan = true; else alguno = true;
+    const escapado = v.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    expr = expr.replace(new RegExp(escapado, "gi"), "(" + (val === null ? "0" : val) + ")");
+  });
+  if(!alguno){ compararConMeta(); return; }   // nada escrito: respeta lo guardado
+  if(faltan){ $("iValor").value = ""; compararConMeta(); return; }
+
+  expr = normalizarFormula(expr);
+  let resultado = "";
+  try{
+    if(/^[-+*/().\d\s]+$/.test(expr)){          // solo números y operadores
+      const v = Function('"use strict";return (' + expr + ")")();
+      if(isFinite(v)) resultado = Math.round(v * 100) / 100;
+    }
+  }catch(e){ resultado = ""; }
+  $("iValor").value = resultado;
+  compararConMeta();
+}
+
+function leerVariables(){
+  const grid = $("varsGrid"), out = {};
+  VARS.forEach(v => {
+    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
+    if(inp && inp.value !== "") out[v.nombre] = parseFloat(inp.value);
+  });
+  return out;
+}
+
+/* La meta es texto libre: "50%", "1 proyecto", "2 procesos misionales", "P.D.".
+   Si trae un número reconocible se compara; si no, se muestra el valor solo. */
+function metaNumerica(meta){
+  const m = String(meta || "").replace(/,/g, ".").match(/-?\d+(?:\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+function compararConMeta(){
+  const caja = $("cmpMeta");
+  const valor = $("iValor").value === "" ? null : num($("iValor").value);
+  const meta = metaNumerica($("iMeta").value);
+  if(valor === null){ caja.innerHTML = "—"; return; }
+  if(meta === null || meta === 0){
+    caja.innerHTML = "Valor: <b>" + red1(valor) + "</b> · la meta no tiene un número comparable";
+    return;
+  }
+  const pct = red1(valor / meta * 100);
+  const sem = semaforo(Math.min(pct, 100));
+  caja.innerHTML = "<b>" + red1(valor) + "</b> de <b>" + red1(meta) + "</b> · " +
+    '<span class="tag ' + sem.clase + '">' + pct + "% de la meta</span>" +
+    /* Una desproporción así casi siempre significa que la meta y la fórmula
+       están en unidades distintas: p.ej. meta "2 procesos" y fórmula en %. */
+    (pct > 200 ? '<div class="tag a" style="margin-top:5px">Revisa las unidades: la meta y la fórmula parecen medir cosas distintas</div>' : "");
+}
+
+$("iFormula").addEventListener("input", () => construirVariables($("iFormula").value, leerVariables()));
+$("iMeta").addEventListener("input", compararConMeta);
+$("iValor").addEventListener("input", () => { if(!VARS.length) compararConMeta(); });
 
 /* ==========================================================================
    Formulario del hito — cuelga del indicador
@@ -2061,6 +2295,7 @@ function abrirReporte(hitoId, repId){
   $("rDificultades").value = r ? r.dificultades : "";
   $("rObs").value = r ? r.obs : "";
 
+  construirCamposFormula(ind ? ind.formula : "");
   pintarEnlaces(r ? r.enlaces : []);
   pintarAcciones(r ? r.acciones : []);
   revisarAvance();
@@ -2127,7 +2362,107 @@ function revisarAvance(){
     "%). Es válido si estás corrigiendo una sobrestimación, pero revisa que no sea un error." : "");
 }
 
-/* ---- enlaces ---- */
+/* ==========================================================================
+   Calculadora de la fórmula — mismo mecanismo que Matriz de Indicadores.
+   La fórmula es texto libre, p.ej. "(N° de encuestas respondidas / Total de
+   docentes) × 100". Se detectan como variables los tramos que no son números
+   ni operadores, se pide un valor para cada una y se evalúa.
+   ========================================================================== */
+let VARS_FORMULA = [];
+
+/* Unifica símbolos a operadores de JavaScript. Se aplica DESPUÉS de sustituir
+   las variables, para no dañar nombres que contengan "x" o "÷". */
+function normalizarFormula(f){
+  return String(f || "")
+    .replace(/×/g, "*").replace(/÷/g, "/")
+    .replace(/−/g, "-").replace(/–/g, "-")
+    .replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2")
+    .replace(/,/g, ".");
+}
+
+function detectarVariables(formula){
+  if(!formula || !formula.trim()) return [];
+  /* La "x" entre números o paréntesis es multiplicación, no una variable.
+     Se convierte antes de partir, o "x 100" se detectaría como variable. */
+  const f = String(formula).replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2");
+  const trozos = f
+    .split(/[()+\-*/×÷=%]|\b\d+(?:[.,]\d+)?\b/)
+    .map(s => s.trim()).filter(Boolean);
+  const vistos = new Set(), vars = [];
+  trozos.forEach(t => {
+    const nombre = t.replace(/^[^\wÁÉÍÓÚÑáéíóúñ°%]+|[^\wÁÉÍÓÚÑáéíóúñ°%]+$/g, "").trim();
+    if(!nombre) return;
+    if(/^[xX]$/.test(nombre)) return;                    // operador suelto
+    if(!/[a-zA-ZÁÉÍÓÚÑáéíóúñ]/.test(nombre)) return;     // sin letras: no es variable
+    if(vistos.has(nombre.toLowerCase())) return;
+    vistos.add(nombre.toLowerCase());
+    vars.push({ nombre, key: "v" + vars.length });
+  });
+  return vars;
+}
+
+function construirCamposFormula(formula){
+  VARS_FORMULA = detectarVariables(formula);
+  const box = $("rVarsBox"), grid = $("rVarsGrid");
+  if(!VARS_FORMULA.length){
+    box.style.display = "none";
+    grid.innerHTML = "";
+    return;
+  }
+  $("rFormulaRef").textContent = "Fórmula: " + formula;
+  grid.innerHTML = VARS_FORMULA.map(v =>
+    '<div><label title="' + esc(v.nombre) + '">' + esc(v.nombre) + "</label>" +
+    '<input type="number" step="any" data-fkey="' + v.key + '" placeholder="0"></div>').join("");
+  grid.querySelectorAll("input").forEach(i => i.addEventListener("input", calcularValorFormula));
+  box.style.display = "";
+  $("rValorCalc").textContent = "—";
+}
+
+function calcularValorFormula(){
+  const grid = $("rVarsGrid");
+  if(!VARS_FORMULA.length) return null;
+  /* Se sustituye sobre la fórmula ORIGINAL, de la más larga a la más corta,
+     para que un nombre no se coma parte de otro. */
+  let expr = String((S.ctxInd && S.ctxInd.formula) || "");
+  let faltan = false, alguno = false;
+  [...VARS_FORMULA].sort((a, b) => b.nombre.length - a.nombre.length).forEach(v => {
+    const inp = grid.querySelector('input[data-fkey="' + v.key + '"]');
+    const val = (inp && inp.value !== "") ? parseFloat(inp.value) : null;
+    if(val === null || isNaN(val)) faltan = true; else alguno = true;
+    const escapado = v.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    expr = expr.replace(new RegExp(escapado, "gi"), "(" + (val === null ? "0" : val) + ")");
+  });
+  if(!alguno){ $("rValorCalc").textContent = "—"; return null; }
+  if(faltan){ $("rValorCalc").textContent = "faltan datos"; return null; }
+
+  expr = normalizarFormula(expr);
+  let resultado = null;
+  try{
+    /* Solo se evalúa si ya no queda nada más que números y operadores. */
+    if(/^[-+*/().\d\s]+$/.test(expr)){
+      const val = Function('"use strict";return (' + expr + ")")();
+      if(isFinite(val)) resultado = Math.round(val * 100) / 100;
+    }
+  }catch(e){ resultado = null; }
+  $("rValorCalc").textContent = (resultado === null) ? "no se pudo calcular" : resultado;
+  return resultado;
+}
+
+$("btnLimpiarVars").onclick = () => {
+  $("rVarsGrid").querySelectorAll("input").forEach(i => i.value = "");
+  $("rValorCalc").textContent = "—";
+};
+$("btnUsarCalc").onclick = () => {
+  const v = calcularValorFormula();
+  if(v === null){ toast("Completa todas las variables para calcular el valor.", true); return; }
+  if(v < 0 || v > 100){
+    toast("El valor calculado es " + v + " y el avance va de 0 a 100. Revisa la fórmula o los datos.", true);
+    return;
+  }
+  $("rAvancePct").value = v;
+  revisarAvance();
+  toast("Avance actualizado a " + v + "% con la fórmula del indicador.");
+};
 $("btnAddEnlace").onclick = () => agregarEnlace("", "");
 function pintarEnlaces(arr){
   $("rEnlaces").innerHTML = "";
@@ -2423,6 +2758,11 @@ function pintarTablero(){
   const iCumpl = inds.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
   const iCrit = inds.filter(i => { const p = progresoIndicador(i.id); return p != null && p < 50; }).length;
   const iSin = inds.filter(i => progresoIndicador(i.id) == null).length;
+  const brechas = inds.map(i => ({ ind: i, b: brechaIndicador(i) }))
+                      .filter(x => x.b && x.b.tipo === "corto")
+                      .sort((a, b) => a.b.logro - b.b.logro);
+  const sobrantes = inds.map(i => ({ ind: i, b: brechaIndicador(i) }))
+                        .filter(x => x.b && x.b.tipo === "sobra");
   const hCerr = hits.filter(h => progresoHito(h.id) >= 100).length;
   const extemp = reps.filter(r => {
     const h = S.hitos.find(x => x.id === r.hitoRef);
@@ -2448,6 +2788,7 @@ function pintarTablero(){
     kpi(iCumpl + " de " + inds.length, "Indicadores al 100%") +
     kpi(iCrit, "Indicadores críticos <50%", iCrit ? "bad" : "") +
     kpi(iSin, "Indicadores sin hitos", iSin ? "warn" : "") +
+    kpi(brechas.length, "Ejecutado sin lograr", brechas.length ? "bad" : "") +
     kpi(hits.length, "Hitos programados") +
     kpi(hCerr + " de " + hits.length, "Hitos al 100%") +
     kpi(reps.length, "Reportes de avance") +
@@ -2519,6 +2860,28 @@ function pintarTablero(){
         "<td>" + (x.venc ? '<span class="tag r">' + x.venc + "</span>" : "—") + "</td>" +
         "<td>" + (x.sin ? '<span class="tag a">' + x.sin + "</span>" : "—") + "</td></tr>";
     }).join("") + "</tbody></table></div>";
+
+  /* --- brecha entre ejecución y logro --- */
+  h += '<div class="tarj"><h3>Ejecución completa sin alcanzar la meta (' + brechas.length + ")</h3>" +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Indicadores con todos sus hitos al 100% pero por debajo del ' +
+    UMBRAL_LOGRO + '% de la meta. Es la señal más clara de que el plan de acción necesita reformularse: se hizo lo previsto y no bastó.</p>' +
+    (brechas.length ?
+      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Alcanzado</th><th>Logro</th><th>Responsable</th></tr></thead><tbody>' +
+      brechas.map(x => {
+        const o = S.objetivos.find(y => y.id === x.ind.objetivoRef);
+        const sem = semaforo(x.b.logro);
+        return "<tr><td><b>" + esc(sinHtml(x.ind.indicador).slice(0, 55)) + "</b></td><td>" +
+          esc(o ? sinHtml(o.objetivo).slice(0, 40) : "—") + "</td><td>" + esc(x.ind.meta || "—") +
+          "</td><td>" + red1(num(x.ind.valor)) + '</td><td><span class="tag ' + sem.clase + '">' + x.b.logro + "%</span></td><td>" +
+          esc(x.ind.respTec || "—") + "</td></tr>";
+      }).join("") + "</tbody></table>" :
+      '<div class="vacio">Ningún indicador presenta esta brecha.</div>') +
+    (sobrantes.length ?
+      '<p style="font-size:12.5px;color:var(--mist);margin:14px 0 0">Además, ' + sobrantes.length +
+      " indicador(es) alcanzaron su meta antes de terminar el plan: " +
+      esc(sobrantes.map(x => sinHtml(x.ind.indicador).slice(0, 40)).join(" · ")) +
+      ". Puede que sobren actividades.</p>" : "") +
+    "</div>";
 
   /* --- hitos vencidos --- */
   const pend = [];
