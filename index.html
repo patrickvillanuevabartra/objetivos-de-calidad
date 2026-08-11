@@ -206,14 +206,6 @@ table.t tr:last-child td{border-bottom:0}
 @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
 
 /* ---------- calculadora de la fórmula ---------- */
-.varsbox{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
-.varsref{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);margin-bottom:11px;
-  padding-bottom:9px;border-bottom:1px dashed var(--line);word-break:break-word}
-.varsres{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);display:flex;align-items:center;
-  gap:9px;flex-wrap:wrap;font-size:13px;color:var(--mist)}
-.varsres b{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--brand)}
-.varsres .btn{margin-left:auto}
-.varsres .btn + .btn{margin-left:0}
 
 /* ---------- lista de casillas ---------- */
 .chklist{border:1px solid var(--line);border-radius:9px;background:#fff;max-height:210px;overflow-y:auto;padding:4px}
@@ -225,6 +217,14 @@ table.t tr:last-child td{border-bottom:0}
 .chklist .cod{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brand);flex:none}
 .chklist .nada{padding:10px;color:var(--mist);font-size:13px;text-align:center}
 .chklist.mal{border-color:var(--bad);background:var(--rojo-bg)}
+
+/* ---------- aviso de calibración ---------- */
+.calib{font-size:12.5px;border-radius:9px;padding:9px 12px;margin-top:10px;line-height:1.45}
+.calib.ok{background:var(--verde-cl);color:var(--verde-osc);border:1px solid #bcd9cb}
+.calib.av{background:var(--ambar-bg);color:var(--ambar);border:1px solid var(--ambar-ln)}
+.cadena{font-size:12px;color:var(--mist);background:var(--paper);border-left:3px solid var(--brand-2);
+  border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:12px;line-height:1.5}
+.cadena b{color:var(--brand)}
 
 /* ---------- tarjeta de indicador ---------- */
 .ind-card{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:12px}
@@ -416,6 +416,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mIndMsg"></div>
+      <div class="cadena">El <b>% del indicador</b> se calcula solo, desde sus hitos:
+        Σ (participación del hito × % del hito) ÷ 100. Aquí no se escriben cantidades:
+        la fórmula documenta el método y su <b>referencia</b> define el universo contra el que se mide.</div>
       <div class="panel" id="pIndObj"></div>
       <div class="rej" style="margin-top:13px">
         <div class="full" style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:2px">
@@ -449,21 +452,11 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
         <div class="full" id="cajaMedicion" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
           <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
-            Medición del indicador
+            Variables de la fórmula
           </div>
           <div class="pista" id="pistaMedicion" style="margin:0 0 10px"></div>
-          <div class="rej" id="varsGrid" style="gap:10px"></div>
-          <div class="rej" style="gap:10px;margin-top:10px">
-            <div>
-              <label for="iValor">Valor alcanzado</label>
-              <input type="number" id="iValor" step="any">
-              <div class="err" id="e_iValor"></div>
-            </div>
-            <div>
-              <label>Comparación con la meta</label>
-              <div class="ruta" id="cmpMeta" style="min-height:38px">—</div>
-            </div>
-          </div>
+          <div id="varsRef"></div>
+          <div class="calib" id="calibra" style="display:none"></div>
         </div>
 
         <div class="full">
@@ -552,6 +545,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mHitoMsg"></div>
+      <div class="cadena">La <b>meta del hito</b> es el tramo de la referencia del indicador que este hito debe cubrir.
+        El <b>% del hito</b> saldrá de dividir lo que se reporte entre esa meta. Cumplidos todos los hitos,
+        el indicador alcanza la suya.</div>
       <div class="panel" id="pHitoInd"></div>
       <div class="rej" style="margin-top:13px">
         <div class="full">
@@ -567,13 +563,22 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
         <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
           <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
-            Cómo se mide el avance
+            Cómo se mide el avance de este hito
+          </div>
+          <div style="font-size:12.5px;color:var(--slate);background:#fff;border:1px solid var(--line);
+               border-radius:8px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
+            La <b>meta del hito</b> es el <b>denominador</b>: cuántas unidades hay que completar en total.
+            En cada reporte declaras el <b>numerador</b>: cuántas llevas.
+            El aplicativo calcula el porcentaje —numerador ÷ denominador × 100— y con él arma el avance del indicador.
+            <div style="margin-top:5px;color:var(--mist)">Déjala vacía si este hito no se puede contar
+              (por ejemplo “Diseño del subsistema”): entonces reportarás el % directamente.</div>
           </div>
           <div class="pista" id="pistaModo" style="margin:0 0 10px"></div>
           <div class="rej" style="gap:10px">
             <div>
               <label for="hMeta">Meta del hito <span class="op">(cantidad a alcanzar)</span></label>
               <input type="number" id="hMeta" min="0" step="any" placeholder="vacío = reportar en %">
+              <button type="button" class="btn sec mini" id="btnCalcMeta" style="margin-top:6px;display:none">Calcular desde la meta del indicador</button>
             </div>
             <div>
               <label for="hUnidad">Unidad</label>
@@ -619,6 +624,8 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mRepMsg"></div>
+      <div class="cadena">Este es el <b>único sitio donde se escriben cantidades</b>. De aquí sube todo:
+        cantidad → % del hito → % del indicador → % del objetivo.</div>
       <div class="panel" id="pRepHito"></div>
       <div class="rej" style="margin-top:13px">
         <div>
@@ -659,18 +666,6 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="rte" id="rAvance" contenteditable="true"></div>
           <div class="err" id="e_rAvance"></div>
         </div>
-        <div class="full" id="rVarsBox" style="display:none">
-          <div class="varsbox">
-            <div class="varsref" id="rFormulaRef"></div>
-            <div class="rej" id="rVarsGrid" style="gap:10px"></div>
-            <div class="varsres">
-              Valor calculado: <b id="rValorCalc">—</b>
-              <button type="button" class="btn sec mini" id="btnLimpiarVars">Limpiar</button>
-              <button type="button" class="btn sec mini" id="btnUsarCalc">Usar como % de avance</button>
-            </div>
-          </div>
-        </div>
-
         <div id="cajaCantidad" style="display:none">
           <label for="rCantidad">Cantidad acumulada <b class="req">*</b> <span class="op" id="uniCant"></span></label>
           <input type="number" id="rCantidad" min="0" step="any">
@@ -1493,11 +1488,14 @@ function bloqueIndicador(o, ind, editable){
    divergen, ahí está la señal para la mejora continua. */
 const UMBRAL_LOGRO = 80;   // por debajo de este % de la meta se considera brecha
 
+/* LOGRO = valor alcanzado sobre la meta, en las unidades de la referencia.
+   Distinto del % de avance, que pondera por participación. */
 function logroIndicador(ind){
-  if(ind.valor === "" || ind.valor == null) return null;
-  const meta = metaNumerica(ind.meta);
-  if(meta === null || meta === 0) return null;
-  return red1(num(ind.valor) / meta * 100);
+  const necesarias = unidadesNecesarias(ind);
+  if(necesarias == null || necesarias === 0) return null;
+  const alcanzado = valorAlcanzado(ind);
+  if(alcanzado == null) return null;
+  return red1(alcanzado / necesarias * 100);
 }
 
 function brechaIndicador(ind){
@@ -1517,12 +1515,17 @@ function brechaIndicador(ind){
    Ojo: esto es LOGRO del indicador, distinto del avance de ejecución que
    sale de los hitos. Un indicador puede estar 100% ejecutado y no cumplir. */
 function medicionHtml(ind){
-  if(ind.valor === "" || ind.valor == null) return "";
-  const valor = num(ind.valor), meta = metaNumerica(ind.meta);
-  if(meta === null || meta === 0)
-    return ' · alcanzado <b>' + red1(valor) + "</b>";
-  const pct = red1(valor / meta * 100), sem = semaforo(Math.min(pct, 100));
-  return " · alcanzado <b>" + red1(valor) + '</b> <span class="tag ' + sem.clase + '">' + pct + "% de la meta</span>";
+  const alcanzado = valorAlcanzado(ind);
+  if(alcanzado == null) return "";
+  const necesarias = unidadesNecesarias(ind);
+  /* La unidad la declaran los hitos ("encuestas"), no la referencia
+     ("Total de docentes"), que es el universo. */
+  const hc = hitosDe(ind.id).filter(esCuantitativo);
+  const uni = (hc.length && hc[0].unidad) || "unidades";
+  if(necesarias == null) return " · reportado <b>" + alcanzado + "</b> " + esc(uni);
+  const pct = red1(alcanzado / necesarias * 100), sem = semaforo(Math.min(pct, 100));
+  return " · <b>" + alcanzado + "</b> de <b>" + necesarias + "</b> " + esc(uni) +
+    ' <span class="tag ' + sem.clase + '">' + pct + "% de la meta</span>";
 }
 
 function brechaHtml(ind){
@@ -1930,7 +1933,6 @@ function abrirIndicador(objId, indId){
   $("oRTCorreo").value = ind ? ind.rtCorreo : "";
   $("oRTCel").value = ind ? ind.rtCel : "";
 
-  $("iValor").value = ind && ind.valor !== "" ? ind.valor : "";
   let guardadas = {};
   if(ind && ind.variables){ try{ guardadas = JSON.parse(ind.variables) || {}; }catch(e){ guardadas = {}; } }
   construirVariables(ind ? ind.formula : "", guardadas);
@@ -1987,7 +1989,7 @@ $("btnGuardarInd").onclick = async () => {
     meta: $("iMeta").value.trim(), fi: $("iFI").value, fv: $("iFV").value,
     actividades: $("iActividades").innerHTML.trim(), recursos: $("iRecursos").innerHTML.trim(),
     proceso: actualizarRuta(), respTec: $("oRespTec").value,
-    valor: $("iValor").value, variables: leerVariables(),
+    variables: leerVariables(),
     rtCorreo: $("oRTCorreo").value.trim(), rtCel: $("oRTCel").value.trim()
   };
   let mal = false;
@@ -2030,8 +2032,10 @@ $("btnGuardarInd").onclick = async () => {
   v[NI.resp_tecnico.id] = d.respTec;
   v[NI.resp_tecnico_correo.id] = d.rtCorreo;
   v[NI.resp_tecnico_celular.id] = d.rtCel;
-  if(d.valor !== "") v[NI.valor_alcanzado.id] = num(d.valor);
   v[NI.variables.id] = Object.keys(d.variables).length ? JSON.stringify(d.variables) : "";
+  /* El valor alcanzado ya no se teclea: se calcula de los hitos al guardar. */
+  const va = valorAlcanzado({ id: S.editInd ? S.editInd.id : null, meta: d.meta, variables: JSON.stringify(d.variables) });
+  if(va != null) v[NI.valor_alcanzado.id] = va;
   v[NE.objetivo_ref.id] = S.ctxObj.id;
 
   const b = $("btnGuardarInd");
@@ -2060,21 +2064,30 @@ async function eliminarIndicador(id){
 }
 
 /* ==========================================================================
-   Medición del indicador — mismo mecanismo que Matriz de Indicadores.
-   La fórmula es texto libre. Se detectan como variables los tramos con
-   letras que quedan entre operadores, paréntesis y números.
-   ========================================================================== */
-let VARS = [];   // [{nombre, key}]
+   MEDICIÓN — cómo se relacionan los cuatro niveles
+   ==========================================================================
 
-function normalizarFormula(f){
-  /* Se llama DESPUÉS de sustituir los nombres, para no dañar variables
-     que contengan una "x" o un "÷" dentro del texto. */
-  return String(f || "")
-    .replace(/×/g, "*").replace(/÷/g, "/")
-    .replace(/[−–]/g, "-")
-    .replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2")   // "5 x 3" → "5*3"
-    .replace(/,/g, ".");                              // coma decimal
-}
+   OBJETIVO ── promedio simple de sus indicadores
+      │
+      INDICADOR ── Σ (participación del hito × % del hito) ÷ 100
+      │            La fórmula documenta el método. Una de sus variables es
+      │            la REFERENCIA (el universo): se declara una sola vez.
+      │            Ej.: (Encuestas respondidas / Total docentes) × 100
+      │                 referencia = Total docentes = 340
+      │
+         HITO ── cantidad reportada ÷ meta del hito × 100
+         │       La meta del hito es un tramo de la referencia. El aplicativo
+         │       calcula cuánto le toca para que, cumplidos todos los hitos,
+         │       el indicador alcance su meta.
+         │       Ej.: 340 × 50% = 170 encuestas a repartir entre los hitos
+         │
+            REPORTE ── declara la cantidad acumulada a la fecha
+                       Ej.: 68 encuestas → el hito va 40%, el indicador 20%
+
+   El dato se escribe UNA sola vez: en el reporte. Todo lo demás se calcula
+   hacia arriba. La fórmula nunca pide números a mano.
+   ========================================================================== */
+let VARS = [];   // [{nombre, key, ref:bool}]
 
 function detectarVariables(formula){
   if(!formula || !formula.trim()) return [];
@@ -2086,109 +2099,142 @@ function detectarVariables(formula){
     const nombre = t.replace(/^[^\wÁÉÍÓÚÑáéíóúñ°%]+|[^\wÁÉÍÓÚÑáéíóúñ°%]+$/g, "").trim();
     if(nombre && /[a-zA-ZÁÉÍÓÚÑáéíóúñ]/.test(nombre) && !vistos.has(nombre.toLowerCase())){
       vistos.add(nombre.toLowerCase());
-      out.push({ nombre, key: "v" + out.length });
+      out.push({ nombre, key: "v" + out.length, ref: false });
     }
   });
+  /* En un cociente la referencia suele ser el denominador (la segunda);
+     en un número simple, la única variable. Siempre editable. */
+  if(out.length) out[out.length > 1 ? 1 : 0].ref = true;
   return out;
 }
 
-/* Construye las casillas. Sin variables detectables, el valor se escribe
-   a mano: es el caso de un indicador que es solo un conteo. */
-function construirVariables(formula, valores){
+/* Pinta las variables y deja elegir cuál es la referencia. */
+function construirVariables(formula, guardadas){
   VARS = detectarVariables(formula);
-  const grid = $("varsGrid"), campo = $("iValor");
+  const caja = $("varsRef");
   if(!VARS.length){
-    grid.innerHTML = "";
-    campo.readOnly = false;
-    campo.style.background = "";
-    campo.placeholder = "escribe el valor";
+    caja.innerHTML = "";
     $("pistaMedicion").textContent = formula && formula.trim()
-      ? "La fórmula no tiene variables que separar, así que el valor se escribe directamente."
-      : "Sin fórmula: el valor alcanzado se escribe directamente.";
-    compararConMeta();
+      ? "La fórmula no declara variables. El avance saldrá solo de las metas de los hitos."
+      : "Escribe la fórmula y aquí aparecerán sus variables.";
+    revisarCalibracion();
     return;
   }
-  grid.innerHTML = VARS.map(v =>
-    "<div><label>" + esc(v.nombre) + '</label><input type="number" step="any" data-vk="' +
-    v.key + '" placeholder="0"></div>').join("");
-  VARS.forEach(v => {
-    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
-    if(valores && valores[v.nombre] != null) inp.value = valores[v.nombre];
-    inp.addEventListener("input", calcularValor);
-  });
-  campo.readOnly = true;
-  campo.style.background = "var(--paper)";
-  campo.placeholder = "se calcula con la fórmula";
-  $("pistaMedicion").textContent = VARS.length === 1
-    ? "Escribe el valor de la variable detectada y el resultado se calcula solo."
-    : "Escribe los " + VARS.length + " valores y el resultado se calcula solo.";
-  calcularValor();
-}
+  const g = guardadas || {};
+  if(g.__ref) VARS.forEach(v => v.ref = (v.nombre === g.__ref));
 
-function calcularValor(){
-  if(!VARS.length){ compararConMeta(); return; }
-  const grid = $("varsGrid");
-  let expr = String($("iFormula").value || ""), faltan = false, alguno = false;
-  /* Los nombres más largos se sustituyen primero, para que "Total de
-     docentes" no se rompa al reemplazar "docentes". */
-  [...VARS].sort((a, b) => b.nombre.length - a.nombre.length).forEach(v => {
-    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
-    const val = (inp && inp.value !== "") ? parseFloat(inp.value) : null;
-    if(val === null || isNaN(val)) faltan = true; else alguno = true;
-    const escapado = v.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    expr = expr.replace(new RegExp(escapado, "gi"), "(" + (val === null ? "0" : val) + ")");
-  });
-  if(!alguno){ compararConMeta(); return; }   // nada escrito: respeta lo guardado
-  if(faltan){ $("iValor").value = ""; compararConMeta(); return; }
+  $("pistaMedicion").textContent = VARS.length > 1
+    ? "Marca cuál es la referencia: el universo contra el que se mide. Se declara una vez y no cambia. Las demás variables las alimentan los reportes de los hitos."
+    : "Esta variable es la referencia: el total a alcanzar. Los reportes de los hitos la van completando.";
 
-  expr = normalizarFormula(expr);
-  let resultado = "";
-  try{
-    if(/^[-+*/().\d\s]+$/.test(expr)){          // solo números y operadores
-      const v = Function('"use strict";return (' + expr + ")")();
-      if(isFinite(v)) resultado = Math.round(v * 100) / 100;
-    }
-  }catch(e){ resultado = ""; }
-  $("iValor").value = resultado;
-  compararConMeta();
+  caja.innerHTML = '<div class="rej" style="gap:10px">' + VARS.map(v =>
+    '<div><label style="display:flex;align-items:center;gap:7px;font-weight:600">' +
+      '<input type="radio" name="varRef" value="' + esc(v.nombre) + '"' + (v.ref ? " checked" : "") +
+      ' style="width:auto;margin:0;accent-color:var(--brand)"> ' + esc(v.nombre) + "</label>" +
+      '<input type="number" step="any" data-ref="' + esc(v.nombre) + '" placeholder="' +
+      (v.ref ? "valor de referencia" : "lo alimentan los hitos") + '"' +
+      (v.ref ? "" : " disabled") + '></div>').join("") + "</div>";
+
+  caja.querySelectorAll('input[name="varRef"]').forEach(r => {
+    r.onchange = () => {
+      VARS.forEach(v => v.ref = (v.nombre === r.value));
+      construirVariables($("iFormula").value, leerVariables());
+    };
+  });
+  const ref = VARS.find(v => v.ref);
+  if(ref && g[ref.nombre] != null){
+    const inp = caja.querySelector('input[data-ref="' + CSS.escape(ref.nombre) + '"]');
+    if(inp) inp.value = g[ref.nombre];
+  }
+  caja.querySelectorAll("input[data-ref]").forEach(i => i.addEventListener("input", revisarCalibracion));
+  revisarCalibracion();
 }
 
 function leerVariables(){
-  const grid = $("varsGrid"), out = {};
-  VARS.forEach(v => {
-    const inp = grid.querySelector('input[data-vk="' + v.key + '"]');
-    if(inp && inp.value !== "") out[v.nombre] = parseFloat(inp.value);
-  });
+  const out = {};
+  const ref = VARS.find(v => v.ref);
+  if(ref){
+    out.__ref = ref.nombre;
+    const inp = $("varsRef").querySelector('input[data-ref="' + CSS.escape(ref.nombre) + '"]');
+    if(inp && inp.value !== "") out[ref.nombre] = parseFloat(inp.value);
+  }
   return out;
 }
 
-/* La meta es texto libre: "50%", "1 proyecto", "2 procesos misionales", "P.D.".
-   Si trae un número reconocible se compara; si no, se muestra el valor solo. */
+/* Valor de la referencia declarado en el indicador. */
+function valorReferencia(ind){
+  if(!ind || !ind.variables) return null;
+  try{
+    const g = JSON.parse(ind.variables) || {};
+    return g.__ref != null && g[g.__ref] != null ? parseFloat(g[g.__ref]) : null;
+  }catch(e){ return null; }
+}
+function nombreReferencia(ind){
+  if(!ind || !ind.variables) return "";
+  try{ return (JSON.parse(ind.variables) || {}).__ref || ""; }catch(e){ return ""; }
+}
+
+/* Cuántas unidades necesitan los hitos para que el indicador alcance su meta:
+   referencia × meta%. Con meta "1 proyecto" y sin %, la meta ES el total. */
+function unidadesNecesarias(ind, refValor){
+  const ref = refValor != null ? refValor : valorReferencia(ind);
+  if(ref == null) return null;
+  const m = metaNumerica(ind && ind.meta);
+  if(m == null) return null;
+  const esPct = /%/.test(String(ind.meta || ""));
+  return esPct ? red1(ref * m / 100) : red1(m);
+}
+
+/* Aviso de calibración: ¿alcanzan los hitos para llegar a la meta? */
+function revisarCalibracion(){
+  const caja = $("calibra");
+  const ind = S.editInd;
+  const gs = leerVariables();
+  const ref = gs.__ref != null ? gs[gs.__ref] : null;
+  const metaTxt = $("iMeta") ? $("iMeta").value : "";
+  const falso = { meta: metaTxt };
+  const necesarias = unidadesNecesarias(falso, ref == null ? null : parseFloat(ref));
+  if(necesarias == null || !ind){ caja.style.display = "none"; return; }
+
+  const asignado = red1(hitosDe(ind.id).reduce((n, h) => n + (esCuantitativo(h) ? num(h.metaHito) : 0), 0));
+  const falta = red1(necesarias - asignado);
+  caja.style.display = "block";
+  if(Math.abs(falta) < 0.01){
+    caja.className = "calib ok";
+    caja.innerHTML = "✓ Los hitos suman <b>" + asignado + "</b> de las <b>" + necesarias +
+      "</b> necesarias. Cumpliéndolos todos, el indicador alcanza su meta.";
+  }else if(falta > 0){
+    caja.className = "calib av";
+    caja.innerHTML = "⚠ Los hitos suman <b>" + asignado + "</b> de <b>" + necesarias +
+      "</b>. Faltan <b>" + falta + "</b> por asignar: aun cumpliéndolos todos, el indicador no llegaría a su meta.";
+  }else{
+    caja.className = "calib av";
+    caja.innerHTML = "ℹ Los hitos suman <b>" + asignado + "</b>, más de las <b>" + necesarias +
+      "</b> necesarias. El plan supera la meta en <b>" + Math.abs(falta) + "</b>.";
+  }
+}
+
+/* Valor alcanzado del indicador: la suma de lo reportado en sus hitos
+   cuantitativos. No se teclea — sale del mismo dato que el % de avance. */
+function valorAlcanzado(ind){
+  if(!ind || !ind.id) return null;
+  const hs = hitosDe(ind.id).filter(esCuantitativo);
+  if(!hs.length) return null;
+  const total = hs.reduce((n, h) => {
+    const rs = reportesDe(h.id);
+    const ult = rs.length ? rs[rs.length - 1] : null;
+    return n + (ult && ult.cantidad !== "" ? num(ult.cantidad) : 0);
+  }, 0);
+  return red1(total);
+}
+
 function metaNumerica(meta){
   const m = String(meta || "").replace(/,/g, ".").match(/-?\d+(?:\.\d+)?/);
   return m ? parseFloat(m[0]) : null;
 }
-function compararConMeta(){
-  const caja = $("cmpMeta");
-  const valor = $("iValor").value === "" ? null : num($("iValor").value);
-  const meta = metaNumerica($("iMeta").value);
-  if(valor === null){ caja.innerHTML = "—"; return; }
-  if(meta === null || meta === 0){
-    caja.innerHTML = "Valor: <b>" + red1(valor) + "</b> · la meta no tiene un número comparable";
-    return;
-  }
-  const pct = red1(valor / meta * 100);
-  const sem = semaforo(Math.min(pct, 100));
-  caja.innerHTML = "<b>" + red1(valor) + "</b> de <b>" + red1(meta) + "</b> · " +
-    '<span class="tag ' + sem.clase + '">' + pct + "% de la meta</span>" +
-    /* Una desproporción así casi siempre significa que la meta y la fórmula
-       están en unidades distintas: p.ej. meta "2 procesos" y fórmula en %. */
-    (pct > 200 ? '<div class="tag a" style="margin-top:5px">Revisa las unidades: la meta y la fórmula parecen medir cosas distintas</div>' : "");
-}
 
 $("iFormula").addEventListener("input", () => construirVariables($("iFormula").value, leerVariables()));
-$("iMeta").addEventListener("input", compararConMeta);
-$("iValor").addEventListener("input", () => { if(!VARS.length) compararConMeta(); });
+$("iMeta").addEventListener("input", revisarCalibracion);
 
 /* ==========================================================================
    Formulario del hito — cuelga del indicador
@@ -2208,13 +2254,24 @@ function abrirHito(indId, hitoId){
   $("pHitoInd").innerHTML =
     "<b>Indicador:</b> " + esc(sinHtml(ind.indicador)) +
     '<div style="margin-top:5px">Meta: <b>' + esc(ind.meta || "—") + "</b> · plazo <b>" + verFecha(ind.fi) + " → " + verFecha(ind.fv) + "</b></div>" +
-    '<div style="margin-top:3px">Participación asignada a otros hitos: <b>' + usada + "%</b> · disponible <b>" + red1(100 - usada) + "%</b></div>";
+    (ind.formula ? '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)">' +
+      '<b>Fórmula del indicador:</b><div class="mono" style="font-size:12.5px;margin-top:2px">' +
+      esc(ind.formula) + "</div></div>" : "") +
+    '<div style="margin-top:6px">Participación asignada a otros hitos: <b>' + usada + "%</b> · disponible <b>" + red1(100 - usada) + "%</b></div>";
 
   $("hNombre").value = hi ? hi.hito : "";
   $("hPart").value = hi ? hi.part : "";
   $("hCosto").value = hi && hi.costo ? hi.costo : "";
   $("hMeta").value = hi && hi.metaHito !== "" ? hi.metaHito : "";
   $("hUnidad").value = hi ? hi.unidad : "";
+  const nec = unidadesNecesarias(ind);
+  $("btnCalcMeta").style.display = nec == null ? "none" : "";
+  if(nec != null){
+    const ya = red1(hitosDe(ind.id).filter(x => !hi || x.id !== hi.id)
+      .reduce((n, x) => n + (esCuantitativo(x) ? num(x.metaHito) : 0), 0));
+    $("btnCalcMeta").textContent = "Calcular: faltan " + red1(Math.max(0, nec - ya)) +
+      " de " + nec + " " + (nombreReferencia(ind) || "unidades");
+  }
   pistaModoHito();
   $("hFI").value = hi ? iso(hi.fi) : iso(ind.fi);
   $("hFV").value = hi ? iso(hi.fv) : "";
@@ -2223,6 +2280,28 @@ function abrirHito(indId, hitoId){
   $("mHito").classList.add("on");
   revisarParticipacion();
 }
+
+/* Propone la meta del hito: lo que falta por asignar para que, cumplidos
+   todos los hitos, el indicador alcance su meta. Siempre editable. */
+$("btnCalcMeta").onclick = () => {
+  const ind = S.ctxInd;
+  if(!ind) return;
+  const necesarias = unidadesNecesarias(ind);
+  if(necesarias == null){
+    toast("El indicador necesita una referencia con valor y una meta numérica.", true);
+    return;
+  }
+  const otros = red1(hitosDe(ind.id)
+    .filter(x => !S.editHito || x.id !== S.editHito.id)
+    .reduce((n, x) => n + (esCuantitativo(x) ? num(x.metaHito) : 0), 0));
+  const saldo = red1(Math.max(0, necesarias - otros));
+  $("hMeta").value = saldo;
+  if(!$("hUnidad").value.trim()) $("hUnidad").value = nombreReferencia(ind) || "unidades";
+  pistaModoHito();
+  toast(saldo > 0
+    ? "Se necesitan " + necesarias + " en total; otros hitos ya cubren " + otros + ". Este toma el saldo: " + saldo + "."
+    : "Los demás hitos ya cubren las " + necesarias + " necesarias.");
+};
 
 /* Un hito con meta numérica es CUANTITATIVO: sus reportes declaran una
    cantidad y el % se calcula solo. Sin meta es PORCENTUAL, como antes. */
@@ -2350,7 +2429,6 @@ function abrirReporte(hitoId, repId){
   $("rDificultades").value = r ? r.dificultades : "";
   $("rObs").value = r ? r.obs : "";
 
-  construirCamposFormula(ind ? ind.formula : "");
   pintarEnlaces(r ? r.enlaces : []);
   pintarAcciones(r ? r.acciones : []);
   revisarAvance();
@@ -2455,286 +2533,6 @@ function revisarAvance(){
   aviso("avRetroceso", (previo && pct < previo) ?
     "Este reporte declara menos avance que el anterior (" + red1(previo) + "% → " + red1(pct) +
     "%). Es válido si estás corrigiendo una sobrestimación, pero revisa que no sea un error." : "");
-}
-
-/* ==========================================================================
-   Calculadora de la fórmula — mismo mecanismo que Matriz de Indicadores.
-   La fórmula es texto libre, p.ej. "(N° de encuestas respondidas / Total de
-   docentes) × 100". Se detectan como variables los tramos que no son números
-   ni operadores, se pide un valor para cada una y se evalúa.
-   ========================================================================== */
-let VARS_FORMULA = [];
-
-/* Unifica símbolos a operadores de JavaScript. Se aplica DESPUÉS de sustituir
-   las variables, para no dañar nombres que contengan "x" o "÷". */
-function normalizarFormula(f){
-  return String(f || "")
-    .replace(/×/g, "*").replace(/÷/g, "/")
-    .replace(/−/g, "-").replace(/–/g, "-")
-    .replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2")
-    .replace(/,/g, ".");
-}
-
-function detectarVariables(formula){
-  if(!formula || !formula.trim()) return [];
-  /* La "x" entre números o paréntesis es multiplicación, no una variable.
-     Se convierte antes de partir, o "x 100" se detectaría como variable. */
-  const f = String(formula).replace(/(\d|\))\s*[xX]\s*(\d|\()/g, "$1*$2");
-  const trozos = f
-    .split(/[()+\-*/×÷=%]|\b\d+(?:[.,]\d+)?\b/)
-    .map(s => s.trim()).filter(Boolean);
-  const vistos = new Set(), vars = [];
-  trozos.forEach(t => {
-    const nombre = t.replace(/^[^\wÁÉÍÓÚÑáéíóúñ°%]+|[^\wÁÉÍÓÚÑáéíóúñ°%]+$/g, "").trim();
-    if(!nombre) return;
-    if(/^[xX]$/.test(nombre)) return;                    // operador suelto
-    if(!/[a-zA-ZÁÉÍÓÚÑáéíóúñ]/.test(nombre)) return;     // sin letras: no es variable
-    if(vistos.has(nombre.toLowerCase())) return;
-    vistos.add(nombre.toLowerCase());
-    vars.push({ nombre, key: "v" + vars.length });
-  });
-  return vars;
-}
-
-function construirCamposFormula(formula){
-  VARS_FORMULA = detectarVariables(formula);
-  const box = $("rVarsBox"), grid = $("rVarsGrid");
-  if(!VARS_FORMULA.length){
-    box.style.display = "none";
-    grid.innerHTML = "";
-    return;
-  }
-  $("rFormulaRef").textContent = "Fórmula: " + formula;
-  grid.innerHTML = VARS_FORMULA.map(v =>
-    '<div><label title="' + esc(v.nombre) + '">' + esc(v.nombre) + "</label>" +
-    '<input type="number" step="any" data-fkey="' + v.key + '" placeholder="0"></div>').join("");
-  grid.querySelectorAll("input").forEach(i => i.addEventListener("input", calcularValorFormula));
-  box.style.display = "";
-  $("rValorCalc").textContent = "—";
-}
-
-function calcularValorFormula(){
-  const grid = $("rVarsGrid");
-  if(!VARS_FORMULA.length) return null;
-  /* Se sustituye sobre la fórmula ORIGINAL, de la más larga a la más corta,
-     para que un nombre no se coma parte de otro. */
-  let expr = String((S.ctxInd && S.ctxInd.formula) || "");
-  let faltan = false, alguno = false;
-  [...VARS_FORMULA].sort((a, b) => b.nombre.length - a.nombre.length).forEach(v => {
-    const inp = grid.querySelector('input[data-fkey="' + v.key + '"]');
-    const val = (inp && inp.value !== "") ? parseFloat(inp.value) : null;
-    if(val === null || isNaN(val)) faltan = true; else alguno = true;
-    const escapado = v.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    expr = expr.replace(new RegExp(escapado, "gi"), "(" + (val === null ? "0" : val) + ")");
-  });
-  if(!alguno){ $("rValorCalc").textContent = "—"; return null; }
-  if(faltan){ $("rValorCalc").textContent = "faltan datos"; return null; }
-
-  expr = normalizarFormula(expr);
-  let resultado = null;
-  try{
-    /* Solo se evalúa si ya no queda nada más que números y operadores. */
-    if(/^[-+*/().\d\s]+$/.test(expr)){
-      const val = Function('"use strict";return (' + expr + ")")();
-      if(isFinite(val)) resultado = Math.round(val * 100) / 100;
-    }
-  }catch(e){ resultado = null; }
-  $("rValorCalc").textContent = (resultado === null) ? "no se pudo calcular" : resultado;
-  return resultado;
-}
-
-$("btnLimpiarVars").onclick = () => {
-  $("rVarsGrid").querySelectorAll("input").forEach(i => i.value = "");
-  $("rValorCalc").textContent = "—";
-};
-$("btnUsarCalc").onclick = () => {
-  const v = calcularValorFormula();
-  if(v === null){ toast("Completa todas las variables para calcular el valor.", true); return; }
-  if(v < 0 || v > 100){
-    toast("El valor calculado es " + v + " y el avance va de 0 a 100. Revisa la fórmula o los datos.", true);
-    return;
-  }
-  $("rAvancePct").value = v;
-  revisarAvance();
-  toast("Avance actualizado a " + v + "% con la fórmula del indicador.");
-};
-$("btnAddEnlace").onclick = () => agregarEnlace("", "");
-function pintarEnlaces(arr){
-  $("rEnlaces").innerHTML = "";
-  (arr && arr.length ? arr : [{ etiqueta: "", url: "" }]).forEach(e => agregarEnlace(e.etiqueta, e.url));
-}
-function agregarEnlace(et, url){
-  const d = document.createElement("div");
-  d.className = "enl";
-  d.innerHTML = '<input type="text" class="et" placeholder="Etiqueta (ej. Acta de reunión)">' +
-    '<input type="url" class="url" placeholder="https://…">' +
-    '<button type="button" class="ico" data-abrir>Abrir</button>' +
-    '<button type="button" class="ico" data-quita>✕</button>';
-  d.querySelector(".et").value = et || "";
-  d.querySelector(".url").value = url || "";
-  d.querySelector("[data-quita]").onclick = () => d.remove();
-  d.querySelector("[data-abrir]").onclick = () => {
-    const u = d.querySelector(".url").value.trim();
-    if(u) window.open(u, "_blank", "noopener");
-  };
-  d.querySelector(".url").addEventListener("blur", function(){
-    const u = this.value.trim();
-    this.style.borderColor = (u && !/^https?:\/\//i.test(u)) ? "var(--warn)" : "";
-  });
-  $("rEnlaces").appendChild(d);
-}
-function leerEnlacesForm(){
-  const out = [];
-  $("rEnlaces").querySelectorAll(".enl").forEach(d => {
-    const url = d.querySelector(".url").value.trim();
-    if(url) out.push({ etiqueta: d.querySelector(".et").value.trim(), url });
-  });
-  return out;
-}
-
-/* ---- próximas acciones ---- */
-$("btnAddAccion").onclick = () => agregarAccion({});
-function pintarAcciones(arr){
-  $("rAcciones").innerHTML = "";
-  (arr || []).forEach(a => agregarAccion(a));
-  if(!arr || !arr.length) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
-}
-function agregarAccion(a){
-  const vacio = $("rAcciones").querySelector(".vacio");
-  if(vacio) vacio.remove();
-  const d = document.createElement("div");
-  d.className = "acc-item panel";
-  d.style.marginBottom = "8px";
-  d.innerHTML = '<div class="rej" style="gap:9px">' +
-    '<div class="full"><label>Próxima acción</label><textarea class="a-acc" style="min-height:50px"></textarea></div>' +
-    '<div><label>Responsable</label><input type="text" class="a-resp"></div>' +
-    '<div><label>Fecha de vencimiento</label><input type="date" class="a-fec"><div class="aviso a-av"></div></div>' +
-    '<div class="full"><label>Necesidades de articulación</label><textarea class="a-art" style="min-height:44px"></textarea></div>' +
-    '<div class="full"><label>Observación</label><textarea class="a-obs" style="min-height:44px"></textarea></div>' +
-    '<div class="full" style="text-align:right"><button type="button" class="btn sec mini a-del">Quitar acción</button></div></div>';
-  d.querySelector(".a-acc").value = a.accion || "";
-  d.querySelector(".a-resp").value = a.responsable || "";
-  d.querySelector(".a-fec").value = iso(a.fecha);
-  d.querySelector(".a-art").value = a.articulacion || "";
-  d.querySelector(".a-obs").value = a.obs || "";
-  d.querySelector(".a-del").onclick = () => {
-    d.remove();
-    if(!$("rAcciones").querySelector(".acc-item")) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
-  };
-  d.querySelector(".a-fec").addEventListener("change", function(){
-    const av = d.querySelector(".a-av");
-    const dh = S.ctxHito ? dias(S.ctxHito.fv, this.value) : null;
-    const di = S.ctxInd ? dias(S.ctxInd.fv, this.value) : null;
-    if(di != null && di > 0){
-      av.textContent = "Se pasa " + di + " día(s) del vencimiento del indicador. No se puede guardar así.";
-      av.classList.add("on");
-    }else if(dh != null && dh > 0){
-      av.textContent = "Se pasa " + dh + " día(s) del vencimiento del hito. Se puede guardar: queda como señal de atraso.";
-      av.classList.add("on");
-    }else av.classList.remove("on");
-  });
-  $("rAcciones").appendChild(d);
-}
-function leerAccionesForm(){
-  const out = [];
-  $("rAcciones").querySelectorAll(".acc-item").forEach(d => {
-    const acc = d.querySelector(".a-acc").value.trim();
-    if(!acc) return;
-    out.push({
-      accion: acc, responsable: d.querySelector(".a-resp").value.trim(),
-      fecha: d.querySelector(".a-fec").value,
-      articulacion: d.querySelector(".a-art").value.trim(),
-      obs: d.querySelector(".a-obs").value.trim()
-    });
-  });
-  return out;
-}
-
-$("btnGuardarRep").onclick = async () => {
-  limpiaErrores("mRep");
-  const hi = S.ctxHito, ind = S.ctxInd;
-  const d = {
-    fecha: $("rFecha").value, estado: $("rEstado").value,
-    avance: $("rAvance").innerHTML.trim(), pct: num($("rAvancePct").value),
-    tipoMed: $("rTipoMed").value,
-    cantidad: $("rCantidad").value,
-    dificultades: $("rDificultades").value.trim(), obs: $("rObs").value.trim(),
-    enlaces: leerEnlacesForm(), acciones: leerAccionesForm()
-  };
-
-  let mal = false;
-  if(!d.fecha){ error("rFecha", "Falta la fecha del reporte."); mal = true; }
-  if(!d.estado){ error("rEstado", "Elige el estado del hito."); mal = true; }
-  if(!sinHtml(d.avance)){ error("rAvance", "Describe el avance."); mal = true; }
-  if(esCuantitativo(hi) && CONFIG.REPORTES.F.cantidad_acumulada && d.cantidad === ""){
-    error("rCantidad", "Indica cuántos " + (hi.unidad || "unidades") + " llevas."); mal = true;
-  }
-  if($("rAvancePct").value === ""){ error("rAvancePct", "Indica el % de avance acumulado."); mal = true; }
-  else if(d.pct < 0 || d.pct > 100){ error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true; }
-  if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
-
-  const antes = dias(d.fecha, hi.fi);
-  if(antes != null && antes > 0){
-    error("rFecha", "El hito empieza el " + verFecha(hi.fi) + ". No se puede reportar avance antes de esa fecha.");
-    mal = true;
-  }
-
-  const fuera = ind ? d.acciones.filter(a => { const x = dias(ind.fv, a.fecha); return x != null && x > 0; }) : [];
-  if(fuera.length){
-    msg("mRepMsg", "Hay " + fuera.length + " próxima(s) acción(es) con fecha posterior al vencimiento del indicador (" +
-        verFecha(ind.fv) + "). Ajústalas antes de guardar.", "mal");
-    return;
-  }
-  if(mal){ msg("mRepMsg", "Revisa los campos marcados.", "mal"); return; }
-
-  const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
-  const v = {};
-  v[R.fecha_ejecucion.id] = d.fecha;
-  v[R.avance.id] = d.avance;
-  v[R.estado_hito.id] = d.estado;
-  if(R.tipo_medicion) v[R.tipo_medicion.id] = d.tipoMed;
-  if(R.cantidad_acumulada && d.cantidad !== "") v[R.cantidad_acumulada.id] = num(d.cantidad);
-  v[R.contribucion.id] = d.pct;          // el campo guarda ahora el acumulado
-  v[R.dificultades.id] = d.dificultades;
-  v[R.observacion.id] = d.obs;
-  v[RE.hito_ref.id] = hi.id;
-  if(S.ctxObj) v[RE.objetivo_ref.id] = S.ctxObj.id;
-  v[RE.evidencias_enlaces.id] = d.enlaces.length ? JSON.stringify(d.enlaces) : "";
-
-  const filas = d.acciones.map(a => {
-    const x = {};
-    x[SUB.F.accion.id] = a.accion;
-    x[SUB.F.responsable.id] = a.responsable;
-    x[SUB.F.fecha_venc.id] = a.fecha;
-    x[SUB.F.articulacion.id] = a.articulacion;
-    x[SUB.F.observacion.id] = a.obs;
-    return x;
-  });
-
-  const b = $("btnGuardarRep");
-  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
-  try{
-    const resp = await API.saveForm(S.editRep ? S.editRep.id : null, v, CONFIG.REPORTES.ENTITY_ID);
-    const repId = S.editRep ? S.editRep.id : (resp && resp.record && resp.record.id);
-    if(repId && filas.length){
-      try{ await API.saveSubform(repId, SUB.id, SUB.ENTITY_ID, filas); }
-      catch(err){ toast("El reporte se guardó, pero las próximas acciones no: " + err.message, true); }
-    }
-    $("mRep").classList.remove("on");
-    const tarde = dias(hi.fv, d.fecha);
-    toast("Reporte guardado." + (tarde != null && tarde > 0 ? " Registrado como extemporáneo (+" + tarde + " d)." : ""));
-    await recargar();
-  }catch(e){ msg("mRepMsg", "No se pudo guardar: " + e.message, "mal"); }
-  b.disabled = false; b.textContent = "Guardar reporte";
-};
-
-async function eliminarReporte(id){
-  if(!confirm("¿Eliminar este reporte de avance?")) return;
-  try{
-    await API.del(id);
-    toast("Reporte eliminado.");
-    await recargar();
-  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
 }
 
 /* ==========================================================================
