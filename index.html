@@ -565,6 +565,24 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="err" id="e_hPart"></div>
           <div class="aviso" id="avPart"></div>
         </div>
+        <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
+            Cómo se mide el avance
+          </div>
+          <div class="pista" id="pistaModo" style="margin:0 0 10px"></div>
+          <div class="rej" style="gap:10px">
+            <div>
+              <label for="hMeta">Meta del hito <span class="op">(cantidad a alcanzar)</span></label>
+              <input type="number" id="hMeta" min="0" step="any" placeholder="vacío = reportar en %">
+            </div>
+            <div>
+              <label for="hUnidad">Unidad</label>
+              <input type="text" id="hUnidad" placeholder="componentes, encuestas, documentos…">
+              <div class="err" id="e_hUnidad"></div>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label for="hCosto">Costo <b class="req">*</b> <span class="op">(si no tiene, pon 0)</span></label>
           <input type="number" id="hCosto" min="0" step="0.01">
@@ -653,6 +671,12 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           </div>
         </div>
 
+        <div id="cajaCantidad" style="display:none">
+          <label for="rCantidad">Cantidad acumulada <b class="req">*</b> <span class="op" id="uniCant"></span></label>
+          <input type="number" id="rCantidad" min="0" step="any">
+          <div class="err" id="e_rCantidad"></div>
+          <div class="pista" id="pistaCant"></div>
+        </div>
         <div>
           <label for="rAvancePct">% de avance acumulado del hito <b class="req">*</b></label>
           <input type="number" id="rAvancePct" min="0" max="100" step="0.01">
@@ -1156,7 +1180,9 @@ async function recargar(){
     part: num(val(r.v, H.pct_participacion)),
     fi:   val(r.v, H.fi_hito),
     fv:   val(r.v, H.fv_hito),
-    costo:num(val(r.v, H.costo))
+    costo:num(val(r.v, H.costo)),
+    metaHito: val(r.v, H.meta_hito),
+    unidad:   val(r.v, H.unidad)
   }));
 
   const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
@@ -1168,6 +1194,7 @@ async function recargar(){
     estado:  val(r.v, R.estado_hito),
     tipoMed: R.tipo_medicion ? val(r.v, R.tipo_medicion) : "",
     pct:     num(val(r.v, R.contribucion)),   // ahora es el % ACUMULADO
+    cantidad: R.cantidad_acumulada ? val(r.v, R.cantidad_acumulada) : "",
     dificultades: val(r.v, R.dificultades),
     obs:     val(r.v, R.observacion),
     enlaces: parseEnlaces(r.v[RE.evidencias_enlaces.col]),
@@ -1426,7 +1453,10 @@ function bloqueIndicador(o, ind, editable){
     const d = dias(HOY, hi.fv);
     const fuera = malPlazoHito(ind, hi);
     h += "<tr>" +
-      "<td><b>" + esc(hi.hito) + "</b>" + (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
+      "<td><b>" + esc(hi.hito) + "</b>" +
+        (esCuantitativo(hi) ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">meta: ' +
+          red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
+        (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
       "<td>" + red1(hi.part) + "%</td>" +
       "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) +
         (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
@@ -2183,12 +2213,29 @@ function abrirHito(indId, hitoId){
   $("hNombre").value = hi ? hi.hito : "";
   $("hPart").value = hi ? hi.part : "";
   $("hCosto").value = hi && hi.costo ? hi.costo : "";
+  $("hMeta").value = hi && hi.metaHito !== "" ? hi.metaHito : "";
+  $("hUnidad").value = hi ? hi.unidad : "";
+  pistaModoHito();
   $("hFI").value = hi ? iso(hi.fi) : iso(ind.fi);
   $("hFV").value = hi ? iso(hi.fv) : "";
   ["hFI","hFV"].forEach(k => { $(k).min = iso(ind.fi); $(k).max = iso(ind.fv); });
 
   $("mHito").classList.add("on");
   revisarParticipacion();
+}
+
+/* Un hito con meta numérica es CUANTITATIVO: sus reportes declaran una
+   cantidad y el % se calcula solo. Sin meta es PORCENTUAL, como antes. */
+const esCuantitativo = hi => hi && hi.metaHito !== "" && hi.metaHito != null && num(hi.metaHito) > 0;
+
+["hMeta","hUnidad"].forEach(id => $(id).addEventListener("input", pistaModoHito));
+function pistaModoHito(){
+  const meta = num($("hMeta").value), uni = $("hUnidad").value.trim();
+  $("pistaModo").textContent = meta > 0
+    ? "Cuantitativo: cada reporte declarará cuántos " + (uni || "unidades") + " lleva, y el % saldrá de " +
+      "esa cantidad sobre " + red1(meta) + ". Nadie tendrá que estimar un porcentaje a ojo."
+    : "Porcentual: cada reporte declarará directamente el % de avance. Úsalo para hitos que no se cuentan, " +
+      "como “Diseño del subsistema”.";
 }
 
 $("hPart").addEventListener("input", revisarParticipacion);
@@ -2206,13 +2253,17 @@ $("btnGuardarHito").onclick = async () => {
   limpiaErrores("mHito");
   const ind = S.ctxInd;
   const d = { hito: $("hNombre").value.trim(), part: num($("hPart").value), costo: num($("hCosto").value),
-              fi: $("hFI").value, fv: $("hFV").value };
+              fi: $("hFI").value, fv: $("hFV").value,
+              metaHito: $("hMeta").value, unidad: $("hUnidad").value.trim() };
   let mal = false;
   if(!d.hito){ error("hNombre", "Escribe el nombre del hito."); mal = true; }
   if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
   if(!d.fi){ error("hFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("hFV", "Falta la fecha de vencimiento."); mal = true; }
   if($("hCosto").value === ""){ error("hCosto", "Indica el costo. Si no tiene, pon 0."); mal = true; }
+  if(d.metaHito !== "" && num(d.metaHito) > 0 && !d.unidad){
+    error("hUnidad", "Indica qué se cuenta: componentes, encuestas, documentos…"); mal = true;
+  }
 
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi = fecha(d.fi), hv = fecha(d.fv);
   if(hi && hv && hv < hi){ error("hFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
@@ -2232,6 +2283,8 @@ $("btnGuardarHito").onclick = async () => {
   v[H.fi_hito.id] = d.fi;
   v[H.fv_hito.id] = d.fv;
   if(d.costo) v[H.costo.id] = d.costo;
+  v[H.meta_hito.id] = d.metaHito === "" ? "" : num(d.metaHito);
+  v[H.unidad.id] = d.unidad;
   v[HE.indicador_ref.id] = ind.id;
   if(S.ctxObj) v[HE.objetivo_ref.id] = S.ctxObj.id;   // respaldo
 
@@ -2281,6 +2334,8 @@ function abrirReporte(hitoId, repId){
     "<b>Hito:</b> " + esc(hi.hito) +
     '<div style="margin-top:5px">Plazo: <b>' + verFecha(hi.fi) + " → " + verFecha(hi.fv) + "</b>" +
     " · participación en el indicador: <b>" + red1(hi.part) + "%</b></div>" +
+    (esCuantitativo(hi) ? '<div style="margin-top:3px">Meta del hito: <b>' + red1(num(hi.metaHito)) + " " +
+      esc(hi.unidad || "unidades") + "</b> · el % se calcula de la cantidad que reportes</div>" : "") +
     (ind ? '<div style="margin-top:3px;color:var(--mist)">Indicador: ' + esc(sinHtml(ind.indicador)) + "</div>" : "");
 
   /* Si el reporte es antiguo y no tiene tipo guardado, se deduce del estado. */
@@ -2310,6 +2365,46 @@ function abrirReporte(hitoId, repId){
       if(acc.length){ r.acciones = acc; pintarAcciones(acc); }
     }).catch(() => {});
   }
+}
+
+/* Muestra el campo de cantidad cuando el hito es cuantitativo, y bloquea
+   el % para que sea siempre consecuencia del conteo. */
+function configurarModoReporte(hi, r){
+  const cuanti = esCuantitativo(hi) && !!CONFIG.REPORTES.F.cantidad_acumulada;
+  const caja = $("cajaCantidad"), pct = $("rAvancePct");
+  caja.style.display = cuanti ? "" : "none";
+  pct.readOnly = cuanti;
+  pct.style.background = cuanti ? "var(--paper)" : "";
+  if(!cuanti){
+    $("pistaCant").textContent = "";
+    if(esCuantitativo(hi))
+      $("pistaTipoMed").textContent += "  ⚠ El hito es cuantitativo pero falta el campo Cantidad acumulada en QuintaDB.";
+    return;
+  }
+  const uni = hi.unidad || "unidades";
+  $("uniCant").textContent = "de " + red1(num(hi.metaHito)) + " " + uni;
+  $("rCantidad").max = "";      // se puede exceder la meta; el % se topa en 100
+  $("rCantidad").value = r && r.cantidad !== "" ? r.cantidad : "";
+  calcularDesdeCantidad();
+}
+
+$("rCantidad").addEventListener("input", calcularDesdeCantidad);
+function calcularDesdeCantidad(){
+  const hi = S.ctxHito;
+  if(!hi || !esCuantitativo(hi)) return;
+  const meta = num(hi.metaHito), uni = hi.unidad || "unidades";
+  if($("rCantidad").value === ""){
+    $("rAvancePct").value = "";
+    $("pistaCant").textContent = "";
+    return;
+  }
+  const cant = num($("rCantidad").value);
+  const pct = red1(Math.min(100, Math.max(0, cant / meta * 100)));
+  $("rAvancePct").value = pct;
+  $("pistaCant").textContent = red1(cant) + " de " + red1(meta) + " " + uni + " → " + pct + "%" +
+    (cant > meta ? "  (supera la meta; el avance se topa en 100%)" : "");
+  revisarAvance();
+  pistaTipoMedicion();
 }
 
 $("rFecha").addEventListener("change", () => {
@@ -2562,6 +2657,7 @@ $("btnGuardarRep").onclick = async () => {
     fecha: $("rFecha").value, estado: $("rEstado").value,
     avance: $("rAvance").innerHTML.trim(), pct: num($("rAvancePct").value),
     tipoMed: $("rTipoMed").value,
+    cantidad: $("rCantidad").value,
     dificultades: $("rDificultades").value.trim(), obs: $("rObs").value.trim(),
     enlaces: leerEnlacesForm(), acciones: leerAccionesForm()
   };
@@ -2570,6 +2666,9 @@ $("btnGuardarRep").onclick = async () => {
   if(!d.fecha){ error("rFecha", "Falta la fecha del reporte."); mal = true; }
   if(!d.estado){ error("rEstado", "Elige el estado del hito."); mal = true; }
   if(!sinHtml(d.avance)){ error("rAvance", "Describe el avance."); mal = true; }
+  if(esCuantitativo(hi) && CONFIG.REPORTES.F.cantidad_acumulada && d.cantidad === ""){
+    error("rCantidad", "Indica cuántos " + (hi.unidad || "unidades") + " llevas."); mal = true;
+  }
   if($("rAvancePct").value === ""){ error("rAvancePct", "Indica el % de avance acumulado."); mal = true; }
   else if(d.pct < 0 || d.pct > 100){ error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true; }
   if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
@@ -2594,6 +2693,7 @@ $("btnGuardarRep").onclick = async () => {
   v[R.avance.id] = d.avance;
   v[R.estado_hito.id] = d.estado;
   if(R.tipo_medicion) v[R.tipo_medicion.id] = d.tipoMed;
+  if(R.cantidad_acumulada && d.cantidad !== "") v[R.cantidad_acumulada.id] = num(d.cantidad);
   v[R.contribucion.id] = d.pct;          // el campo guarda ahora el acumulado
   v[R.dificultades.id] = d.dificultades;
   v[R.observacion.id] = d.obs;
