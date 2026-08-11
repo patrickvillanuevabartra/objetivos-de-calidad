@@ -133,7 +133,13 @@ const CONFIG = {
       pct_participacion: { id: "dcImoDW5bcL4oaW7Tibmk8", type: "float", col: "% participación"  }, // oblig.
       fi_hito:           { id: "buWPVcI3TdM4o7WOCqECoJ", type: "date", col: "F.I. hito"   }, // oblig.
       fv_hito:           { id: "ddKKxdShHcQOVcMrJdMM08", type: "date", col: "F.V. hito"   }, // oblig.
-      costo:             { id: "cSWQrkCgPcJikSWPFdMuSu", type: "float", col: "Costo"  }
+      costo:             { id: "cSWQrkCgPcJikSWPFdMuSu", type: "float", col: "Costo"  },
+      // Meta cuantitativa del hito. Si tiene meta numérica, el hito es
+      // CUANTITATIVO: los reportes declaran una cantidad acumulada y el %
+      // se calcula solo. Si no la tiene, es PORCENTUAL y el reporte declara
+      // el % directamente, como antes.
+      meta_hito:         { id: "ddTCoUW5PaaiOnW5KLxCkR", type: "float", col: "Meta del hito" },
+      unidad:            { id: "bhW7BdSmjcWP7dKZtcKSoC", type: "string", col: "Unidad" }
     },
 
     // ---- Relaciones: NO escribibles por REST ------------------------------
@@ -204,7 +210,10 @@ const CONFIG = {
       dificultades:     { id: "ddRhNcJCjcWOJdJZxcJmof", type: "text", col: "Dificultades"  },
       observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text", col: "Observación"  },
       // Parcial = corte intermedio · Cierre = medición final del hito
-      tipo_medicion:    { id: "aEW5NdOCnltOoPW4xdUCo9", type: "select", col: "Tipo de medición" }
+      tipo_medicion:    { id: "aEW5NdOCnltOoPW4xdUCo9", type: "select", col: "Tipo de medición" },
+      // Solo se usa en hitos con meta cuantitativa: de aquí sale el % de
+      // avance, en vez de que alguien lo estime a ojo.
+      cantidad_acumulada: { id: "cZvttcMNXfW6hdJmk0fLuH", type: "float", col: "Cantidad acumulada" }
     },
 
     // Literales EXACTOS del radio. Mandar con esta capitalización o se
