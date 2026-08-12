@@ -590,7 +590,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
 
         <div>
-          <label for="hCosto">Costo <b class="req">*</b> <span class="op">(si no tiene, pon 0)</span></label>
+          <label for="hCosto">Costo <span class="op">(opcional)</span></label>
           <input type="number" id="hCosto" min="0" step="0.01">
           <div class="err" id="e_hCosto"></div>
         </div>
@@ -790,6 +790,15 @@ function error(campo, texto){
   const e = $("e_" + campo), c = $(campo);
   if(e){ e.textContent = texto; e.classList.add("on"); }
   if(c) c.classList.add("mal");
+}
+/* Lleva la vista al primer campo con error: si queda fuera de pantalla,
+   el usuario pulsa Guardar y parece que no pasa nada. */
+function irAlPrimerError(caja){
+  const e = document.querySelector("#" + caja + " .err.on, #" + caja + " .mal");
+  if(!e) return;
+  const campo = e.classList.contains("mal") ? e : e.previousElementSibling;
+  (campo || e).scrollIntoView({ behavior: "smooth", block: "center" });
+  if(campo && campo.focus) try{ campo.focus({ preventScroll: true }); }catch(x){ campo.focus(); }
 }
 function aviso(id, texto){
   const a = $(id);
@@ -1901,7 +1910,7 @@ $("btnGuardarObj").onclick = async () => {
   if(!d.respProc){ error("oRespProc", "Elige el responsable de proceso."); mal = true; }
   if(!d.rpCorreo){ error("oRPCorreo", "Falta el correo del responsable de proceso."); mal = true; }
   if(!d.rpCel){ error("oRPCel", "Falta el celular del responsable de proceso."); mal = true; }
-  if(mal){ msg("mObjMsg", "Revisa los campos marcados.", "mal"); return; }
+  if(mal){ msg("mObjMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mObj"); return; }
 
   const F = CONFIG.MATRIZ.F, E = CONFIG.ESPEJO;
   const v = {};
@@ -2070,7 +2079,7 @@ $("btnGuardarInd").onclick = async () => {
       mal = true;
     }
   }
-  if(mal){ msg("mIndMsg", "Revisa los campos marcados.", "mal"); return; }
+  if(mal){ msg("mIndMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mInd"); return; }
 
   const NI = CONFIG.INDICADORES.F, NE = CONFIG.INDICADORES.ESPEJO;
   const v = {};
@@ -2389,7 +2398,6 @@ $("btnGuardarHito").onclick = async () => {
   if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
   if(!d.fi){ error("hFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("hFV", "Falta la fecha de vencimiento."); mal = true; }
-  if($("hCosto").value === ""){ error("hCosto", "Indica el costo. Si no tiene, pon 0."); mal = true; }
   if(d.metaHito === "" || num(d.metaHito) <= 0){
     error("hMeta", "Indica cuántas unidades hay que completar. Si es una entrega única, pon 1."); mal = true;
   }
@@ -2406,7 +2414,7 @@ $("btnGuardarHito").onclick = async () => {
   if(total > 100 + CONFIG.REGLAS.participacion.tolerancia){
     error("hPart", "La participación total llegaría a " + total + "%. El máximo es 100%."); mal = true;
   }
-  if(mal){ msg("mHitoMsg", "Revisa los campos marcados.", "mal"); return; }
+  if(mal){ msg("mHitoMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mHito"); return; }
 
   const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
   const v = {};
@@ -2414,7 +2422,7 @@ $("btnGuardarHito").onclick = async () => {
   v[H.pct_participacion.id] = d.part;
   v[H.fi_hito.id] = d.fi;
   v[H.fv_hito.id] = d.fv;
-  if(d.costo) v[H.costo.id] = d.costo;
+  v[H.costo.id] = $("hCosto").value === "" ? "" : d.costo;   // el 0 debe enviarse, o queda el valor viejo
   v[H.meta_hito.id] = d.metaHito === "" ? "" : num(d.metaHito);
   v[H.unidad.id] = d.unidad;
   v[HE.indicador_ref.id] = ind.id;
@@ -2614,6 +2622,97 @@ function revisarAvance(){
     "Este reporte declara menos avance que el anterior (" + red1(previo) + "% → " + red1(pct) +
     "%). Es válido si estás corrigiendo una sobrestimación, pero revisa que no sea un error." : "");
 }
+
+$("btnGuardarRep").onclick = async () => {
+  limpiaErrores("mRep");
+  const hi = S.ctxHito, ind = S.ctxInd;
+  if(!hi){ msg("mRepMsg", "No se pudo identificar el hito. Cierra y vuelve a abrir el reporte.", "mal"); return; }
+  const cuanti = esCuantitativo(hi) && !!CONFIG.REPORTES.F.cantidad_acumulada;
+  const d = {
+    fecha: $("rFecha").value, estado: $("rEstado").value,
+    tipoMed: $("rTipoMed").value,
+    avance: $("rAvance").innerHTML.trim(),
+    cantidad: $("rCantidad").value,
+    pct: num($("rAvancePct").value),
+    dificultades: $("rDificultades").value.trim(), obs: $("rObs").value.trim(),
+    enlaces: leerEnlacesForm(), acciones: leerAccionesForm()
+  };
+
+  let mal = false;
+  if(!d.fecha){ error("rFecha", "Falta la fecha del reporte."); mal = true; }
+  if(!d.estado){ error("rEstado", "Elige el estado del hito."); mal = true; }
+  if(!sinHtml(d.avance)){ error("rAvance", "Describe el avance."); mal = true; }
+  if(cuanti && d.cantidad === ""){
+    error("rCantidad", "Indica cuántos " + (hi.unidad || "unidades") + " llevas en total a esta fecha."); mal = true;
+  }
+  if(!cuanti && $("rAvancePct").value === ""){
+    error("rAvancePct", "Indica el % de avance acumulado."); mal = true;
+  }
+  if($("rAvancePct").value !== "" && (d.pct < 0 || d.pct > 100)){
+    error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true;
+  }
+  if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
+
+  /* No se reporta avance antes de que el hito empiece. */
+  const antes = dias(d.fecha, hi.fi);
+  if(antes != null && antes > 0){
+    error("rFecha", "El hito empieza el " + verFecha(hi.fi) + ". No se puede reportar avance antes de esa fecha.");
+    mal = true;
+  }
+
+  /* Las próximas acciones no pueden pasarse del vencimiento del indicador. */
+  const fuera = ind ? d.acciones.filter(a => { const x = dias(ind.fv, a.fecha); return x != null && x > 0; }) : [];
+  if(fuera.length){
+    msg("mRepMsg", "Hay " + fuera.length + " próxima(s) acción(es) con fecha posterior al vencimiento del indicador (" +
+        verFecha(ind.fv) + "). Ajústalas antes de guardar.", "mal");
+    return;
+  }
+  if(mal){ msg("mRepMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mRep"); return; }
+
+  const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
+  const v = {};
+  v[R.fecha_ejecucion.id] = d.fecha;
+  v[R.avance.id] = d.avance;
+  v[R.estado_hito.id] = d.estado;
+  v[R.contribucion.id] = d.pct;          // el campo guarda el % ACUMULADO
+  v[R.dificultades.id] = d.dificultades;
+  v[R.observacion.id] = d.obs;
+  if(R.tipo_medicion) v[R.tipo_medicion.id] = d.tipoMed;
+  if(R.cantidad_acumulada) v[R.cantidad_acumulada.id] = d.cantidad === "" ? "" : num(d.cantidad);
+  v[RE.hito_ref.id] = hi.id;
+  if(S.ctxObj) v[RE.objetivo_ref.id] = S.ctxObj.id;
+  v[RE.evidencias_enlaces.id] = d.enlaces.length ? JSON.stringify(d.enlaces) : "";
+
+  const filas = d.acciones.map(a => {
+    const x = {};
+    x[SUB.F.accion.id] = a.accion;
+    x[SUB.F.responsable.id] = a.responsable;
+    x[SUB.F.fecha_venc.id] = a.fecha;
+    x[SUB.F.articulacion.id] = a.articulacion;
+    x[SUB.F.observacion.id] = a.obs;
+    return x;
+  });
+
+  const b = $("btnGuardarRep");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    const resp = await API.saveForm(S.editRep ? S.editRep.id : null, v, CONFIG.REPORTES.ENTITY_ID);
+    const repId = S.editRep ? S.editRep.id : (resp && resp.record && resp.record.id);
+    /* Las próximas acciones son subformulario: van en una llamada aparte. */
+    if(repId && filas.length){
+      try{ await API.saveSubform(repId, SUB.id, SUB.ENTITY_ID, filas); }
+      catch(err){ toast("El reporte se guardó, pero las próximas acciones no: " + err.message, true); }
+    }
+    guardarPosicion(hi.id);
+    $("mRep").classList.remove("on");
+    const tarde = dias(hi.fv, d.fecha);
+    toast("Reporte guardado." + (tarde != null && tarde > 0 ? " Registrado como extemporáneo (+" + tarde + " d)." : ""));
+    await recargar();
+  }catch(e){
+    msg("mRepMsg", "No se pudo guardar: " + e.message, "mal");
+  }
+  b.disabled = false; b.textContent = "Guardar reporte";
+};
 
 /* ---- evidencias: enlaces múltiples ---- */
 $("btnAddEnlace").onclick = () => agregarEnlace("", "");
