@@ -572,15 +572,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
         <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
           <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
-            Cómo se mide el avance de este hito
-          </div>
-          <div style="font-size:12.5px;color:var(--slate);background:#fff;border:1px solid var(--line);
-               border-radius:8px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
-            Todo hito se mide contando algo. Indica <b>cuántas unidades hay que completar en total</b>
-            y <b>qué se cuenta</b>. Después, en cada reporte solo dirás cuántas llevas, y el porcentaje
-            saldrá solo.
-            <div style="margin-top:5px;color:var(--mist)">Si el hito es una entrega única —un diseño,
-              un informe, un acta— la cantidad es <b>1</b>.</div>
+            Cómo se mide el avance
           </div>
           <div class="rej" style="gap:10px">
             <div>
@@ -595,7 +587,6 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
               <div class="err" id="e_hUnidad"></div>
             </div>
           </div>
-          <div class="pista" id="pistaModo" style="margin:9px 0 0"></div>
         </div>
 
         <div>
@@ -2374,14 +2365,7 @@ $("btnCalcMeta").onclick = () => {
 const esCuantitativo = hi => hi && hi.metaHito !== "" && hi.metaHito != null && num(hi.metaHito) > 0;
 
 ["hMeta","hUnidad"].forEach(id => $(id).addEventListener("input", pistaModoHito));
-function pistaModoHito(){
-  const meta = num($("hMeta").value), uni = $("hUnidad").value.trim();
-  if(meta <= 0 || !uni){ $("pistaModo").textContent = ""; return; }
-  const mitad = red1(meta / 2);
-  $("pistaModo").textContent = meta === 1
-    ? "Con 1 " + uni + ", el hito irá 0% hasta completarse y 100% al reportarlo."
-    : "Ejemplo: al reportar " + mitad + " de " + red1(meta) + " " + uni + ", el hito irá 50%.";
-}
+function pistaModoHito(){ /* sin nota: los rótulos de los campos ya lo dicen */ }
 
 $("hPart").addEventListener("input", revisarParticipacion);
 function revisarParticipacion(){
@@ -2488,17 +2472,33 @@ function abrirReporte(hitoId, repId){
       esc(hi.unidad || "unidades") + "</b> · el % se calcula de la cantidad que reportes</div>" : "") +
     (ind ? '<div style="margin-top:3px;color:var(--mist)">Indicador: ' + esc(sinHtml(ind.indicador)) + "</div>" : "");
 
-  /* Si el reporte es antiguo y no tiene tipo guardado, se deduce del estado. */
+  /* ORDEN IMPORTANTE:
+     1) campos sueltos, 2) modo del hito (muestra u oculta la cantidad),
+     3) valores guardados, 4) tipo de medición, que ajusta el estado.
+     Si se invierte, el modo pisa el % con el campo de cantidad vacío y el
+     reporte queda imposible de guardar. */
+  $("rFecha").value = r ? iso(r.fecha) : "";
+  $("rFecha").min = iso(hi.fi);
+  $("rAvance").innerHTML = r ? r.avance : "";
+  $("rDificultades").value = r ? r.dificultades : "";
+  $("rObs").value = r ? r.obs : "";
+
+  configurarModoReporte(hi, r);
+
+  if(esCuantitativo(hi) && CONFIG.REPORTES.F.cantidad_acumulada){
+    /* El % se deriva de la cantidad; si el reporte es antiguo y no la tiene,
+       se reconstruye desde el % guardado para no perder el dato. */
+    if(r && (r.cantidad === "" || r.cantidad == null) && r.pct)
+      $("rCantidad").value = red1(num(hi.metaHito) * num(r.pct) / 100);
+    calcularDesdeCantidad();
+  }else{
+    $("rAvancePct").value = r ? r.pct : (anterior ? anterior.pct : "");
+  }
+
   $("rTipoMed").value = r
     ? (r.tipoMed || (r.estado === "Ejecutado" ? "Cierre" : "Parcial"))
     : "Parcial";
   aplicarTipoMedicion();
-  $("rFecha").value = r ? iso(r.fecha) : "";
-  $("rFecha").min = iso(hi.fi);
-  $("rAvance").innerHTML = r ? r.avance : "";
-  $("rAvancePct").value = r ? r.pct : (anterior ? anterior.pct : "");
-  $("rDificultades").value = r ? r.dificultades : "";
-  $("rObs").value = r ? r.obs : "";
 
   pintarEnlaces(r ? r.enlaces : []);
   pintarAcciones(r ? r.acciones : []);
@@ -2585,9 +2585,9 @@ function aplicarTipoMedicion(){
   $("rEstado").style.pointerEvents = "none";
   $("rEstado").tabIndex = -1;
   $("rEstado").dataset.fijo = estado;
-  /* Un cierre suele ser el 100%, así que se propone, pero se puede corregir:
-     un hito puede cerrarse con menos si venció sin completarse. */
-  if(cierre && !num($("rAvancePct").value)) $("rAvancePct").value = 100;
+  /* En hitos cuantitativos el % lo manda la cantidad: no se toca. */
+  const derivado = esCuantitativo(S.ctxHito) && !!CONFIG.REPORTES.F.cantidad_acumulada;
+  if(cierre && !derivado && !num($("rAvancePct").value)) $("rAvancePct").value = 100;
   pistaTipoMedicion();
 }
 
@@ -2613,6 +2613,112 @@ function revisarAvance(){
   aviso("avRetroceso", (previo && pct < previo) ?
     "Este reporte declara menos avance que el anterior (" + red1(previo) + "% → " + red1(pct) +
     "%). Es válido si estás corrigiendo una sobrestimación, pero revisa que no sea un error." : "");
+}
+
+/* ---- evidencias: enlaces múltiples ---- */
+$("btnAddEnlace").onclick = () => agregarEnlace("", "");
+
+function pintarEnlaces(arr){
+  $("rEnlaces").innerHTML = "";
+  (arr && arr.length ? arr : [{ etiqueta: "", url: "" }]).forEach(e => agregarEnlace(e.etiqueta, e.url));
+}
+function agregarEnlace(et, url){
+  const d = document.createElement("div");
+  d.className = "enl";
+  d.innerHTML = '<input type="text" class="et" placeholder="Etiqueta (ej. Acta de reunión)">' +
+    '<input type="url" class="url" placeholder="https://…">' +
+    '<button type="button" class="ico" data-abrir>Abrir</button>' +
+    '<button type="button" class="ico" data-quita>✕</button>';
+  d.querySelector(".et").value = et || "";
+  d.querySelector(".url").value = url || "";
+  d.querySelector("[data-quita]").onclick = () => d.remove();
+  d.querySelector("[data-abrir]").onclick = () => {
+    const u = d.querySelector(".url").value.trim();
+    if(u) window.open(u, "_blank", "noopener");
+  };
+  d.querySelector(".url").addEventListener("blur", function(){
+    const u = this.value.trim();
+    this.style.borderColor = (u && !/^https?:\/\//i.test(u)) ? "var(--warn)" : "";
+  });
+  $("rEnlaces").appendChild(d);
+}
+function leerEnlacesForm(){
+  const out = [];
+  $("rEnlaces").querySelectorAll(".enl").forEach(d => {
+    const url = d.querySelector(".url").value.trim();
+    if(url) out.push({ etiqueta: d.querySelector(".et").value.trim(), url });
+  });
+  return out;
+}
+
+/* ---- próximas acciones (subformulario) ---- */
+$("btnAddAccion").onclick = () => agregarAccion({});
+
+function pintarAcciones(arr){
+  $("rAcciones").innerHTML = "";
+  (arr || []).forEach(a => agregarAccion(a));
+  if(!arr || !arr.length) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+}
+function agregarAccion(a){
+  const vacio = $("rAcciones").querySelector(".vacio");
+  if(vacio) vacio.remove();
+  const d = document.createElement("div");
+  d.className = "acc-item panel";
+  d.style.marginBottom = "8px";
+  d.innerHTML = '<div class="rej" style="gap:9px">' +
+    '<div class="full"><label>Próxima acción</label><textarea class="a-acc" style="min-height:50px"></textarea></div>' +
+    '<div><label>Responsable</label><input type="text" class="a-resp"></div>' +
+    '<div><label>Fecha de vencimiento</label><input type="date" class="a-fec"><div class="aviso a-av"></div></div>' +
+    '<div class="full"><label>Necesidades de articulación</label><textarea class="a-art" style="min-height:44px"></textarea></div>' +
+    '<div class="full"><label>Observación</label><textarea class="a-obs" style="min-height:44px"></textarea></div>' +
+    '<div class="full" style="text-align:right"><button type="button" class="btn sec mini a-del">Quitar acción</button></div></div>';
+  d.querySelector(".a-acc").value = a.accion || "";
+  d.querySelector(".a-resp").value = a.responsable || "";
+  d.querySelector(".a-fec").value = iso(a.fecha);
+  d.querySelector(".a-art").value = a.articulacion || "";
+  d.querySelector(".a-obs").value = a.obs || "";
+  d.querySelector(".a-del").onclick = () => {
+    d.remove();
+    if(!$("rAcciones").querySelector(".acc-item"))
+      $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+  };
+  d.querySelector(".a-fec").addEventListener("change", function(){
+    const av = d.querySelector(".a-av");
+    const dh = S.ctxHito ? dias(S.ctxHito.fv, this.value) : null;
+    const di = S.ctxInd ? dias(S.ctxInd.fv, this.value) : null;
+    if(di != null && di > 0){
+      av.textContent = "Se pasa " + di + " día(s) del vencimiento del indicador. No se puede guardar así.";
+      av.classList.add("on");
+    }else if(dh != null && dh > 0){
+      av.textContent = "Se pasa " + dh + " día(s) del vencimiento del hito. Se puede guardar: queda como señal de atraso.";
+      av.classList.add("on");
+    }else av.classList.remove("on");
+  });
+  $("rAcciones").appendChild(d);
+}
+function leerAccionesForm(){
+  const out = [];
+  $("rAcciones").querySelectorAll(".acc-item").forEach(d => {
+    const acc = d.querySelector(".a-acc").value.trim();
+    if(!acc) return;
+    out.push({
+      accion: acc, responsable: d.querySelector(".a-resp").value.trim(),
+      fecha: d.querySelector(".a-fec").value,
+      articulacion: d.querySelector(".a-art").value.trim(),
+      obs: d.querySelector(".a-obs").value.trim()
+    });
+  });
+  return out;
+}
+
+async function eliminarReporte(id){
+  if(!confirm("¿Eliminar este reporte de avance?")) return;
+  try{
+    await API.del(id);
+    guardarPosicion(null);
+    toast("Reporte eliminado.");
+    await recargar();
+  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
 }
 
 /* ==========================================================================
