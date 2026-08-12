@@ -218,6 +218,15 @@ table.t tr:last-child td{border-bottom:0}
 .chklist .nada{padding:10px;color:var(--mist);font-size:13px;text-align:center}
 .chklist.mal{border-color:var(--bad);background:var(--rojo-bg)}
 
+/* ---------- resaltado del registro recién guardado ---------- */
+.recien{animation:destello 2.2s ease-out}
+tr.recien > td{animation:destello 2.2s ease-out}
+@keyframes destello{
+  0%,55%{background:#fff6d8;box-shadow:0 0 0 2px #f0dcb0}
+  100%{background:transparent;box-shadow:none}
+}
+@media (prefers-reduced-motion:reduce){ .recien,tr.recien>td{animation:none;background:#fff6d8} }
+
 /* ---------- aviso de calibración ---------- */
 .calib{font-size:12.5px;border-radius:9px;padding:9px 12px;margin-top:10px;line-height:1.45}
 .calib.ok{background:var(--verde-cl);color:var(--verde-osc);border:1px solid #bcd9cb}
@@ -1124,8 +1133,58 @@ function llenarFiltros(){
 /* ==========================================================================
    Lectura de las cuatro tablas
    ========================================================================== */
+/* Al guardar se repinta toda la lista, y sin esto la página saltaría arriba
+   y se cerrarían las tarjetas. Se recuerda dónde estabas y se vuelve ahí. */
+function guardarPosicion(objId){
+  S.volverA = {
+    obj: objId || null,
+    scroll: window.scrollY,
+    abiertos: [...document.querySelectorAll(".obj.abierto")].map(e => e.dataset.id)
+  };
+}
+function restaurarPosicion(){
+  const v = S.volverA;
+  if(!v) return;
+  (v.abiertos || []).forEach(id => {
+    const e = document.querySelector('.obj[data-id="' + CSS.escape(id) + '"]');
+    if(e) e.classList.add("abierto");
+  });
+  /* Si se trabajó un registro concreto, se vuelve a él y se resalta un
+     momento; si no, se recupera el desplazamiento anterior. */
+  if(v.obj){
+    /* El registro puede estar dentro de una tarjeta cerrada: se abre su
+       objetivo antes de desplazarse, o el navegador no lo encontraría. */
+    const ind = S.indicadores.find(x => x.id === v.obj);
+    const hit = S.hitos.find(x => x.id === v.obj);
+    const rep = S.reportes.find(x => x.id === v.obj);
+    let objId = null;
+    if(ind) objId = ind.objetivoRef;
+    else if(hit){ const i = S.indicadores.find(x => x.id === hit.indicadorRef); objId = i && i.objetivoRef; }
+    else if(rep){
+      const hh = S.hitos.find(x => x.id === rep.hitoRef);
+      const i = hh && S.indicadores.find(x => x.id === hh.indicadorRef);
+      objId = i && i.objetivoRef;
+    }
+    if(objId){
+      const card = document.querySelector('.obj[data-id="' + CSS.escape(objId) + '"]');
+      if(card) card.classList.add("abierto");
+    }
+    const e = document.querySelector('[data-fila="' + CSS.escape(v.obj) + '"]') ||
+              document.querySelector('.obj[data-id="' + CSS.escape(v.obj) + '"]');
+    if(e){
+      e.scrollIntoView({ behavior: "smooth", block: "center" });
+      e.classList.add("recien");
+      setTimeout(() => e.classList.remove("recien"), 2200);
+      S.volverA = null;
+      return;
+    }
+  }
+  window.scrollTo({ top: v.scroll || 0 });
+  S.volverA = null;
+}
+
 async function recargar(){
-  $("lista").innerHTML = '<div class="cargando"><span class="spin"></span>Cargando…</div>';
+  if(!S.volverA) $("lista").innerHTML = '<div class="cargando"><span class="spin"></span>Cargando…</div>';
   const [obj, ind, hit, rep] = await Promise.all([
     listar(CONFIG.MATRIZ.ENTITY_ID),
     listar(CONFIG.INDICADORES.ENTITY_ID),
@@ -1200,6 +1259,7 @@ async function recargar(){
   pintarLista();
   pintarDespriorizados();
   pintarTablero();
+  restaurarPosicion();
 }
 
 function parseEnlaces(txt){
@@ -1410,7 +1470,7 @@ function bloqueIndicador(o, ind, editable){
   const suma = red1(sumaParticipacion(ind.id));
   const malSuma = hs.length && Math.abs(suma - 100) > CONFIG.REGLAS.participacion.tolerancia;
 
-  let h = '<div class="ind-card">' +
+  let h = '<div class="ind-card" data-fila="' + esc(ind.id) + '">' +
     '<div class="ind-cab">' +
       '<div style="flex:1;min-width:0">' +
         "<b>" + esc(ind.indicador || "(sin indicador)") + "</b>" +
@@ -1448,7 +1508,7 @@ function bloqueIndicador(o, ind, editable){
     const ph = red1(progresoHito(hi.id)), eh = estadoHito(hi.id), rs = reportesDe(hi.id);
     const d = dias(HOY, hi.fv);
     const fuera = malPlazoHito(ind, hi);
-    h += "<tr>" +
+    h += '<tr data-fila="' + esc(hi.id) + '">' +
       "<td><b>" + esc(hi.hito) + "</b>" +
         (esCuantitativo(hi) ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">meta: ' +
           red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
@@ -1464,7 +1524,7 @@ function bloqueIndicador(o, ind, editable){
         '<button class="ico" data-hdel="' + esc(hi.id) + '" title="Eliminar">🗑️</button>' : "") + "</td></tr>";
 
     rs.forEach(r => {
-      h += '<tr class="rep"><td colspan="7">' +
+      h += '<tr class="rep" data-fila="' + esc(r.id) + '"><td colspan="7">' +
         '<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">' +
           '<div style="flex:0 0 auto"><span class="tag z">📅 ' + verFecha(r.fecha) + "</span></div>" +
           '<div style="flex:1;min-width:200px">' + (r.avance || "<i>sin descripción</i>") +
@@ -1869,7 +1929,8 @@ $("btnGuardarObj").onclick = async () => {
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
     const antes = S.editObj ? norm(S.editObj.condicion) : "";
-    await API.saveForm(S.editObj ? S.editObj.id : null, v, CONFIG.MATRIZ.ENTITY_ID);
+    const resp = await API.saveForm(S.editObj ? S.editObj.id : null, v, CONFIG.MATRIZ.ENTITY_ID);
+    guardarPosicion(S.editObj ? S.editObj.id : (resp && resp.record && resp.record.id));
     $("mObj").classList.remove("on");
     const ahora = norm(d.condicion);
     let aviso;
@@ -2042,7 +2103,8 @@ $("btnGuardarInd").onclick = async () => {
   const b = $("btnGuardarInd");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
-    await API.saveForm(S.editInd ? S.editInd.id : null, v, CONFIG.INDICADORES.ENTITY_ID);
+    const resp = await API.saveForm(S.editInd ? S.editInd.id : null, v, CONFIG.INDICADORES.ENTITY_ID);
+    guardarPosicion(S.editInd ? S.editInd.id : (resp && resp.record && resp.record.id));
     $("mInd").classList.remove("on");
     toast("Indicador guardado.");
     await recargar();
@@ -2059,6 +2121,7 @@ async function eliminarIndicador(id){
       await API.del(hi.id);
     }
     await API.del(id);
+    guardarPosicion(null);
     toast("Indicador eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
@@ -2376,7 +2439,8 @@ $("btnGuardarHito").onclick = async () => {
   const b = $("btnGuardarHito");
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
-    await API.saveForm(S.editHito ? S.editHito.id : null, v, CONFIG.HITOS.ENTITY_ID);
+    const resp = await API.saveForm(S.editHito ? S.editHito.id : null, v, CONFIG.HITOS.ENTITY_ID);
+    guardarPosicion(S.editHito ? S.editHito.id : (resp && resp.record && resp.record.id));
     $("mHito").classList.remove("on");
     toast("Hito guardado.");
     await recargar();
@@ -2390,6 +2454,7 @@ async function eliminarHito(id){
   try{
     for(const r of rs) await API.del(r.id);
     await API.del(id);
+    guardarPosicion(null);
     toast("Hito eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
