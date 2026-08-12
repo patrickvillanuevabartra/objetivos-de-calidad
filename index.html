@@ -641,6 +641,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             <option value="Parcial">Parcial (corte / avance en curso)</option>
             <option value="Cierre">De cierre (fin del plazo del hito)</option>
           </select>
+          <div class="err" id="e_rTipoMed"></div>
           <div class="aviso" id="avCierre"></div>
           <div class="pista" id="pistaTipoMed"></div>
         </div>
@@ -2561,6 +2562,13 @@ function calcularDesdeCantidad(){
   const cant = num($("rCantidad").value);
   const pct = red1(Math.min(100, Math.max(0, cant / meta * 100)));
   $("rAvancePct").value = pct;
+  /* Si se completó la meta, el hito está cerrado: no tiene sentido pedirle
+     al usuario que cambie un selector por algo que el sistema ya sabe. */
+  if(pct >= 100 && $("rTipoMed").value !== "Cierre"){
+    $("rTipoMed").value = "Cierre";
+    aplicarTipoMedicion();
+    toast("Se completó la meta del hito: el reporte pasa a medición de cierre.");
+  }
   $("pistaCant").textContent = red1(cant) + " de " + red1(meta) + " " + uni + " → " + pct + "%" +
     (cant > meta ? "  (supera la meta; el avance se topa en 100%)" : "");
   revisarAvance();
@@ -2616,6 +2624,10 @@ function pistaTipoMedicion(){
 $("rAvancePct").addEventListener("input", revisarAvance);
 function revisarAvance(){
   const pct = num($("rAvancePct").value);
+  if(pct >= 100 && $("rTipoMed").value !== "Cierre" && !$("rAvancePct").readOnly){
+    $("rTipoMed").value = "Cierre";
+    aplicarTipoMedicion();
+  }
   const previo = num($("rAnterior").dataset.pct);
   pistaTipoMedicion();
   aviso("avRetroceso", (previo && pct < previo) ?
@@ -2650,6 +2662,15 @@ $("btnGuardarRep").onclick = async () => {
   }
   if($("rAvancePct").value !== "" && (d.pct < 0 || d.pct > 100)){
     error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true;
+  }
+  /* Un hito al 100% no puede quedar En Proceso. */
+  if(d.pct >= 100 && d.tipoMed !== "Cierre"){
+    error("rTipoMed", "El hito llegó al 100%: cambia el tipo de medición a “De cierre”.");
+    aviso("avCierre", "El avance es 100% pero el reporte está marcado como Parcial. Un hito completo debe cerrarse.");
+    mal = true;
+  }
+  if(d.tipoMed === "Cierre" && d.estado !== "Ejecutado"){
+    error("rEstado", "Una medición de cierre deja el hito Ejecutado."); mal = true;
   }
   if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
 
