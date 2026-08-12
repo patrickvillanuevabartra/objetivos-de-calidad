@@ -567,25 +567,26 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           </div>
           <div style="font-size:12.5px;color:var(--slate);background:#fff;border:1px solid var(--line);
                border-radius:8px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
-            La <b>meta del hito</b> es el <b>denominador</b>: cuántas unidades hay que completar en total.
-            En cada reporte declaras el <b>numerador</b>: cuántas llevas.
-            El aplicativo calcula el porcentaje —numerador ÷ denominador × 100— y con él arma el avance del indicador.
-            <div style="margin-top:5px;color:var(--mist)">Déjala vacía si este hito no se puede contar
-              (por ejemplo “Diseño del subsistema”): entonces reportarás el % directamente.</div>
+            Todo hito se mide contando algo. Indica <b>cuántas unidades hay que completar en total</b>
+            y <b>qué se cuenta</b>. Después, en cada reporte solo dirás cuántas llevas, y el porcentaje
+            saldrá solo.
+            <div style="margin-top:5px;color:var(--mist)">Si el hito es una entrega única —un diseño,
+              un informe, un acta— la cantidad es <b>1</b>.</div>
           </div>
-          <div class="pista" id="pistaModo" style="margin:0 0 10px"></div>
           <div class="rej" style="gap:10px">
             <div>
-              <label for="hMeta">Meta del hito <span class="op">(cantidad a alcanzar)</span></label>
-              <input type="number" id="hMeta" min="0" step="any" placeholder="vacío = reportar en %">
+              <label for="hMeta">Cuántas hay que completar <b class="req">*</b></label>
+              <input type="number" id="hMeta" min="0" step="any" placeholder="1">
+              <div class="err" id="e_hMeta"></div>
               <button type="button" class="btn sec mini" id="btnCalcMeta" style="margin-top:6px;display:none">Calcular desde la meta del indicador</button>
             </div>
             <div>
-              <label for="hUnidad">Unidad</label>
-              <input type="text" id="hUnidad" placeholder="componentes, encuestas, documentos…">
+              <label for="hUnidad">Qué se cuenta <b class="req">*</b></label>
+              <input type="text" id="hUnidad" placeholder="requerimientos, encuestas, informes…">
               <div class="err" id="e_hUnidad"></div>
             </div>
           </div>
+          <div class="pista" id="pistaModo" style="margin:9px 0 0"></div>
         </div>
 
         <div>
@@ -2305,16 +2306,18 @@ $("btnCalcMeta").onclick = () => {
 
 /* Un hito con meta numérica es CUANTITATIVO: sus reportes declaran una
    cantidad y el % se calcula solo. Sin meta es PORCENTUAL, como antes. */
+/* Todo hito se mide contando. Los registros antiguos sin meta se tratan como
+   porcentuales para no romperlos, pero al editarlos habrá que completarla. */
 const esCuantitativo = hi => hi && hi.metaHito !== "" && hi.metaHito != null && num(hi.metaHito) > 0;
 
 ["hMeta","hUnidad"].forEach(id => $(id).addEventListener("input", pistaModoHito));
 function pistaModoHito(){
   const meta = num($("hMeta").value), uni = $("hUnidad").value.trim();
-  $("pistaModo").textContent = meta > 0
-    ? "Cuantitativo: cada reporte declarará cuántos " + (uni || "unidades") + " lleva, y el % saldrá de " +
-      "esa cantidad sobre " + red1(meta) + ". Nadie tendrá que estimar un porcentaje a ojo."
-    : "Porcentual: cada reporte declarará directamente el % de avance. Úsalo para hitos que no se cuentan, " +
-      "como “Diseño del subsistema”.";
+  if(meta <= 0 || !uni){ $("pistaModo").textContent = ""; return; }
+  const mitad = red1(meta / 2);
+  $("pistaModo").textContent = meta === 1
+    ? "Con 1 " + uni + ", el hito irá 0% hasta completarse y 100% al reportarlo."
+    : "Ejemplo: al reportar " + mitad + " de " + red1(meta) + " " + uni + ", el hito irá 50%.";
 }
 
 $("hPart").addEventListener("input", revisarParticipacion);
@@ -2340,8 +2343,11 @@ $("btnGuardarHito").onclick = async () => {
   if(!d.fi){ error("hFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("hFV", "Falta la fecha de vencimiento."); mal = true; }
   if($("hCosto").value === ""){ error("hCosto", "Indica el costo. Si no tiene, pon 0."); mal = true; }
-  if(d.metaHito !== "" && num(d.metaHito) > 0 && !d.unidad){
-    error("hUnidad", "Indica qué se cuenta: componentes, encuestas, documentos…"); mal = true;
+  if(d.metaHito === "" || num(d.metaHito) <= 0){
+    error("hMeta", "Indica cuántas unidades hay que completar. Si es una entrega única, pon 1."); mal = true;
+  }
+  if(!d.unidad){
+    error("hUnidad", "Indica qué se cuenta: requerimientos, encuestas, informes…"); mal = true;
   }
 
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi = fecha(d.fi), hv = fecha(d.fv);
@@ -2455,8 +2461,11 @@ function configurarModoReporte(hi, r){
   pct.style.background = cuanti ? "var(--paper)" : "";
   if(!cuanti){
     $("pistaCant").textContent = "";
-    if(esCuantitativo(hi))
-      $("pistaTipoMed").textContent += "  ⚠ El hito es cuantitativo pero falta el campo Cantidad acumulada en QuintaDB.";
+    /* Hito creado antes de que la meta fuera obligatoria: se reporta en %
+       hasta que alguien complete su meta. */
+    if(!esCuantitativo(hi))
+      msg("mRepMsg", "Este hito todavía no tiene definida su meta (cuántas unidades completar). " +
+          "Por ahora reporta el % directamente; conviene editarlo y completarla.", "av");
     return;
   }
   const uni = hi.unidad || "unidades";
@@ -2502,9 +2511,15 @@ $("rTipoMed").addEventListener("change", aplicarTipoMedicion);
 function aplicarTipoMedicion(){
   const cierre = $("rTipoMed").value === "Cierre";
   const estado = cierre ? "Ejecutado" : "En Proceso";
-  opciones("rEstado", [estado], estado, "");
+  opciones("rEstado", CONFIG.REPORTES.ESTADOS, estado, "");
   $("rEstado").value = estado;
-  $("rEstado").disabled = true;
+  /* No se usa `disabled`: un campo deshabilitado se lee vacío y la
+     validación rechazaría el reporte al editarlo. Se bloquea visualmente
+     y se reimpone el valor si alguien lo cambia. */
+  $("rEstado").style.background = "var(--paper)";
+  $("rEstado").style.pointerEvents = "none";
+  $("rEstado").tabIndex = -1;
+  $("rEstado").dataset.fijo = estado;
   /* Un cierre suele ser el 100%, así que se propone, pero se puede corregir:
      un hito puede cerrarse con menos si venció sin completarse. */
   if(cierre && !num($("rAvancePct").value)) $("rAvancePct").value = 100;
