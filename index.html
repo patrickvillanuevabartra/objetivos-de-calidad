@@ -598,6 +598,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <label for="hFI">F.I. hito <b class="req">*</b></label>
           <input type="date" id="hFI">
           <div class="err" id="e_hFI"></div>
+          <div class="pista" id="pistaEncadena"></div>
         </div>
         <div>
           <label for="hFV">F.V. hito <b class="req">*</b></label>
@@ -1478,6 +1479,9 @@ function bloqueIndicador(o, ind, editable){
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
           "Meta: <b>" + esc(ind.meta || "—") + "</b>" + medicionHtml(ind) + " · " + verFecha(ind.fi) + " → " + verFecha(ind.fv) +
           (ind.respTec ? " · " + esc(ind.respTec) : "") + "</div>" +
+        (ind.formula ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--slate);' +
+          'background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:5px 8px;margin-top:4px;' +
+          'display:inline-block">ƒ ' + esc(sinHtml(ind.formula)) + "</div>" : "") +
         (ind.proceso ? '<div style="font-size:12px;color:var(--mist);margin-top:2px">' + esc(ind.proceso) + "</div>" : "") +
         brechaHtml(ind) +
       "</div>" +
@@ -1515,7 +1519,7 @@ function bloqueIndicador(o, ind, editable){
           red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
         (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
       "<td>" + red1(hi.part) + "%</td>" +
-      "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) +
+      "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) + encadenaHtml(hs, hi) +
         (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
       '<td><div class="barra" style="width:64px"><i style="width:' + ph + '%"></i></div>' + ph + "%</td>" +
       '<td><span class="tag ' + (eh === "Ejecutado" ? "v" : (eh === "Pendiente" ? "g" : "z")) + '">' + esc(eh) + "</span></td>" +
@@ -1640,6 +1644,22 @@ function extempHtml(hi, r){
   if(d != null && d > 0) return '<div class="tag a" style="margin-top:4px">reporte extemporáneo (+' + d + " d)</div>";
   return "";
 }
+/* Señala cómo encadena cada hito con el anterior: si arranca al día
+   siguiente, si se solapa o si queda un hueco sin cubrir. */
+function encadenaHtml(hs, hi){
+  const i = hs.indexOf(hi);
+  if(i <= 0) return "";
+  const prev = hs[i - 1];
+  const d = dias(prev.fv, hi.fi);
+  if(d == null) return "";
+  if(d === 1) return '<div style="font-size:11px;color:var(--mist);margin-top:3px">sigue a “' +
+    esc(prev.hito.slice(0, 22)) + '”</div>';
+  if(d <= 0) return '<div class="tag a" style="margin-top:3px">se solapa ' + (Math.abs(d) + 1) +
+    " d con el anterior</div>";
+  return '<div class="tag a" style="margin-top:3px">' + (d - 1) + " d de hueco tras “" +
+    esc(prev.hito.slice(0, 18)) + '”</div>';
+}
+
 function malPlazoHito(ind, hi){
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi_ = fecha(hi.fi), hv = fecha(hi.fv);
   if(!ii || !iv || !hi_ || !hv) return false;
@@ -2338,8 +2358,27 @@ function abrirHito(indId, hitoId){
       " de " + nec + " " + (nombreReferencia(ind) || "unidades");
   }
   pistaModoHito();
-  $("hFI").value = hi ? iso(hi.fi) : iso(ind.fi);
+  /* Los hitos se encadenan: uno nuevo arranca al día siguiente del último
+     que vence, como en Profit. Si no hay hitos aún, arranca con el indicador.
+     Siempre editable: la propuesta no sustituye la decisión. */
   $("hFV").value = hi ? iso(hi.fv) : "";
+  if(hi){
+    $("hFI").value = iso(hi.fi);
+    $("pistaEncadena").textContent = "";
+  }else{
+    const previos = hitosDe(indId).map(x => fecha(x.fv)).filter(Boolean).sort((a, b) => b - a);
+    if(previos.length){
+      const sig = new Date(previos[0].getTime() + 86400000);
+      const fvInd = fecha(ind.fv);
+      const inicio = (fvInd && sig > fvInd) ? fvInd : sig;
+      $("hFI").value = iso(inicio);
+      $("pistaEncadena").textContent = "Propuesto: el día siguiente al último hito, que vence el " +
+        verFecha(previos[0]) + ". Puedes cambiarlo.";
+    }else{
+      $("hFI").value = iso(ind.fi);
+      $("pistaEncadena").textContent = "Primer hito: arranca con el indicador. Puedes cambiarlo.";
+    }
+  }
   ["hFI","hFV"].forEach(k => { $(k).min = iso(ind.fi); $(k).max = iso(ind.fv); });
 
   $("mHito").classList.add("on");
