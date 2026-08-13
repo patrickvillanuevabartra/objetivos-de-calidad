@@ -586,6 +586,14 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
               <input type="text" id="hUnidad" placeholder="requerimientos, encuestas, informes…">
               <div class="err" id="e_hUnidad"></div>
             </div>
+            <div class="full">
+              <label for="hProduce">¿Este hito produce el resultado del indicador?</label>
+              <select id="hProduce">
+                <option value="No">No — es un insumo o paso previo</option>
+                <option value="Sí">Sí — de aquí sale el resultado que mide el indicador</option>
+              </select>
+              <div class="pista" id="pistaProduce"></div>
+            </div>
           </div>
         </div>
 
@@ -1239,7 +1247,8 @@ async function recargar(){
     fv:   val(r.v, H.fv_hito),
     costo:num(val(r.v, H.costo)),
     metaHito: val(r.v, H.meta_hito),
-    unidad:   val(r.v, H.unidad)
+    unidad:   val(r.v, H.unidad),
+    produce:  val(r.v, H.produce_resultado)
   }));
 
   const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
@@ -1515,6 +1524,7 @@ function bloqueIndicador(o, ind, editable){
     const fuera = malPlazoHito(ind, hi);
     h += '<tr data-fila="' + esc(hi.id) + '">' +
       "<td><b>" + esc(hi.hito) + "</b>" +
+        (hi.produce === "Sí" ? ' <span class="tag v" title="De este hito sale el resultado del indicador">resultado</span>' : "") +
         (esCuantitativo(hi) ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">meta: ' +
           red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
         (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
@@ -1568,9 +1578,11 @@ function brechaIndicador(ind){
   const ejec = progresoIndicador(ind.id);      // % de ejecución, de los hitos
   const logro = logroIndicador(ind);           // % de la meta, de la fórmula
   if(ejec == null || logro == null) return null;
-  if(ejec >= 100 && logro < UMBRAL_LOGRO)
+  /* La brecha aparece cuando el plan va muy por delante del resultado, no
+     solo al 100%: en SANIPES el avance iba 91% con el logro en 69%. */
+  if(ejec - logro >= 15 && logro < UMBRAL_LOGRO)
     return { tipo: "corto", ejec, logro,
-      txt: "Ejecutado al 100%, pero solo " + logro + "% de la meta" };
+      txt: "Plan ejecutado al " + red1(ejec) + "%, pero el resultado va " + logro + "% de la meta" };
   if(ejec < 100 && logro >= 100)
     return { tipo: "sobra", ejec, logro,
       txt: "Meta alcanzada con " + red1(ejec) + "% de ejecución" };
@@ -2281,7 +2293,7 @@ function revisarCalibracion(){
   const necesarias = unidadesNecesarias(falso, ref == null ? null : parseFloat(ref));
   if(necesarias == null || !ind){ caja.style.display = "none"; return; }
 
-  const asignado = red1(hitosDe(ind.id).reduce((n, h) => n + (esCuantitativo(h) ? num(h.metaHito) : 0), 0));
+  const asignado = red1(producenResultado(ind.id).reduce((n, h) => n + num(h.metaHito), 0));
   const falta = red1(necesarias - asignado);
   caja.style.display = "block";
   if(Math.abs(falta) < 0.01){
@@ -2301,9 +2313,19 @@ function revisarCalibracion(){
 
 /* Valor alcanzado del indicador: la suma de lo reportado en sus hitos
    cuantitativos. No se teclea — sale del mismo dato que el % de avance. */
+/* Si algún hito está marcado como productor del resultado, solo esos
+   cuentan para el logro. Los demás son insumos: hacen posible el resultado
+   pero no lo producen. Sin ninguno marcado, se suman todos (caso de una
+   meta única repartida entre hitos). */
+const producenResultado = indId => {
+  const hs = hitosDe(indId).filter(esCuantitativo);
+  const marcados = hs.filter(x => x.produce === "Sí");
+  return marcados.length ? marcados : hs;
+};
+
 function valorAlcanzado(ind){
   if(!ind || !ind.id) return null;
-  const hs = hitosDe(ind.id).filter(esCuantitativo);
+  const hs = producenResultado(ind.id);
   if(!hs.length) return null;
   const total = hs.reduce((n, h) => {
     const rs = reportesDe(h.id);
@@ -2349,11 +2371,13 @@ function abrirHito(indId, hitoId){
   $("hCosto").value = hi && hi.costo ? hi.costo : "";
   $("hMeta").value = hi && hi.metaHito !== "" ? hi.metaHito : "";
   $("hUnidad").value = hi ? hi.unidad : "";
+  $("hProduce").value = (hi && hi.produce === "Sí") ? "Sí" : "No";
+  pistaProduceResultado();
   const nec = unidadesNecesarias(ind);
   $("btnCalcMeta").style.display = nec == null ? "none" : "";
   if(nec != null){
-    const ya = red1(hitosDe(ind.id).filter(x => !hi || x.id !== hi.id)
-      .reduce((n, x) => n + (esCuantitativo(x) ? num(x.metaHito) : 0), 0));
+    const ya = red1(producenResultado(ind.id).filter(x => !hi || x.id !== hi.id)
+      .reduce((n, x) => n + num(x.metaHito), 0));
     $("btnCalcMeta").textContent = "Calcular: faltan " + red1(Math.max(0, nec - ya)) +
       " de " + nec + " " + (nombreReferencia(ind) || "unidades");
   }
@@ -2395,9 +2419,9 @@ $("btnCalcMeta").onclick = () => {
     toast("El indicador necesita una referencia con valor y una meta numérica.", true);
     return;
   }
-  const otros = red1(hitosDe(ind.id)
+  const otros = red1(producenResultado(ind.id)
     .filter(x => !S.editHito || x.id !== S.editHito.id)
-    .reduce((n, x) => n + (esCuantitativo(x) ? num(x.metaHito) : 0), 0));
+    .reduce((n, x) => n + num(x.metaHito), 0));
   const saldo = red1(Math.max(0, necesarias - otros));
   $("hMeta").value = saldo;
   if(!$("hUnidad").value.trim()) $("hUnidad").value = nombreReferencia(ind) || "unidades";
@@ -2416,6 +2440,22 @@ const esCuantitativo = hi => hi && hi.metaHito !== "" && hi.metaHito != null && 
 ["hMeta","hUnidad"].forEach(id => $(id).addEventListener("input", pistaModoHito));
 function pistaModoHito(){ /* sin nota: los rótulos de los campos ya lo dicen */ }
 
+$("hProduce").addEventListener("change", pistaProduceResultado);
+function pistaProduceResultado(){
+  const ind = S.ctxInd;
+  const otros = ind ? hitosDe(ind.id).filter(x => x.produce === "Sí" && (!S.editHito || x.id !== S.editHito.id)) : [];
+  const yo = $("hProduce").value === "Sí";
+  if(yo){
+    $("pistaProduce").textContent = "Lo que se reporte aquí es el resultado del indicador." +
+      (otros.length ? " Otros " + otros.length + " hito(s) también lo producen: se suman." : "");
+  }else if(otros.length){
+    $("pistaProduce").textContent = "Aporta al avance del plan, pero el resultado lo produce “" +
+      otros[0].hito + "”" + (otros.length > 1 ? " y " + (otros.length - 1) + " más" : "") + ".";
+  }else{
+    $("pistaProduce").textContent = "Si ningún hito se marca, el resultado será la suma de todos.";
+  }
+}
+
 $("hPart").addEventListener("input", revisarParticipacion);
 function revisarParticipacion(){
   if(!S.ctxInd) return;
@@ -2432,7 +2472,8 @@ $("btnGuardarHito").onclick = async () => {
   const ind = S.ctxInd;
   const d = { hito: $("hNombre").value.trim(), part: num($("hPart").value), costo: num($("hCosto").value),
               fi: $("hFI").value, fv: $("hFV").value,
-              metaHito: $("hMeta").value, unidad: $("hUnidad").value.trim() };
+              metaHito: $("hMeta").value, unidad: $("hUnidad").value.trim(),
+              produce: $("hProduce").value };
   let mal = false;
   if(!d.hito){ error("hNombre", "Escribe el nombre del hito."); mal = true; }
   if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
@@ -2465,6 +2506,7 @@ $("btnGuardarHito").onclick = async () => {
   v[H.costo.id] = $("hCosto").value === "" ? "" : d.costo;   // el 0 debe enviarse, o queda el valor viejo
   v[H.meta_hito.id] = d.metaHito === "" ? "" : num(d.metaHito);
   v[H.unidad.id] = d.unidad;
+  v[H.produce_resultado.id] = d.produce;
   v[HE.indicador_ref.id] = ind.id;
   if(S.ctxObj) v[HE.objetivo_ref.id] = S.ctxObj.id;   // respaldo
 
