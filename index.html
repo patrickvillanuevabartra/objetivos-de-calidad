@@ -1574,6 +1574,14 @@ function logroIndicador(ind){
   return red1(alcanzado / necesarias * 100);
 }
 
+/* Logro del objetivo: promedio del logro de sus indicadores que tengan
+   resultado medible. Devuelve null si ninguno lo tiene. */
+function logroObjetivo(objId){
+  const ls = indicadoresDe(objId).map(logroIndicador).filter(x => x != null);
+  if(!ls.length) return null;
+  return red1(ls.reduce((a, b) => a + b, 0) / ls.length);
+}
+
 function brechaIndicador(ind){
   const ejec = progresoIndicador(ind.id);      // % de ejecución, de los hitos
   const logro = logroIndicador(ind);           // % de la meta, de la fórmula
@@ -3108,42 +3116,62 @@ function pintarTablero(){
   const porOfi = {};
   objs.forEach(o => {
     const k = o.oficina || "(sin oficina)";
-    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0, cumpl: 0, venc: 0, sin: 0, crit: 0 };
+    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0, cumpl: 0, venc: 0, sin: 0, crit: 0, sumaLogro: 0, conLogro: 0 };
     const x = porOfi[k]; x.n++;
     const p = progresoObjetivo(o.id), pl = plazoObjetivo(o.id);
     const d = pl.fv ? dias(HOY, pl.fv) : null;
     if(p == null) x.sin++;
     else{ x.suma += p; x.con++; if(p >= 100) x.cumpl++; else if(p < 50) x.crit++; }
+    const lg = logroObjetivo(o.id);
+    if(lg != null){ x.sumaLogro += lg; x.conLogro++; }
     if(d != null && d < 0 && !(p != null && p >= 100)) x.venc++;
   });
   const ranking = Object.keys(porOfi).map(k => {
     const x = porOfi[k];
     return { ofi: k, n: x.n, cumpl: x.cumpl, venc: x.venc, sin: x.sin, crit: x.crit,
-             prom: x.con ? red1(x.suma / x.con) : null };
+             prom: x.con ? red1(x.suma / x.con) : null,
+             logro: x.conLogro ? red1(x.sumaLogro / x.conLogro) : null };
   }).sort((a, b) => {
-    if(a.prom == null && b.prom == null) return a.ofi.localeCompare(b.ofi, "es");
-    if(a.prom == null) return 1;
-    if(b.prom == null) return -1;
-    if(a.prom !== b.prom) return b.prom - a.prom;
+    /* Se ordena por LOGRO cuando existe: una oficina que ejecuta todo sin
+       lograr nada no debe encabezar el ranking. Si no hay resultado medible,
+       se usa el avance del plan. */
+    const va = a.logro != null ? a.logro : a.prom;
+    const vb = b.logro != null ? b.logro : b.prom;
+    if(va == null && vb == null) return a.ofi.localeCompare(b.ofi, "es");
+    if(va == null) return 1;
+    if(vb == null) return -1;
+    if(va !== vb) return vb - va;
     return a.venc - b.venc;
   });
-  h += '<div class="tarj"><h3>Ranking de oficinas por avance</h3>' +
-    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De mayor a menor avance promedio. Las oficinas sin indicadores cargados quedan al final.</p>' +
-    '<table class="t"><thead><tr><th style="width:34px">#</th><th>Oficina</th><th style="width:32%">Avance</th>' +
-    "<th>Obj.</th><th>Cumpl.</th><th>Crít.</th><th>Venc.</th><th>Sin ind.</th></tr></thead><tbody>" +
+  h += '<div class="tarj"><h3>Ranking de oficinas</h3>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Se ordena por <b>logro</b> ' +
+    "—cuánto de la meta se alcanzó— y, donde no hay resultado medible, por avance del plan. " +
+    "Las dos columnas se muestran juntas a propósito: ejecutar el plan y alcanzar la meta son cosas " +
+    "distintas, y su diferencia es la señal para revisar la planificación.</p>" +
+    '<table class="t"><thead><tr><th style="width:34px">#</th><th>Oficina</th>' +
+    '<th style="width:24%">Avance del plan</th><th style="width:24%">Logro de la meta</th>' +
+    "<th>Obj.</th><th>Cumpl.</th><th>Venc.</th></tr></thead><tbody>" +
     ranking.map((x, i) => {
-      const sem = semaforo(x.prom);
-      return "<tr><td style=\"font-family:'IBM Plex Mono',monospace;color:var(--mist)\">" + (x.prom == null ? "—" : i + 1) + "</td>" +
-        "<td><b>" + esc(x.ofi) + "</b></td>" +
-        '<td><div style="display:flex;align-items:center;gap:9px">' +
-          '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (x.prom || 0) + '%"></i></div>' +
-          "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:13px;flex:0 0 46px;text-align:right\">" +
-          (x.prom == null ? "—" : x.prom + "%") + "</span></div></td>" +
+      const semA = semaforo(x.prom), semL = semaforo(x.logro);
+      const orden = x.logro != null ? x.logro : x.prom;
+      const brecha = (x.prom != null && x.logro != null) ? red1(x.prom - x.logro) : null;
+      const barra = (v, sem) => '<div style="display:flex;align-items:center;gap:9px">' +
+        '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (v || 0) + '%"></i></div>' +
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:13px;flex:0 0 46px;text-align:right\">" +
+        (v == null ? "—" : v + "%") + "</span></div>";
+      return "<tr><td style=\"font-family:'IBM Plex Mono',monospace;color:var(--mist)\">" +
+          (orden == null ? "—" : i + 1) + "</td>" +
+        "<td><b>" + esc(x.ofi) + "</b>" +
+          (brecha != null && brecha >= 15 ?
+            '<div class="tag a" style="margin-top:3px">ejecuta ' + brecha + " pts por encima de lo que logra</div>" : "") +
+        "</td>" +
+        "<td>" + barra(x.prom, semA) + "</td>" +
+        "<td>" + (x.logro == null
+          ? '<span style="color:var(--mist);font-size:12.5px">sin resultado medible</span>'
+          : barra(x.logro, semL)) + "</td>" +
         "<td>" + x.n + "</td>" +
         "<td>" + (x.cumpl ? '<span class="tag v">' + x.cumpl + "</span>" : "—") + "</td>" +
-        "<td>" + (x.crit ? '<span class="tag r">' + x.crit + "</span>" : "—") + "</td>" +
-        "<td>" + (x.venc ? '<span class="tag r">' + x.venc + "</span>" : "—") + "</td>" +
-        "<td>" + (x.sin ? '<span class="tag a">' + x.sin + "</span>" : "—") + "</td></tr>";
+        "<td>" + (x.venc ? '<span class="tag r">' + x.venc + "</span>" : "—") + "</td></tr>";
     }).join("") + "</tbody></table></div>";
 
   /* --- brecha entre ejecución y logro --- */
