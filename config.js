@@ -139,7 +139,11 @@ const CONFIG = {
       // se calcula solo. Si no la tiene, es PORCENTUAL y el reporte declara
       // el % directamente, como antes.
       meta_hito:         { id: "ddTCoUW5PaaiOnW5KLxCkR", type: "float", col: "Meta del hito" },
-      unidad:            { id: "bhW7BdSmjcWP7dKZtcKSoC", type: "string", col: "Unidad" }
+      unidad:            { id: "bhW7BdSmjcWP7dKZtcKSoC", type: "string", col: "Unidad" },
+      // Marca el hito que produce el RESULTADO del indicador. Los demás son
+      // insumos: aportan al avance del plan, pero no al logro de la meta.
+      // Si ningún hito está marcado, el logro suma todos los cuantitativos.
+      produce_resultado: { id: "cPbCkoW5DhW63cKWf2pCoi", type: "select", col: "Produce resultado" }
     },
 
     // ---- Relaciones: NO escribibles por REST ------------------------------
