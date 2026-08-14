@@ -627,8 +627,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           </div>
           <div class="rej" style="gap:10px">
             <div class="full">
-              <label for="hRespTec">Responsable técnico <span class="op">(déjalo vacío para heredar el del indicador)</span></label>
+              <label for="hRespTec">Responsable técnico <b class="req">*</b> <span class="op">(viene el del indicador; cámbialo si lo ejecuta otra persona)</span></label>
               <select id="hRespTec"></select>
+              <div class="err" id="e_hRespTec"></div>
               <div class="pista" id="pistaRespHito"></div>
             </div>
             <div><label for="hRTCorreo">Correo</label><input type="email" id="hRTCorreo"></div>
@@ -1587,7 +1588,8 @@ function bloqueIndicador(o, ind, editable){
         (esCuantitativo(hi) ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">meta: ' +
           red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
         (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") +
-        (hi.respTec ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">👤 ' + esc(hi.respTec) + "</div>" : "") + "</td>" +
+        (hi.respTec ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">👤 ' + esc(hi.respTec) +
+          (ind.respTec && hi.respTec !== ind.respTec ? ' <span class="tag a">distinto</span>' : "") + "</div>" : "") + "</td>" +
       "<td>" + red1(hi.part) + "%</td>" +
       "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) + encadenaHtml(hs, hi) +
         (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
@@ -2466,16 +2468,28 @@ function abrirHito(indId, hitoId){
 
   /* Los técnicos del hito salen del mismo catálogo; el del indicador queda
      como opción destacada para que se vea de quién se hereda. */
+  /* El responsable del indicador viene ya elegido: heredar no puede
+     significar dejar el campo vacío, porque entonces no se registra a nadie
+     y el hito aparece sin responsable en la tabla y en los avisos. */
   const heredado = ind.respTec || "";
-  const filtro = tecnicosDe(o ? o.respProc : "", hi ? hi.respTec : "");
+  const elegido = hi ? (hi.respTec || heredado) : heredado;
+  const filtro = tecnicosDe(o ? o.respProc : "", elegido);
   const lista = filtro.lista.map(t => ({
     v: t.label, t: t.label + (t.label === heredado ? "  (del indicador)" : "")
   }));
-  opciones("hRespTec", lista, hi ? hi.respTec : "", "— hereda del indicador —");
+  opciones("hRespTec", lista, elegido, elegido ? "" : "— elige —");
+  $("hRespTec").value = elegido;
   S.notaTecHito = filtro.nota;
-  $("hRespTec").value = hi ? (hi.respTec || "") : "";   // por si el valor no está en el catálogo
-  $("hRTCorreo").value = hi ? hi.rtCorreo : "";
-  $("hRTCel").value = hi ? hi.rtCel : "";
+
+  /* Si se hereda, se traen también sus datos de contacto del catálogo. */
+  if(hi && hi.respTec){
+    $("hRTCorreo").value = hi.rtCorreo;
+    $("hRTCel").value = hi.rtCel;
+  }else{
+    const rt = S.cat.respTecnicos.find(x => x.label === elegido);
+    $("hRTCorreo").value = rt ? (rt.correo || "") : (ind.rtCorreo || "");
+    $("hRTCel").value = rt ? (rt.celular || "") : (ind.rtCel || "");
+  }
   pistaRespHito();
   const nec = unidadesNecesarias(ind);
   $("btnCalcMeta").style.display = nec == null ? "none" : "";
@@ -2553,10 +2567,10 @@ $("hRespTec").addEventListener("change", () => {
 function pistaRespHito(){
   const propio = $("hRespTec").value;
   const heredado = S.ctxInd ? (S.ctxInd.respTec || "") : "";
-  const base = propio
-    ? "Este hito lo ejecuta " + propio + ". Los avisos de vencimiento irán a esta persona."
-    : (heredado ? "Sin responsable propio: se usará " + heredado + ", el del indicador."
-                : "El indicador tampoco tiene responsable técnico definido.");
+  let base;
+  if(!propio) base = "Elige quién ejecuta este hito.";
+  else if(propio === heredado) base = "Hereda del indicador. Cámbialo si este hito lo ejecuta otra persona.";
+  else base = "Distinto al del indicador (" + (heredado || "sin definir") + "). Los avisos irán a " + propio + ".";
   $("pistaRespHito").textContent = base + (S.notaTecHito ? "  ·  " + S.notaTecHito : "");
 }
 
@@ -2620,6 +2634,7 @@ $("btnGuardarHito").onclick = async () => {
   if(!d.unidad){
     error("hUnidad", "Indica qué se cuenta: requerimientos, encuestas, informes…"); mal = true;
   }
+  if(!d.respTec){ error("hRespTec", "Elige quién ejecuta este hito."); mal = true; }
 
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi = fecha(d.fi), hv = fecha(d.fv);
   if(hi && hv && hv <= hi){ error("hFV", "El vencimiento debe ser posterior a la fecha de inicio."); mal = true; }
@@ -2643,8 +2658,8 @@ $("btnGuardarHito").onclick = async () => {
   v[H.unidad.id] = d.unidad;
   v[H.produce_resultado.id] = d.produce;
   v[H.resp_tecnico.id] = d.respTec;
-  v[H.resp_tecnico_correo.id] = d.respTec ? d.rtCorreo : "";
-  v[H.resp_tecnico_celular.id] = d.respTec ? d.rtCel : "";
+  v[H.resp_tecnico_correo.id] = d.rtCorreo;
+  v[H.resp_tecnico_celular.id] = d.rtCel;
   v[HE.indicador_ref.id] = ind.id;
   if(S.ctxObj) v[HE.objetivo_ref.id] = S.ctxObj.id;   // respaldo
 
