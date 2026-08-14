@@ -143,7 +143,12 @@ const CONFIG = {
       // Marca el hito que produce el RESULTADO del indicador. Los demás son
       // insumos: aportan al avance del plan, pero no al logro de la meta.
       // Si ningún hito está marcado, el logro suma todos los cuantitativos.
-      produce_resultado: { id: "cPbCkoW5DhW63cKWf2pCoi", type: "select", col: "Produce resultado" }
+      produce_resultado: { id: "cPbCkoW5DhW63cKWf2pCoi", type: "select", col: "Produce resultado" },
+      // Responsable técnico propio del hito. Si se deja vacío, se hereda el
+      // del indicador: en SANIPES cada hito lo ejecuta un actor distinto.
+      resp_tecnico:        { id: "ddTmkHW5XfW5LEW5VcMSom", type: "string", col: "Responsable técnico hito" },
+      resp_tecnico_correo: { id: "bZlmo9uSnpqPGOWQBdUanC", type: "email",  col: "Correo responsable técnico hito" },
+      resp_tecnico_celular:{ id: "axdwhdPmngEOoTW5H3C8oB", type: "phone",  col: "Celular responsable técnico hito" }
     },
 
     // ---- Relaciones: NO escribibles por REST ------------------------------
