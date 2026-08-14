@@ -218,6 +218,21 @@ table.t tr:last-child td{border-bottom:0}
 .chklist .nada{padding:10px;color:var(--mist);font-size:13px;text-align:center}
 .chklist.mal{border-color:var(--bad);background:var(--rojo-bg)}
 
+/* ---------- fila de progreso por objetivo ---------- */
+.fila-obj{display:grid;grid-template-columns:1fr 230px;gap:10px 18px;align-items:center;
+  padding:11px 12px;border-radius:10px;transition:background .15s}
+.fila-obj:nth-child(odd){background:var(--paper)}
+.fila-obj:hover{background:var(--verde-cl)}
+.fo-tit{font-size:14px;font-weight:600;line-height:1.35;grid-column:1;grid-row:1}
+.fo-meta{grid-column:1;grid-row:2;display:flex;gap:9px;flex-wrap:wrap;align-items:center;
+  font-size:12px;color:var(--mist);margin-top:3px}
+.fo-barra{grid-column:2;grid-row:1/3;display:flex;align-items:center;gap:11px}
+.fo-barra .barra{flex:1;height:9px}
+.fo-pct{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;flex:0 0 54px;
+  text-align:right;color:var(--brand)}
+.fo-pct.critico{color:var(--bad)} .fo-pct.bueno{color:var(--warn)} .fo-pct.cumplido{color:var(--ok)}
+@media (max-width:720px){ .fila-obj{grid-template-columns:1fr} .fo-barra{grid-column:1;grid-row:3;margin-top:6px} }
+
 /* ---------- texto recortado: se ve completo al pasar el cursor ---------- */
 .corta{position:relative;cursor:help;border-bottom:1px dotted var(--line)}
 .corta::after{content:attr(data-full);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
@@ -602,6 +617,21 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
               </select>
               <div class="pista" id="pistaProduce"></div>
             </div>
+          </div>
+        </div>
+
+        <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px">
+            Quién ejecuta este hito
+          </div>
+          <div class="rej" style="gap:10px">
+            <div class="full">
+              <label for="hRespTec">Responsable técnico <span class="op">(déjalo vacío para heredar el del indicador)</span></label>
+              <select id="hRespTec"></select>
+              <div class="pista" id="pistaRespHito"></div>
+            </div>
+            <div><label for="hRTCorreo">Correo</label><input type="email" id="hRTCorreo"></div>
+            <div><label for="hRTCel">Celular</label><input type="text" id="hRTCel"></div>
           </div>
         </div>
 
@@ -1273,7 +1303,10 @@ async function recargar(){
     costo:num(val(r.v, H.costo)),
     metaHito: val(r.v, H.meta_hito),
     unidad:   val(r.v, H.unidad),
-    produce:  val(r.v, H.produce_resultado)
+    produce:  val(r.v, H.produce_resultado),
+    respTec:  val(r.v, H.resp_tecnico),
+    rtCorreo: val(r.v, H.resp_tecnico_correo),
+    rtCel:    val(r.v, H.resp_tecnico_celular)
   }));
 
   const R = CONFIG.REPORTES.F, RE = CONFIG.REPORTES.ESPEJO, SUB = CONFIG.REPORTES.SUBFORM.proximas_acciones;
@@ -1512,7 +1545,7 @@ function bloqueIndicador(o, ind, editable){
         "<b>" + esc(ind.indicador || "(sin indicador)") + "</b>" +
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
           "Meta: <b>" + esc(ind.meta || "—") + "</b>" + medicionHtml(ind) + " · " + verFecha(ind.fi) + " → " + verFecha(ind.fv) +
-          (ind.respTec ? " · " + esc(ind.respTec) : "") + "</div>" +
+          (ind.respTec ? ' · <span title="Responsable técnico del indicador">👤 ' + esc(ind.respTec) + "</span>" : "") + "</div>" +
         (ind.formula ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--slate);' +
           'background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:5px 8px;margin-top:4px;' +
           'display:inline-block">ƒ ' + esc(sinHtml(ind.formula)) + "</div>" : "") +
@@ -1552,7 +1585,8 @@ function bloqueIndicador(o, ind, editable){
         (hi.produce === "Sí" ? ' <span class="tag v" title="De este hito sale el resultado del indicador">resultado</span>' : "") +
         (esCuantitativo(hi) ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">meta: ' +
           red1(num(hi.metaHito)) + " " + esc(hi.unidad || "unidades") + "</div>" : "") +
-        (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") + "</td>" +
+        (fuera ? '<div class="tag r" style="margin-top:3px">fuera del plazo de la meta</div>' : "") +
+        (hi.respTec ? '<div style="font-size:11.5px;color:var(--mist);margin-top:2px">👤 ' + esc(hi.respTec) + "</div>" : "") + "</td>" +
       "<td>" + red1(hi.part) + "%</td>" +
       "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) + encadenaHtml(hs, hi) +
         (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
@@ -1703,6 +1737,14 @@ function encadenaHtml(hs, hi){
     " d con el anterior</div>";
   return '<div class="tag a" style="margin-top:3px">' + (d - 1) + " d de hueco tras “" +
     esc(prev.hito.slice(0, 18)) + '”</div>';
+}
+
+/* Quién responde por un hito: el suyo propio si lo tiene, si no el del
+   indicador. Se usa para mostrarlo y para dirigir los avisos. */
+function respDelHito(hi, ind){
+  if(hi && hi.respTec) return { nombre: hi.respTec, correo: hi.rtCorreo, cel: hi.rtCel, propio: true };
+  if(ind && ind.respTec) return { nombre: ind.respTec, correo: ind.rtCorreo, cel: ind.rtCel, propio: false };
+  return null;
 }
 
 function malPlazoHito(ind, hi){
@@ -2408,6 +2450,18 @@ function abrirHito(indId, hitoId){
   $("hUnidad").value = hi ? hi.unidad : "";
   $("hProduce").value = (hi && hi.produce === "Sí") ? "Sí" : "No";
   pistaProduceResultado();
+
+  /* Los técnicos del hito salen del mismo catálogo; el del indicador queda
+     como opción destacada para que se vea de quién se hereda. */
+  const heredado = ind.respTec || "";
+  const lista = S.cat.respTecnicos.map(t => ({
+    v: t.label, t: t.label + (t.label === heredado ? "  (del indicador)" : "")
+  }));
+  opciones("hRespTec", lista, hi ? hi.respTec : "", "— hereda del indicador —");
+  $("hRespTec").value = hi ? (hi.respTec || "") : "";   // por si el valor no está en el catálogo
+  $("hRTCorreo").value = hi ? hi.rtCorreo : "";
+  $("hRTCel").value = hi ? hi.rtCel : "";
+  pistaRespHito();
   const nec = unidadesNecesarias(ind);
   $("btnCalcMeta").style.display = nec == null ? "none" : "";
   if(nec != null){
@@ -2475,6 +2529,21 @@ const esCuantitativo = hi => hi && hi.metaHito !== "" && hi.metaHito != null && 
 ["hMeta","hUnidad"].forEach(id => $(id).addEventListener("input", pistaModoHito));
 function pistaModoHito(){ /* sin nota: los rótulos de los campos ya lo dicen */ }
 
+$("hRespTec").addEventListener("change", () => {
+  const rt = S.cat.respTecnicos.find(x => x.label === $("hRespTec").value);
+  $("hRTCorreo").value = rt ? (rt.correo || "") : "";
+  $("hRTCel").value = rt ? (rt.celular || "") : "";
+  pistaRespHito();
+});
+function pistaRespHito(){
+  const propio = $("hRespTec").value;
+  const heredado = S.ctxInd ? (S.ctxInd.respTec || "") : "";
+  $("pistaRespHito").textContent = propio
+    ? "Este hito lo ejecuta " + propio + ". Los avisos de vencimiento irán a esta persona."
+    : (heredado ? "Sin responsable propio: se usará " + heredado + ", el del indicador."
+                : "El indicador tampoco tiene responsable técnico definido.");
+}
+
 $("hProduce").addEventListener("change", pistaProduceResultado);
 function pistaProduceResultado(){
   const ind = S.ctxInd;
@@ -2520,7 +2589,10 @@ $("btnGuardarHito").onclick = async () => {
   const d = { hito: $("hNombre").value.trim(), part: num($("hPart").value), costo: num($("hCosto").value),
               fi: $("hFI").value, fv: $("hFV").value,
               metaHito: $("hMeta").value, unidad: $("hUnidad").value.trim(),
-              produce: $("hProduce").value };
+              produce: $("hProduce").value,
+              respTec: $("hRespTec").value,
+              rtCorreo: $("hRTCorreo").value.trim(),
+              rtCel: $("hRTCel").value.trim() };
   let mal = false;
   if(!d.hito){ error("hNombre", "Escribe el nombre del hito."); mal = true; }
   if(!d.part || d.part <= 0){ error("hPart", "La participación debe ser mayor que cero."); mal = true; }
@@ -2554,6 +2626,9 @@ $("btnGuardarHito").onclick = async () => {
   v[H.meta_hito.id] = d.metaHito === "" ? "" : num(d.metaHito);
   v[H.unidad.id] = d.unidad;
   v[H.produce_resultado.id] = d.produce;
+  v[H.resp_tecnico.id] = d.respTec;
+  v[H.resp_tecnico_correo.id] = d.respTec ? d.rtCorreo : "";
+  v[H.resp_tecnico_celular.id] = d.respTec ? d.rtCel : "";
   v[HE.indicador_ref.id] = ind.id;
   if(S.ctxObj) v[HE.objetivo_ref.id] = S.ctxObj.id;   // respaldo
 
@@ -3127,16 +3202,39 @@ function pintarTablero(){
   /* --- progreso por objetivo --- */
   const orden = objs.slice().sort((a, b) => (progresoObjetivo(b.id) || 0) - (progresoObjetivo(a.id) || 0));
   h += '<div class="tarj"><h3>Progreso por objetivo</h3>' +
-    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De mayor a menor avance. Entre paréntesis, cuántos de sus indicadores están cumplidos. Pasa el cursor sobre un nombre recortado para verlo completo.</p>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 14px">De mayor a menor avance. ' +
+    "Cada fila muestra el periodo, la oficina, cuántos indicadores tiene y cuántos ya cumplieron su meta.</p>" +
     orden.map(o => {
-      const p = progresoObjetivo(o.id), sem = semaforo(p);
+      const p = progresoObjetivo(o.id), sem = semaforo(p), lg = logroObjetivo(o.id);
       const is = indicadoresDe(o.id);
       const cum = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
+      const pl = plazoObjetivo(o.id), d = pl.fv ? dias(HOY, pl.fv) : null;
       const t = sinHtml(o.objetivo);
-      return '<div class="bar2"><div class="n">' + recorta(t, 62) +
-        ' <span style="color:var(--mist)">(' + cum + "/" + is.length + ")</span></div>" +
-        '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (p || 0) + '%"></i></div>' +
-        '<div class="v">' + (p == null ? "—" : p + "%") + "</div></div>";
+
+      /* Etiqueta de plazo: solo cuando aporta algo (vencido o por vencer). */
+      let plazo = "";
+      if(d != null && d < 0 && !(p != null && p >= 100))
+        plazo = '<span class="tag r">vencido ' + Math.abs(d) + " d</span>";
+      else if(d != null && d >= 0 && d <= CONFIG.REGLAS.alertas.porVencer)
+        plazo = '<span class="tag a">vence en ' + d + " d</span>";
+
+      return '<div class="fila-obj">' +
+        '<div class="fo-tit">' + recorta(t, 78) + "</div>" +
+        '<div class="fo-meta">' +
+          (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+          (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
+          (is.length
+            ? "<span>" + is.length + " indicador" + (is.length > 1 ? "es" : "") +
+              (cum ? ' · <b style="color:var(--ok)">' + cum + " cumplido" + (cum > 1 ? "s" : "") + "</b>" : "") + "</span>"
+            : '<span class="tag a">sin indicadores</span>') +
+          (lg != null ? '<span title="Cuánto de la meta se ha alcanzado">logro ' + lg + "%</span>" : "") +
+          plazo +
+        "</div>" +
+        '<div class="fo-barra">' +
+          '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+          '<div class="fo-pct ' + (sem.cl || "") + '">' + (p == null ? "—" : p + "%") + "</div>" +
+        "</div>" +
+      "</div>";
     }).join("") + "</div>";
 
   /* --- ranking de oficinas --- */
@@ -3202,17 +3300,19 @@ function pintarTablero(){
     }).join("") + "</tbody></table></div>";
 
   /* --- brecha entre ejecución y logro --- */
-  h += '<div class="tarj"><h3>Ejecución completa sin alcanzar la meta (' + brechas.length + ")</h3>" +
-    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Indicadores con todos sus hitos al 100% pero por debajo del ' +
-    UMBRAL_LOGRO + '% de la meta. Es la señal más clara de que el plan de acción necesita reformularse: se hizo lo previsto y no bastó.</p>' +
+  h += '<div class="tarj"><h3>El plan avanza más que el resultado (' + brechas.length + ")</h3>" +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Indicadores donde <b>el plan va muy por delante del resultado</b>: ' +
+    "la ejecución supera al logro en 15 puntos o más, y el logro está por debajo del " + UMBRAL_LOGRO + "% de la meta. " +
+    "Señal de que las actividades avanzan pero no están moviendo el indicador: conviene revisar si el plan necesita reformularse.</p>" +
     (brechas.length ?
-      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Alcanzado</th><th>Logro</th><th>Responsable</th></tr></thead><tbody>' +
+      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Ejecución</th><th>Alcanzado</th><th>Logro</th><th>Responsable</th></tr></thead><tbody>' +
       brechas.map(x => {
         const o = S.objetivos.find(y => y.id === x.ind.objetivoRef);
         const sem = semaforo(x.b.logro);
         return "<tr><td><b>" + recorta(sinHtml(x.ind.indicador), 55) + "</b></td><td>" +
           (o ? recorta(sinHtml(o.objetivo), 40) : "—") + "</td><td>" + esc(x.ind.meta || "—") +
-          "</td><td>" + red1(num(x.ind.valor)) + '</td><td><span class="tag ' + sem.clase + '">' + x.b.logro + "%</span></td><td>" +
+          '</td><td><span class="tag z">' + red1(x.b.ejec) + "%</span></td><td>" + (valorAlcanzado(x.ind) ?? "—") +
+          '</td><td><span class="tag ' + sem.clase + '">' + x.b.logro + "%</span></td><td>" +
           esc(x.ind.respTec || "—") + "</td></tr>";
       }).join("") + "</tbody></table>" :
       '<div class="vacio">Ningún indicador presenta esta brecha.</div>') +
@@ -3238,7 +3338,7 @@ function pintarTablero(){
       '<table class="t"><thead><tr><th>Hito</th><th>Indicador</th><th>Responsable</th><th>Venció</th><th>Días</th><th>Avance</th></tr></thead><tbody>' +
       pend.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" +
         recorta(sinHtml(x.ind ? x.ind.indicador : ""), 50) + "</td><td>" +
-        esc((x.ind && x.ind.respTec) || "—") + "</td><td>" + verFecha(x.hi.fv) +
+        esc((respDelHito(x.hi, x.ind) || {}).nombre || "—") + "</td><td>" + verFecha(x.hi.fv) +
         '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
       "</tbody></table>" :
       '<div class="vacio">Ningún hito vencido pendiente.</div>') + "</div>";
