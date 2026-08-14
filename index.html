@@ -2114,25 +2114,37 @@ function abrirIndicador(objId, indId){
 }
 
 /* Los técnicos se filtran por el responsable de proceso del OBJETIVO. */
-function refrescarTecnicos(valorActual){
-  const rp = S.ctxObj ? S.cat.respProceso.find(x => x.label === S.ctxObj.respProc) : null;
+/* Técnicos que dependen del responsable de proceso del objetivo. Se usa
+   igual en el indicador y en el hito: el criterio debe ser uno solo.
+   Los que no tienen líder asignado se incluyen siempre, para que nadie
+   quede inalcanzable mientras el catálogo se termina de poblar. */
+function tecnicosDe(nombreRespProceso, valorActual){
+  const rp = S.cat.respProceso.find(x => x.label === nombreRespProceso);
   let arr = S.cat.respTecnicos, nota = "";
   if(rp){
     const suyos = S.cat.respTecnicos.filter(t => coincideRel(t.lider, rp));
     const huerfanos = S.cat.respTecnicos.filter(t => !t.lider);
     if(suyos.length){
       arr = suyos.concat(huerfanos);
-      nota = suyos.length + " técnico(s) a cargo de " + rp.label + (huerfanos.length ? " · y " + huerfanos.length + " sin líder asignado" : "");
+      nota = suyos.length + " técnico(s) a cargo de " + rp.label +
+             (huerfanos.length ? " · y " + huerfanos.length + " sin líder asignado" : "");
     }else{
       nota = "Ningún técnico tiene a " + rp.label + " como líder en QuintaDB, así que se muestran todos.";
     }
   }
+  /* Un valor ya guardado se conserva aunque no esté en la lista filtrada:
+     un registro antiguo no debe perder su responsable. */
   if(valorActual && !arr.some(t => t.label === valorActual)){
     const orig = S.cat.respTecnicos.find(t => t.label === valorActual);
     if(orig) arr = [orig].concat(arr);
   }
-  opciones("oRespTec", arr.map(t => t.label), valorActual, "— elige —");
-  $("pistaRT").textContent = nota;
+  return { lista: arr, nota };
+}
+
+function refrescarTecnicos(valorActual){
+  const r = tecnicosDe(S.ctxObj ? S.ctxObj.respProc : "", valorActual);
+  opciones("oRespTec", r.lista.map(t => t.label), valorActual, "— elige —");
+  $("pistaRT").textContent = r.nota;
 }
 $("oRespTec").addEventListener("change", () => {
   const rt = S.cat.respTecnicos.find(x => x.label === $("oRespTec").value);
@@ -2455,10 +2467,12 @@ function abrirHito(indId, hitoId){
   /* Los técnicos del hito salen del mismo catálogo; el del indicador queda
      como opción destacada para que se vea de quién se hereda. */
   const heredado = ind.respTec || "";
-  const lista = S.cat.respTecnicos.map(t => ({
+  const filtro = tecnicosDe(o ? o.respProc : "", hi ? hi.respTec : "");
+  const lista = filtro.lista.map(t => ({
     v: t.label, t: t.label + (t.label === heredado ? "  (del indicador)" : "")
   }));
   opciones("hRespTec", lista, hi ? hi.respTec : "", "— hereda del indicador —");
+  S.notaTecHito = filtro.nota;
   $("hRespTec").value = hi ? (hi.respTec || "") : "";   // por si el valor no está en el catálogo
   $("hRTCorreo").value = hi ? hi.rtCorreo : "";
   $("hRTCel").value = hi ? hi.rtCel : "";
@@ -2539,10 +2553,11 @@ $("hRespTec").addEventListener("change", () => {
 function pistaRespHito(){
   const propio = $("hRespTec").value;
   const heredado = S.ctxInd ? (S.ctxInd.respTec || "") : "";
-  $("pistaRespHito").textContent = propio
+  const base = propio
     ? "Este hito lo ejecuta " + propio + ". Los avisos de vencimiento irán a esta persona."
     : (heredado ? "Sin responsable propio: se usará " + heredado + ", el del indicador."
                 : "El indicador tampoco tiene responsable técnico definido.");
+  $("pistaRespHito").textContent = base + (S.notaTecHito ? "  ·  " + S.notaTecHito : "");
 }
 
 $("hProduce").addEventListener("change", pistaProduceResultado);
