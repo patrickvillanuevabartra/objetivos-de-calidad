@@ -218,6 +218,14 @@ table.t tr:last-child td{border-bottom:0}
 .chklist .nada{padding:10px;color:var(--mist);font-size:13px;text-align:center}
 .chklist.mal{border-color:var(--bad);background:var(--rojo-bg)}
 
+/* ---------- texto recortado: se ve completo al pasar el cursor ---------- */
+.corta{position:relative;cursor:help;border-bottom:1px dotted var(--line)}
+.corta::after{content:attr(data-full);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
+  background:var(--ink);color:#fff;font-size:12.5px;font-weight:400;line-height:1.45;padding:8px 11px;
+  border-radius:8px;max-width:520px;width:max-content;white-space:normal;box-shadow:0 6px 20px rgba(0,0,0,.25);
+  opacity:0;visibility:hidden;transition:opacity .15s}
+.corta:hover::after{opacity:1;visibility:visible}
+
 /* ---------- resaltado del registro recién guardado ---------- */
 .recien{animation:destello 2.2s ease-out}
 tr.recien > td{animation:destello 2.2s ease-out}
@@ -801,6 +809,23 @@ function error(campo, texto){
   if(e){ e.textContent = texto; e.classList.add("on"); }
   if(c) c.classList.add("mal");
 }
+/* El error se limpia en cuanto se escribe: si se queda marcado tras
+   corregirlo, parece que hubiera que escribir dos veces. */
+document.addEventListener("input", ev => {
+  const c = ev.target;
+  if(!c || !c.id) return;
+  if(c.classList && c.classList.contains("mal")) c.classList.remove("mal");
+  const e = $("e_" + c.id);
+  if(e) e.classList.remove("on");
+}, true);
+document.addEventListener("change", ev => {
+  const c = ev.target;
+  if(!c || !c.id) return;
+  if(c.classList && c.classList.contains("mal")) c.classList.remove("mal");
+  const e = $("e_" + c.id);
+  if(e) e.classList.remove("on");
+}, true);
+
 /* Lleva la vista al primer campo con error: si queda fuera de pantalla,
    el usuario pulsa Guardar y parece que no pasa nada. */
 function irAlPrimerError(caja){
@@ -2074,6 +2099,8 @@ $("oRespTec").addEventListener("change", () => {
 
 /* Aviso si al recortar el plazo quedan hitos fuera */
 ["iFI","iFV"].forEach(id => $(id).addEventListener("change", () => {
+  const a = fecha($("iFI").value), b = fecha($("iFV").value);
+  if(a && b && b <= a) error("iFV", "El vencimiento debe ser posterior a la fecha de inicio.");
   if(!S.editInd){ aviso("avFechasInd", ""); return; }
   const fi = fecha($("iFI").value), fv = fecha($("iFV").value);
   if(!fi || !fv) return;
@@ -2107,7 +2134,7 @@ $("btnGuardarInd").onclick = async () => {
   if(!d.rtCel){ error("oRTCel", "Falta el celular del responsable técnico."); mal = true; }
   if(!d.fi){ error("iFI", "Falta la fecha de inicio."); mal = true; }
   if(!d.fv){ error("iFV", "Falta la fecha de vencimiento."); mal = true; }
-  if(d.fi && d.fv && fecha(d.fv) < fecha(d.fi)){ error("iFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
+  if(d.fi && d.fv && fecha(d.fv) <= fecha(d.fi)){ error("iFV", "El vencimiento debe ser posterior a la fecha de inicio."); mal = true; }
 
   if(S.editInd && d.fi && d.fv){
     const fi = fecha(d.fi), fv = fecha(d.fv);
@@ -2464,6 +2491,18 @@ function pistaProduceResultado(){
   }
 }
 
+["hFI","hFV"].forEach(id => $(id).addEventListener("change", revisarFechasHito));
+function revisarFechasHito(){
+  const fi = fecha($("hFI").value), fv = fecha($("hFV").value);
+  if(fi && fv && fv <= fi){
+    error("hFV", "El vencimiento debe ser posterior a la fecha de inicio.");
+    /* Se propone el día siguiente para no dejar al usuario sin salida. */
+    const sig = new Date(fi.getTime() + 86400000);
+    const iv = S.ctxInd ? fecha(S.ctxInd.fv) : null;
+    if(!iv || sig <= iv) $("hFV").min = iso(sig);
+  }
+}
+
 $("hPart").addEventListener("input", revisarParticipacion);
 function revisarParticipacion(){
   if(!S.ctxInd) return;
@@ -2495,7 +2534,7 @@ $("btnGuardarHito").onclick = async () => {
   }
 
   const ii = fecha(ind.fi), iv = fecha(ind.fv), hi = fecha(d.fi), hv = fecha(d.fv);
-  if(hi && hv && hv < hi){ error("hFV", "El vencimiento no puede ser anterior al inicio."); mal = true; }
+  if(hi && hv && hv <= hi){ error("hFV", "El vencimiento debe ser posterior a la fecha de inicio."); mal = true; }
   if(hi && ii && hi < ii){ error("hFI", "No puede empezar antes que la meta (" + verFecha(ind.fi) + ")."); mal = true; }
   if(hv && iv && hv > iv){ error("hFV", "No puede vencer después que la meta (" + verFecha(ind.fv) + ")."); mal = true; }
 
@@ -3076,19 +3115,6 @@ function pintarTablero(){
     kpi(oSin, "Sin indicadores", oSin ? "warn" : "") +
     "</div></div>";
 
-  h += '<div class="tarj"><h3>Indicadores, hitos y reportes</h3><div class="kpis">' +
-    kpi(inds.length, "Total indicadores") +
-    kpi(iCumpl + " de " + inds.length, "Indicadores al 100%") +
-    kpi(iCrit, "Indicadores críticos <50%", iCrit ? "bad" : "") +
-    kpi(iSin, "Indicadores sin hitos", iSin ? "warn" : "") +
-    kpi(brechas.length, "Ejecutado sin lograr", brechas.length ? "bad" : "") +
-    kpi(hits.length, "Hitos programados") +
-    kpi(hCerr + " de " + hits.length, "Hitos al 100%") +
-    kpi(reps.length, "Reportes de avance") +
-    kpi(extemp, "Reportes extemporáneos", extemp ? "warn" : "") +
-    kpi(costo ? "S/ " + costo.toLocaleString("es-PE") : "—", "Costo programado") +
-    "</div></div>";
-
   /* --- condición --- */
   const porCond = {};
   CONFIG.REGLAS.condiciones.forEach(c => porCond[c] = 0);
@@ -3099,15 +3125,16 @@ function pintarTablero(){
       '<div class="v">' + porCond[c] + "</div></div>").join("") + "</div>";
 
   /* --- progreso por objetivo --- */
-  const orden = objs.slice().sort((a, b) => (progresoObjetivo(a.id) || 0) - (progresoObjetivo(b.id) || 0));
+  const orden = objs.slice().sort((a, b) => (progresoObjetivo(b.id) || 0) - (progresoObjetivo(a.id) || 0));
   h += '<div class="tarj"><h3>Progreso por objetivo</h3>' +
-    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De menor a mayor: los que necesitan atención aparecen primero. Entre paréntesis, cuántos de sus indicadores están cumplidos.</p>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">De mayor a menor avance. Entre paréntesis, cuántos de sus indicadores están cumplidos. Pasa el cursor sobre un nombre recortado para verlo completo.</p>' +
     orden.map(o => {
       const p = progresoObjetivo(o.id), sem = semaforo(p);
       const is = indicadoresDe(o.id);
       const cum = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
-      return '<div class="bar2"><div class="n" title="' + esc(sinHtml(o.objetivo)) + '">' +
-        esc(sinHtml(o.objetivo).slice(0, 62)) + ' <span style="color:var(--mist)">(' + cum + "/" + is.length + ")</span></div>" +
+      const t = sinHtml(o.objetivo);
+      return '<div class="bar2"><div class="n">' + recorta(t, 62) +
+        ' <span style="color:var(--mist)">(' + cum + "/" + is.length + ")</span></div>" +
         '<div class="barra ' + (sem.cl || "") + '" style="flex:1"><i style="width:' + (p || 0) + '%"></i></div>' +
         '<div class="v">' + (p == null ? "—" : p + "%") + "</div></div>";
     }).join("") + "</div>";
@@ -3183,8 +3210,8 @@ function pintarTablero(){
       brechas.map(x => {
         const o = S.objetivos.find(y => y.id === x.ind.objetivoRef);
         const sem = semaforo(x.b.logro);
-        return "<tr><td><b>" + esc(sinHtml(x.ind.indicador).slice(0, 55)) + "</b></td><td>" +
-          esc(o ? sinHtml(o.objetivo).slice(0, 40) : "—") + "</td><td>" + esc(x.ind.meta || "—") +
+        return "<tr><td><b>" + recorta(sinHtml(x.ind.indicador), 55) + "</b></td><td>" +
+          (o ? recorta(sinHtml(o.objetivo), 40) : "—") + "</td><td>" + esc(x.ind.meta || "—") +
           "</td><td>" + red1(num(x.ind.valor)) + '</td><td><span class="tag ' + sem.clase + '">' + x.b.logro + "%</span></td><td>" +
           esc(x.ind.respTec || "—") + "</td></tr>";
       }).join("") + "</tbody></table>" :
@@ -3210,7 +3237,7 @@ function pintarTablero(){
     (pend.length ?
       '<table class="t"><thead><tr><th>Hito</th><th>Indicador</th><th>Responsable</th><th>Venció</th><th>Días</th><th>Avance</th></tr></thead><tbody>' +
       pend.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" +
-        esc(sinHtml(x.ind ? x.ind.indicador : "").slice(0, 50)) + "</td><td>" +
+        recorta(sinHtml(x.ind ? x.ind.indicador : ""), 50) + "</td><td>" +
         esc((x.ind && x.ind.respTec) || "—") + "</td><td>" + verFecha(x.hi.fv) +
         '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
       "</tbody></table>" :
@@ -3225,14 +3252,21 @@ function pintarTablero(){
       prox.map(i => {
         const d = dias(HOY, i.fv), p = progresoIndicador(i.id), sem = semaforo(p);
         const o = S.objetivos.find(x => x.id === i.objetivoRef);
-        return "<tr><td>" + esc(sinHtml(i.indicador).slice(0, 50)) + "</td><td>" +
-          esc(o ? sinHtml(o.objetivo).slice(0, 40) : "—") + "</td><td>" + esc(i.meta || "—") +
+        return "<tr><td>" + recorta(sinHtml(i.indicador), 50) + "</td><td>" +
+          (o ? recorta(sinHtml(o.objetivo), 40) : "—") + "</td><td>" + esc(i.meta || "—") +
           "</td><td>" + verFecha(i.fv) + '</td><td><span class="tag ' + (d <= 30 ? "a" : "z") + '">' + d + " d</span></td>" +
           '<td><span class="tag ' + sem.clase + '">' + (p == null ? "sin hitos" : p + "%") + "</span></td></tr>";
       }).join("") + "</tbody></table>" :
       '<div class="vacio">Ningún indicador vence en los próximos 60 días.</div>') + "</div>";
 
   $("tablero").innerHTML = h;
+}
+
+/* Recorta un texto y, si lo hizo, lo deja disponible al pasar el cursor. */
+function recorta(txt, n){
+  const t = String(txt || "");
+  if(t.length <= n) return esc(t);
+  return '<span class="corta" data-full="' + esc(t) + '">' + esc(t.slice(0, n)) + "…</span>";
 }
 
 function kpi(n, e, clase){
