@@ -95,6 +95,7 @@ main{max-width:1280px;margin:0 auto;padding:28px 24px 80px}
 .btn:disabled{background:#9aa5a0;cursor:not-allowed}
 .btn.sec{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}
 .btn.sec:hover{background:var(--verde-cl)}
+.btn.sec.on{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn.mini{padding:5px 10px;font-size:12.5px}
 .btn.peligro{background:var(--rojo)}
 .btn.peligro:hover{background:#8d2020}
@@ -3344,9 +3345,15 @@ function pintarTablero(){
       '<div class="vacio">Ningún hito vencido pendiente.</div>') + "</div>";
 
   /* --- próximos vencimientos, por indicador --- */
-  const prox = inds.filter(i => { const d = dias(HOY, i.fv); return d != null && d >= 0 && d <= 60; })
+  const dv = S.diasVenc || CONFIG.REGLAS.alertas.porVencer;   // 30 por defecto
+  const prox = inds.filter(i => { const d = dias(HOY, i.fv); return d != null && d >= 0 && d <= dv; })
     .sort((a, b) => dias(HOY, a.fv) - dias(HOY, b.fv));
-  h += '<div class="tarj"><h3>Indicadores que vencen en los próximos 60 días (' + prox.length + ")</h3>" +
+  h += '<div class="tarj"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">' +
+      '<h3 style="margin:0">Indicadores que vencen pronto (' + prox.length + ")</h3>" +
+      '<div style="margin-left:auto;display:flex;gap:4px">' +
+      [30, 60, 90].map(n => '<button type="button" class="btn sec mini' + (n === dv ? " on" : "") +
+        '" data-venc="' + n + '">' + n + " días</button>").join("") +
+      "</div></div>" +
     (prox.length ?
       '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Vence</th><th>Faltan</th><th>Avance</th></tr></thead><tbody>' +
       prox.map(i => {
@@ -3357,9 +3364,12 @@ function pintarTablero(){
           "</td><td>" + verFecha(i.fv) + '</td><td><span class="tag ' + (d <= 30 ? "a" : "z") + '">' + d + " d</span></td>" +
           '<td><span class="tag ' + sem.clase + '">' + (p == null ? "sin hitos" : p + "%") + "</span></td></tr>";
       }).join("") + "</tbody></table>" :
-      '<div class="vacio">Ningún indicador vence en los próximos 60 días.</div>') + "</div>";
+      '<div class="vacio">Ningún indicador vence en los próximos ' + dv + " días.</div>") + "</div>";
 
   $("tablero").innerHTML = h;
+  $("tablero").querySelectorAll("[data-venc]").forEach(b => {
+    b.onclick = () => { S.diasVenc = parseInt(b.dataset.venc, 10); pintarTablero(); };
+  });
 }
 
 /* Recorta un texto y, si lo hizo, lo deja disponible al pasar el cursor. */
