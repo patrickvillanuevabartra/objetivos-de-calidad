@@ -796,7 +796,10 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
       </div>
 
-      <div class="subtit">Próximas acciones <button type="button" class="btn sec mini" id="btnAddAccion">+ Añadir acción</button></div>
+      <div class="subtit">Próximas acciones <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--mist)">
+        (opcional)</span><button type="button" class="btn sec mini" id="btnAddAccion">+ Añadir acción</button></div>
+      <p style="font-size:12.5px;color:var(--mist);margin:0 0 10px">Se guardan junto con el reporte:
+        no tienen botón propio. Al pulsar <b>Guardar reporte</b> quedan registradas todas.</p>
       <div id="rAcciones"></div>
     </div>
     <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
@@ -3068,7 +3071,8 @@ $("btnGuardarRep").onclick = async () => {
   }catch(e){
     msg("mRepMsg", "No se pudo guardar: " + e.message, "mal");
   }
-  b.disabled = false; b.textContent = "Guardar reporte";
+  b.disabled = false;
+  contarAcciones();
 };
 
 /* ---- evidencias: enlaces múltiples ---- */
@@ -3114,7 +3118,15 @@ function pintarAcciones(arr){
   $("rAcciones").innerHTML = "";
   (arr || []).forEach(a => agregarAccion(a));
   if(!arr || !arr.length) $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+  contarAcciones();
 }
+function contarAcciones(){
+  const n = $("rAcciones").querySelectorAll(".acc-item").length;
+  const b = $("btnGuardarRep");
+  if(!b || b.disabled) return;
+  b.textContent = n ? "Guardar reporte y " + n + (n > 1 ? " acciones" : " acción") : "Guardar reporte";
+}
+
 function agregarAccion(a){
   const vacio = $("rAcciones").querySelector(".vacio");
   if(vacio) vacio.remove();
@@ -3137,6 +3149,7 @@ function agregarAccion(a){
     d.remove();
     if(!$("rAcciones").querySelector(".acc-item"))
       $("rAcciones").innerHTML = '<div class="vacio">Sin próximas acciones registradas.</div>';
+    contarAcciones();
   };
   d.querySelector(".a-fec").addEventListener("change", function(){
     const av = d.querySelector(".a-av");
@@ -3151,6 +3164,7 @@ function agregarAccion(a){
     }else av.classList.remove("on");
   });
   $("rAcciones").appendChild(d);
+  contarAcciones();
 }
 function leerAccionesForm(){
   const out = [];
