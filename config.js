@@ -284,15 +284,18 @@ const CONFIG = {
   //  se comparten entre matrices) o crear una propia.
   // ==========================================================================
   USUARIOS: {
-    ENTITY_ID: "aNDhddT0PnW7PLW5tcJwLP",
+    // Tabla PROPIA de este aplicativo. Antes se compartía con la Matriz de
+    // Indicadores (aNDhddT0PnW7PLW5tcJwLP), lo que impedía dar acceso a un
+    // sistema y no al otro. Ahora cada uno gestiona sus propios accesos.
+    ENTITY_ID: "ddO28eWRPdKRxcTmo7WOWh",
     // La lectura va por NOMBRE de columna (QuintaDB con name_value=1).
     F: {
-      usuario:  { id: "baCMPTW5zhv5pcVIVcKSkQ", type: "string", col: "Usuario" },
-      password: { id: "dcS1xdTCjivyoEWQVdSCoy", type: "string", col: "Contraseña" },
-      rol:      { id: "ddRmknWQbcTO0qW4Tyz8oV", type: "select", col: "Rol" },
-      oficina:  { id: "aTcmohWOLgWO_dHCo6x1SJ", type: "string", col: "Oficina asignada" },
-      activo:   { id: "bRxCofW6HhpBP5rCkdiwuZ", type: "select", col: "Activo" },
-      nombre:   { id: "bZCCoBWRXcSQhdJapdTCoY", type: "string", col: "Nombre completo" }
+      usuario:  { id: "aYdKbBk1jhW4ZdUN7dGfOE", type: "string", col: "Usuario" },
+      password: { id: "b_lmkWEYzhhOGsxI3dKsrF", type: "string", col: "Contraseña" },
+      rol:      { id: "cZbSoYfffbjyk-W6CQg8kF", type: "select", col: "Rol" },
+      oficina:  { id: "ckn8k7jSniWQXRWOqenmkz", type: "string", col: "Oficina asignada" },
+      activo:   { id: "cuW5BdQSncg4owCu7dPCkJ", type: "select", col: "Activo" },
+      nombre:   { id: "aEWOCjWOHcOk16WQldOSkZ", type: "string", col: "Nombre completo" }
     },
     ROLES: ["Administrador", "Gestor", "Oficina", "Usuario libre"]
   },
