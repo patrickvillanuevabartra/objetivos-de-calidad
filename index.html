@@ -29,6 +29,7 @@ html,body{margin:0;padding:0}
 body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--paper);
   line-height:1.55;-webkit-font-smoothing:antialiased;zoom:1.22}
 h1,h2,h3{font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:700;letter-spacing:-.01em;line-height:1.2;margin:0}
+.pw{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
 .mono{font-family:'IBM Plex Mono',monospace}
 button,input,select,textarea{font-family:inherit;font-size:14px}
 
@@ -312,6 +313,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <button class="on" data-v="tablero">Tablero</button>
         <button data-v="objetivos">Objetivos de calidad</button>
         <button data-v="despriorizados">Despriorizados <span class="cont" id="contDespri"></span></button>
+        <button data-v="usuarios" id="tabUsuarios" style="display:none">Usuarios</button>
         <span class="chip" id="chipUsr"></span>
         <button id="btnSalir">Salir</button>
       </nav>
@@ -365,6 +367,50 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="campo" style="flex:1.4"><label for="dBuscar">Buscar</label><input type="text" id="dBuscar" placeholder="objetivo, indicador, responsable…"></div>
       </div>
       <div id="listaDespri"></div>
+    </section>
+
+    <!-- ---------- usuarios ---------- -->
+    <section class="vista" id="vUsuarios">
+      <div class="page-head">
+        <div class="eyebrow">Gestión de accesos</div>
+        <h1>Usuarios</h1>
+        <p>Quién entra a este aplicativo y qué puede hacer. Los accesos son propios de la Matriz de Plan
+           de Acción de Objetivos de Calidad: no afectan a los otros sistemas del SGOE.</p>
+      </div>
+
+      <div class="tarj">
+        <h3>Roles y permisos</h3>
+        <table class="t"><thead><tr><th>Rol</th><th>Qué ve</th><th style="text-align:center">Crear</th>
+          <th style="text-align:center">Editar</th><th style="text-align:center">Eliminar</th></tr></thead>
+        <tbody>
+          <tr><td><b>Administrador</b><div style="font-size:12px;color:var(--mist)">Control total</div></td>
+            <td>Todo</td><td style="text-align:center;color:var(--ok);font-weight:700">✓</td>
+            <td style="text-align:center;color:var(--ok);font-weight:700">✓</td>
+            <td style="text-align:center;color:var(--ok);font-weight:700">✓</td></tr>
+          <tr><td><b>Gestor</b><div style="font-size:12px;color:var(--mist)">Ve y edita todo</div></td>
+            <td>Todo</td><td style="text-align:center;color:var(--ok);font-weight:700">✓</td>
+            <td style="text-align:center;color:var(--ok);font-weight:700">✓</td>
+            <td style="text-align:center;color:var(--bad);font-weight:700">✗</td></tr>
+          <tr><td><b>Oficina</b><div style="font-size:12px;color:var(--mist)">Solo su unidad</div></td>
+            <td>Todo, edita lo suyo</td><td style="text-align:center;color:var(--ok);font-weight:700">✓</td>
+            <td style="text-align:center">Solo su oficina</td>
+            <td style="text-align:center;color:var(--bad);font-weight:700">✗</td></tr>
+          <tr><td><b>Usuario libre</b><div style="font-size:12px;color:var(--mist)">Solo consulta</div></td>
+            <td>Todo</td><td style="text-align:center;color:var(--bad);font-weight:700">✗</td>
+            <td style="text-align:center;color:var(--bad);font-weight:700">✗</td>
+            <td style="text-align:center;color:var(--bad);font-weight:700">✗</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="tarj">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <h3 style="margin:0">Usuarios del sistema</h3>
+          <button class="btn" id="btnNuevoUsuario">+ Crear usuario</button>
+        </div>
+        <input type="text" id="usBuscar" placeholder="Buscar por nombre, usuario, rol u oficina…"
+               style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:12px">
+        <div id="usuariosLista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
+      </div>
     </section>
   </main>
 </div>
@@ -760,6 +806,58 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
   </div>
 </div>
 
+<!-- ==================== MODAL USUARIO ==================== -->
+<div class="modal" id="mUsr">
+  <div class="caja" style="max-width:640px">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Acceso al sistema</div>
+        <h2 id="mUsrTit">Nuevo usuario</h2>
+      </div>
+      <button class="cerrar" data-cierra="mUsr">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mUsrMsg"></div>
+      <div class="rej">
+        <div class="full">
+          <label for="uNombre">Nombre completo <b class="req">*</b></label>
+          <input type="text" id="uNombre">
+          <div class="err" id="e_uNombre"></div>
+        </div>
+        <div>
+          <label for="uUsuario">Usuario <b class="req">*</b></label>
+          <input type="text" id="uUsuario" autocomplete="off">
+          <div class="err" id="e_uUsuario"></div>
+        </div>
+        <div>
+          <label for="uPass">Contraseña <b class="req">*</b></label>
+          <input type="text" id="uPass" autocomplete="off">
+          <div class="err" id="e_uPass"></div>
+        </div>
+        <div>
+          <label for="uRol">Rol <b class="req">*</b></label>
+          <select id="uRol"></select>
+          <div class="err" id="e_uRol"></div>
+        </div>
+        <div>
+          <label for="uActivo">Activo</label>
+          <select id="uActivo"><option value="Sí">Sí</option><option value="No">No</option></select>
+        </div>
+        <div class="full" id="cajaOficinas">
+          <label>Oficinas asignadas <b class="req">*</b> <span class="op">(puede tener más de una)</span></label>
+          <div class="chklist" id="uOficinas"></div>
+          <div class="err" id="e_uOficinas"></div>
+          <div class="pista" id="pistaRolUsr"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
+      <button class="btn sec" data-cierra="mUsr">Cancelar</button>
+      <button class="btn" id="btnGuardarUsr">Guardar usuario</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -1056,6 +1154,8 @@ $("btnEntrar").onclick = async () => {
     $("login").style.display = "none";
     $("app").style.display = "block";
     $("chipUsr").textContent = S.sesion.nombre + " · " + S.sesion.rol;
+    /* La gestión de accesos es solo para administradores. */
+    if(esAdmin()) $("tabUsuarios").style.display = "";
     arrancar();
   }catch(e){
     $("loginErr").style.display = "block";
@@ -1796,6 +1896,8 @@ document.querySelectorAll("header.top nav button[data-v]").forEach(b => b.onclic
   b.classList.add("on");
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("on"));
   $("v" + b.dataset.v.charAt(0).toUpperCase() + b.dataset.v.slice(1)).classList.add("on");
+  /* Se carga al abrir la pestaña: no hace falta pedirla en cada arranque. */
+  if(b.dataset.v === "usuarios" && !S.usuarios.length) cargarUsuarios();
 });
 
 /* ==========================================================================
@@ -3157,6 +3259,186 @@ function pintarDespriorizados(){
   con("[data-rnuevo]", e => abrirReporte(e.dataset.rnuevo, null));
   con("[data-redit]",  e => abrirReporte(e.dataset.hito, e.dataset.redit));
   con("[data-rdel]",   e => eliminarReporte(e.dataset.rdel));
+}
+
+/* ==========================================================================
+   Usuarios — tabla propia de este aplicativo
+   ========================================================================== */
+S.usuarios = [];
+
+async function cargarUsuarios(){
+  const cont = $("usuariosLista");
+  cont.innerHTML = '<div class="cargando"><span class="spin"></span>Cargando…</div>';
+  try{
+    const regs = await listar(CONFIG.USUARIOS.ENTITY_ID);
+    const F = CONFIG.USUARIOS.F;
+    S.usuarios = regs.map(r => ({
+      id: r.id,
+      nombre: val(r.v, F.nombre),
+      usuario: val(r.v, F.usuario),
+      pass: val(r.v, F.password),
+      rol: val(r.v, F.rol) || "Usuario libre",
+      oficina: val(r.v, F.oficina),
+      activo: val(r.v, F.activo) === "Sí" ? "Sí" : "No"
+    })).sort((a, b) => (a.nombre || a.usuario).localeCompare(b.nombre || b.usuario, "es"));
+    pintarUsuarios();
+  }catch(e){
+    cont.innerHTML = '<div class="msg mal">No se pudieron cargar: ' + esc(e.message) + "</div>";
+  }
+}
+
+$("usBuscar").addEventListener("input", pintarUsuarios);
+
+function pintarUsuarios(){
+  const q = norm($("usBuscar").value.trim());
+  const arr = S.usuarios.filter(u => !q ||
+    norm([u.nombre, u.usuario, u.rol, u.oficina].join(" ")).indexOf(q) >= 0);
+
+  if(!S.usuarios.length){
+    $("usuariosLista").innerHTML = '<div class="vacio">No hay usuarios. Crea el primero con “+ Crear usuario”.</div>';
+    return;
+  }
+  if(!arr.length){
+    $("usuariosLista").innerHTML = '<div class="vacio">Ningún usuario coincide con la búsqueda.</div>';
+    return;
+  }
+
+  $("usuariosLista").innerHTML =
+    '<table class="t"><thead><tr><th>Nombre</th><th>Usuario</th><th>Contraseña</th><th>Rol</th>' +
+    "<th>Oficina(s)</th><th style=\"text-align:center\">Activo</th><th></th></tr></thead><tbody>" +
+    arr.map(u => {
+      const ofis = partir(u.oficina);
+      const vistaOfi = u.rol === "Oficina"
+        ? (ofis.length ? (ofis.length === 1 ? esc(ofis[0]) : recorta(ofis.join(" · "), 40)) :
+           '<span class="tag r">sin oficina</span>')
+        : '<span style="color:var(--mist)">ve todo</span>';
+      return "<tr" + (u.activo === "No" ? ' style="opacity:.55"' : "") + ">" +
+        "<td><b>" + esc(u.nombre || "—") + "</b></td>" +
+        "<td>" + esc(u.usuario) + "</td>" +
+        '<td style="white-space:nowrap">' +
+          "<span class=\"mono pw\" data-pw=\"" + esc(u.pass) + "\">••••••</span> " +
+          '<button class="ico" data-verpw="' + esc(u.id) + '" title="Mostrar u ocultar">👁️</button></td>' +
+        "<td>" + esc(u.rol) + "</td>" +
+        "<td>" + vistaOfi + "</td>" +
+        '<td style="text-align:center">' + (u.activo === "Sí"
+          ? '<span style="color:var(--ok);font-weight:600">● Sí</span>'
+          : '<span style="color:var(--bad);font-weight:600">● No</span>') + "</td>" +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="ico" data-uedit="' + esc(u.id) + '" title="Editar">✏️</button> ' +
+          '<button class="ico" data-utog="' + esc(u.id) + '" title="' +
+            (u.activo === "Sí" ? "Desactivar" : "Activar") + '">' + (u.activo === "Sí" ? "🔒" : "🔓") + "</button> " +
+          '<button class="ico" data-udel="' + esc(u.id) + '" title="Eliminar">🗑️</button></td></tr>';
+    }).join("") + "</tbody></table>";
+
+  const raiz = $("usuariosLista");
+  raiz.querySelectorAll("[data-verpw]").forEach(b => b.onclick = () => {
+    const sp = b.previousElementSibling;
+    const oculto = sp.textContent.indexOf("•") >= 0;
+    sp.textContent = oculto ? (sp.dataset.pw || "(vacía)") : "••••••";
+  });
+  raiz.querySelectorAll("[data-uedit]").forEach(b => b.onclick = () => abrirUsuario(b.dataset.uedit));
+  raiz.querySelectorAll("[data-utog]").forEach(b => b.onclick = () => alternarUsuario(b.dataset.utog));
+  raiz.querySelectorAll("[data-udel]").forEach(b => b.onclick = () => eliminarUsuario(b.dataset.udel));
+}
+
+$("btnNuevoUsuario").onclick = () => abrirUsuario(null);
+
+function abrirUsuario(id){
+  const u = id ? S.usuarios.find(x => x.id === id) : null;
+  S.editUsr = u;
+  limpiaErrores("mUsr");
+  msg("mUsrMsg", "", "");
+  $("mUsrTit").textContent = u ? (u.nombre || u.usuario) : "Nuevo usuario";
+  $("uNombre").value = u ? u.nombre : "";
+  $("uUsuario").value = u ? u.usuario : "";
+  $("uPass").value = u ? u.pass : "";
+  $("uActivo").value = u ? u.activo : "Sí";
+  opciones("uRol", CONFIG.USUARIOS.ROLES, u ? u.rol : "Usuario libre", "");
+  pintarCasillas("uOficinas", CONFIG.CATALOGOS.oficinas.opciones.map(o => ({ label: o, codigo: "" })),
+    u ? partir(u.oficina) : []);
+  ajustarRolUsuario();
+  $("mUsr").classList.add("on");
+}
+
+/* Solo el rol Oficina necesita oficinas: los demás ven todo. */
+$("uRol").addEventListener("change", ajustarRolUsuario);
+function ajustarRolUsuario(){
+  const esOficina = $("uRol").value === "Oficina";
+  $("cajaOficinas").style.display = esOficina ? "" : "none";
+  $("pistaRolUsr").textContent = esOficina
+    ? "Solo podrá editar los objetivos de las oficinas marcadas."
+    : "";
+}
+
+$("btnGuardarUsr").onclick = async () => {
+  limpiaErrores("mUsr");
+  const d = {
+    nombre: $("uNombre").value.trim(),
+    usuario: $("uUsuario").value.trim(),
+    pass: $("uPass").value.trim(),
+    rol: $("uRol").value,
+    activo: $("uActivo").value,
+    oficinas: leerCasillas("uOficinas")
+  };
+  let mal = false;
+  if(!d.nombre){ error("uNombre", "Escribe el nombre completo."); mal = true; }
+  if(!d.usuario){ error("uUsuario", "Escribe el usuario."); mal = true; }
+  if(!d.pass){ error("uPass", "Escribe la contraseña."); mal = true; }
+  if(d.rol === "Oficina" && !d.oficinas.length){
+    error("uOficinas", "Marca al menos una oficina."); mal = true;
+  }
+  /* El usuario identifica a la persona al entrar: no puede repetirse. */
+  const dup = S.usuarios.find(x => norm(x.usuario) === norm(d.usuario) && (!S.editUsr || x.id !== S.editUsr.id));
+  if(dup){ error("uUsuario", "Ya existe un usuario con ese nombre de acceso."); mal = true; }
+  if(mal){ msg("mUsrMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mUsr"); return; }
+
+  const F = CONFIG.USUARIOS.F;
+  const v = {};
+  v[F.nombre.id] = d.nombre;
+  v[F.usuario.id] = d.usuario;
+  v[F.password.id] = d.pass;
+  v[F.rol.id] = d.rol;
+  v[F.activo.id] = d.activo;
+  v[F.oficina.id] = d.rol === "Oficina" ? d.oficinas.join("; ") : "";
+
+  const b = $("btnGuardarUsr");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    await API.saveForm(S.editUsr ? S.editUsr.id : null, v, CONFIG.USUARIOS.ENTITY_ID);
+    $("mUsr").classList.remove("on");
+    toast(S.editUsr ? "Usuario actualizado." : "Usuario creado.");
+    await cargarUsuarios();
+  }catch(e){ msg("mUsrMsg", "No se pudo guardar: " + e.message, "mal"); }
+  b.disabled = false; b.textContent = "Guardar usuario";
+};
+
+async function alternarUsuario(id){
+  const u = S.usuarios.find(x => x.id === id);
+  if(!u) return;
+  const nuevo = u.activo === "Sí" ? "No" : "Sí";
+  if(nuevo === "No" && norm(u.usuario) === norm(S.sesion.usuario)){
+    toast("No puedes desactivar tu propio acceso.", true); return;
+  }
+  try{
+    const v = {}; v[CONFIG.USUARIOS.F.activo.id] = nuevo;
+    await API.saveForm(id, v, CONFIG.USUARIOS.ENTITY_ID);
+    toast(nuevo === "Sí" ? "Usuario activado." : "Usuario desactivado.");
+    await cargarUsuarios();
+  }catch(e){ toast("No se pudo cambiar: " + e.message, true); }
+}
+
+async function eliminarUsuario(id){
+  const u = S.usuarios.find(x => x.id === id);
+  if(!u) return;
+  if(norm(u.usuario) === norm(S.sesion.usuario)){
+    toast("No puedes eliminar tu propio usuario.", true); return;
+  }
+  if(!confirm("¿Eliminar a " + (u.nombre || u.usuario) + "?\n\nPerderá el acceso a este aplicativo.")) return;
+  try{
+    await API.del(id);
+    toast("Usuario eliminado.");
+    await cargarUsuarios();
+  }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
 }
 
 /* ==========================================================================
