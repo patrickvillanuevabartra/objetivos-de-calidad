@@ -260,6 +260,11 @@ tr.recien > td{animation:destello 2.2s ease-out}
   border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:12px;line-height:1.5}
 .cadena b{color:var(--brand)}
 
+/* ---------- fórmula del indicador ---------- */
+.formula{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--slate);
+  background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px 9px;margin-top:5px;
+  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+
 /* ---------- tarjeta de indicador ---------- */
 .ind-card{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:12px}
 .ind-cab{display:flex;gap:12px;align-items:flex-start}
@@ -1353,6 +1358,19 @@ function restaurarPosicion(){
   S.volverA = null;
 }
 
+/* QuintaDB a veces devuelve la lista sin el registro recién creado: la
+   escritura confirma antes de que quede indexado. Se reintenta una vez
+   tras una pausa corta, en lugar de obligar a recargar la página. */
+async function recargarConEspera(idEsperado, coleccion){
+  await recargar();
+  if(!idEsperado) return;
+  const hay = () => (S[coleccion] || []).some(x => x.id === idEsperado);
+  for(let i = 0; i < 3 && !hay(); i++){
+    await new Promise(r => setTimeout(r, 600 + i * 500));
+    await recargar();
+  }
+}
+
 async function recargar(){
   if(!S.volverA) $("lista").innerHTML = '<div class="cargando"><span class="spin"></span>Cargando…</div>';
   const [obj, ind, hit, rep] = await Promise.all([
@@ -1651,9 +1669,9 @@ function bloqueIndicador(o, ind, editable){
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
           "Meta: <b>" + esc(ind.meta || "—") + "</b>" + medicionHtml(ind) + " · " + verFecha(ind.fi) + " → " + verFecha(ind.fv) +
           (ind.respTec ? ' · <span title="Responsable técnico del indicador">👤 ' + esc(ind.respTec) + "</span>" : "") + "</div>" +
-        (ind.formula ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--slate);' +
-          'background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:5px 8px;margin-top:4px;' +
-          'display:inline-block">ƒ ' + esc(sinHtml(ind.formula)) + "</div>" : "") +
+        /* La fórmula se muestra completa: con inline-block y nombres de
+           variable largos, el texto se cortaba en lugar de repartirse. */
+        (ind.formula ? '<div class="formula">ƒ ' + esc(sinHtml(ind.formula)) + "</div>" : "") +
         (ind.proceso ? '<div style="font-size:12px;color:var(--mist);margin-top:2px">' + esc(ind.proceso) + "</div>" : "") +
         brechaHtml(ind) +
       "</div>" +
@@ -2146,7 +2164,8 @@ $("btnGuardarObj").onclick = async () => {
   try{
     const antes = S.editObj ? norm(S.editObj.condicion) : "";
     const resp = await API.saveForm(S.editObj ? S.editObj.id : null, v, CONFIG.MATRIZ.ENTITY_ID);
-    guardarPosicion(S.editObj ? S.editObj.id : (resp && resp.record && resp.record.id));
+    const nuevoId = S.editObj ? null : (resp && resp.record && resp.record.id);
+    guardarPosicion(S.editObj ? S.editObj.id : nuevoId);
     $("mObj").classList.remove("on");
     const ahora = norm(d.condicion);
     let aviso;
@@ -2157,7 +2176,7 @@ $("btnGuardarObj").onclick = async () => {
       aviso = "Objetivo reactivado. Vuelve al seguimiento y al tablero.";
     else aviso = "Objetivo actualizado.";
     toast(aviso);
-    await recargar();
+    await recargarConEspera(nuevoId, "objetivos");
   }catch(e){ msg("mObjMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar objetivo";
 };
@@ -2334,10 +2353,11 @@ $("btnGuardarInd").onclick = async () => {
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
     const resp = await API.saveForm(S.editInd ? S.editInd.id : null, v, CONFIG.INDICADORES.ENTITY_ID);
-    guardarPosicion(S.editInd ? S.editInd.id : (resp && resp.record && resp.record.id));
+    const nuevoId = S.editInd ? null : (resp && resp.record && resp.record.id);
+    guardarPosicion(S.editInd ? S.editInd.id : nuevoId);
     $("mInd").classList.remove("on");
     toast("Indicador guardado.");
-    await recargar();
+    await recargarConEspera(nuevoId, "indicadores");
   }catch(e){ msg("mIndMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar indicador";
 };
@@ -2772,10 +2792,11 @@ $("btnGuardarHito").onclick = async () => {
   b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
   try{
     const resp = await API.saveForm(S.editHito ? S.editHito.id : null, v, CONFIG.HITOS.ENTITY_ID);
-    guardarPosicion(S.editHito ? S.editHito.id : (resp && resp.record && resp.record.id));
+    const nuevoId = S.editHito ? null : (resp && resp.record && resp.record.id);
+    guardarPosicion(S.editHito ? S.editHito.id : nuevoId);
     $("mHito").classList.remove("on");
     toast("Hito guardado.");
-    await recargar();
+    await recargarConEspera(nuevoId, "hitos");
   }catch(e){ msg("mHitoMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar hito";
 };
@@ -3067,7 +3088,7 @@ $("btnGuardarRep").onclick = async () => {
     $("mRep").classList.remove("on");
     const tarde = dias(hi.fv, d.fecha);
     toast("Reporte guardado." + (tarde != null && tarde > 0 ? " Registrado como extemporáneo (+" + tarde + " d)." : ""));
-    await recargar();
+    await recargarConEspera(S.editRep ? null : repId, "reportes");
   }catch(e){
     msg("mRepMsg", "No se pudo guardar: " + e.message, "mal");
   }
