@@ -1677,7 +1677,7 @@ function detalle(o){
   return h;
 }
 
-function bloqueIndicador(o, ind, editable, num){
+function bloqueIndicador(o, ind, editable, nOrden){
   const p = progresoIndicador(ind.id), sem = semaforo(p);
   const hs = hitosDe(ind.id).sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0));
   const suma = red1(sumaParticipacion(ind.id));
@@ -1685,7 +1685,7 @@ function bloqueIndicador(o, ind, editable, num){
 
   let h = '<div class="ind-card" data-fila="' + esc(ind.id) + '">' +
     '<div class="ind-cab">' +
-      '<div class="ind-num">' + num + "</div>" +
+      '<div class="ind-num">' + nOrden + "</div>" +
       '<div style="flex:1;min-width:0">' +
         "<b>" + esc(ind.indicador || "(sin indicador)") + "</b>" +
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
