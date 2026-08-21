@@ -1202,9 +1202,7 @@ function setConn(ok, texto){
 async function arrancar(){
   try{
     await cargarCatalogos();
-    await recargar();
-    setConn(true, S.objetivos.length + " objetivos · " + S.indicadores.length + " indicadores · " +
-                  S.hitos.length + " hitos · " + S.reportes.length + " reportes");
+    await recargar();   // ya deja los contadores al día
   }catch(e){
     setConn(false, e.message);
     $("lista").innerHTML = '<div class="msg mal">No se pudo cargar: ' + esc(e.message) + "</div>";
@@ -1320,8 +1318,9 @@ function guardarPosicion(objId){
 function restaurarPosicion(){
   const v = S.volverA;
   if(!v) return;
+  const vistaAbrir = document.querySelector(".vista.on") || document;
   (v.abiertos || []).forEach(id => {
-    const e = document.querySelector('.obj[data-id="' + CSS.escape(id) + '"]');
+    const e = vistaAbrir.querySelector('.obj[data-id="' + CSS.escape(id) + '"]');
     if(e) e.classList.add("abierto");
   });
   /* Si se trabajó un registro concreto, se vuelve a él y se resalta un
@@ -1341,11 +1340,16 @@ function restaurarPosicion(){
       objId = i && i.objetivoRef;
     }
     if(objId){
-      const card = document.querySelector('.obj[data-id="' + CSS.escape(objId) + '"]');
+      const card = (document.querySelector(".vista.on") || document)
+        .querySelector('.obj[data-id="' + CSS.escape(objId) + '"]');
       if(card) card.classList.add("abierto");
     }
-    const e = document.querySelector('[data-fila="' + CSS.escape(v.obj) + '"]') ||
-              document.querySelector('.obj[data-id="' + CSS.escape(v.obj) + '"]');
+    /* Se busca SOLO dentro de la vista activa: un mismo objetivo puede
+       existir en Objetivos y en Despriorizados, y saltar de pestaña al
+       guardar o eliminar desubica al usuario. */
+    const vista = document.querySelector(".vista.on") || document;
+    const e = vista.querySelector('[data-fila="' + CSS.escape(v.obj) + '"]') ||
+              vista.querySelector('.obj[data-id="' + CSS.escape(v.obj) + '"]');
     if(e){
       e.scrollIntoView({ behavior: "smooth", block: "center" });
       e.classList.add("recien");
@@ -1451,7 +1455,20 @@ async function recargar(){
   pintarLista();
   pintarDespriorizados();
   pintarTablero();
+  actualizarContadores();
   restaurarPosicion();
+}
+
+/* Los contadores del encabezado se recalculan en cada recarga: antes solo
+   se escribían al arrancar y quedaban desfasados al crear o eliminar. */
+function actualizarContadores(){
+  const p = (n, sing, plur) => n + " " + (n === 1 ? sing : plur);
+  setConn(true, [
+    p(S.objetivos.length, "objetivo", "objetivos"),
+    p(S.indicadores.length, "indicador", "indicadores"),
+    p(S.hitos.length, "hito", "hitos"),
+    p(S.reportes.length, "reporte", "reportes")
+  ].join(" · "));
 }
 
 function parseEnlaces(txt){
@@ -2195,6 +2212,9 @@ async function eliminarObjetivo(id){
       await API.del(i.id);
     }
     await API.del(id);
+    /* Sin esto quedaba viva la posición de un guardado anterior y la vista
+       saltaba al registro equivocado, incluso a otra pestaña. */
+    guardarPosicion(null);
     toast("Objetivo eliminado.");
     await recargar();
   }catch(e){ toast("No se pudo eliminar: " + e.message, true); }
