@@ -268,6 +268,8 @@ tr.recien > td{animation:destello 2.2s ease-out}
 /* ---------- tarjeta de indicador ---------- */
 .ind-card{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:12px}
 .ind-cab{display:flex;gap:12px;align-items:flex-start}
+.ind-num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;
+  display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;margin-top:1px}
 .ind-cab b{font-size:14px;line-height:1.35}
 .ind-txt{font-size:12.5px;color:var(--slate);margin-top:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ind-txt b{color:var(--brand)}
@@ -1662,6 +1664,8 @@ function detalle(o){
 
   const is = indicadoresDe(o.id).sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0));
   h += '<div class="subtit">Indicadores' +
+       (is.length ? ' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--mist)">(' +
+         is.length + ")</span>" : "") +
        (editable ? '<button class="btn sec mini" data-inuevo="' + esc(o.id) + '">+ Añadir indicador</button>' : "") + "</div>";
 
   if(!is.length){
@@ -1669,11 +1673,11 @@ function detalle(o){
     return h;
   }
 
-  is.forEach(ind => h += bloqueIndicador(o, ind, editable));
+  is.forEach((ind, i) => h += bloqueIndicador(o, ind, editable, i + 1));
   return h;
 }
 
-function bloqueIndicador(o, ind, editable){
+function bloqueIndicador(o, ind, editable, num){
   const p = progresoIndicador(ind.id), sem = semaforo(p);
   const hs = hitosDe(ind.id).sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0));
   const suma = red1(sumaParticipacion(ind.id));
@@ -1681,6 +1685,7 @@ function bloqueIndicador(o, ind, editable){
 
   let h = '<div class="ind-card" data-fila="' + esc(ind.id) + '">' +
     '<div class="ind-cab">' +
+      '<div class="ind-num">' + num + "</div>" +
       '<div style="flex:1;min-width:0">' +
         "<b>" + esc(ind.indicador || "(sin indicador)") + "</b>" +
         '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">' +
