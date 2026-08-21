@@ -318,7 +318,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       </div>
       <nav>
         <button class="on" data-v="tablero">Tablero</button>
-        <button data-v="objetivos">Objetivos de calidad</button>
+        <button data-v="objetivos">Objetivos de calidad <span class="cont" id="contActivos"></span></button>
         <button data-v="despriorizados">Despriorizados <span class="cont" id="contDespri"></span></button>
         <button data-v="usuarios" id="tabUsuarios" style="display:none">Usuarios</button>
         <span class="chip" id="chipUsr"></span>
@@ -3250,6 +3250,7 @@ $("dBuscar").addEventListener("input", pintarDespriorizados);
 function pintarDespriorizados(){
   const todos = S.objetivos.filter(esDespriorizado);
   $("contDespri").textContent = todos.length || "";
+  $("contActivos").textContent = S.objetivos.filter(o => !esDespriorizado(o)).length || "";
 
   const per = $("dPeriodo").value, ofi = $("dOficina").value, q = norm($("dBuscar").value.trim());
   const arr = todos.filter(o => {
@@ -3563,13 +3564,24 @@ function pintarTablero(){
     kpi(oSin, "Sin indicadores", oSin ? "warn" : "") +
     "</div></div>";
 
-  /* --- condición --- */
+  /* --- condición ---
+     Este bloque SÍ cuenta los despriorizados: es un desglose del universo
+     de objetivos, no un cálculo de avance. El resto del tablero los excluye
+     para que no ensucien los promedios, pero aquí darían siempre cero. */
+  const todosPer = S.objetivos.filter(o => !per || o.periodo === per);
   const porCond = {};
   CONFIG.REGLAS.condiciones.forEach(c => porCond[c] = 0);
-  objs.forEach(o => { const c = o.condicion || "(sin condición)"; porCond[c] = (porCond[c] || 0) + 1; });
+  todosPer.forEach(o => { const c = o.condicion || "(sin condición)"; porCond[c] = (porCond[c] || 0) + 1; });
+  const totalCond = todosPer.length || 1;
   h += '<div class="tarj"><h3>Objetivos por condición</h3>' +
-    Object.keys(porCond).map(c => '<div class="bar2"><div class="n">' + esc(c) + "</div>" +
-      '<div class="barra" style="flex:1"><i style="width:' + pc(porCond[c]) + '%"></i></div>' +
+    '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Incluye los despriorizados, que no ' +
+    "entran en el resto del tablero. Total: <b>" + todosPer.length + "</b> objetivo" +
+    (todosPer.length === 1 ? "" : "s") + ".</p>" +
+    Object.keys(porCond).map(c => '<div class="bar2"><div class="n">' + esc(c) +
+      (norm(c) === "despriorizada" && porCond[c]
+        ? ' <span style="color:var(--mist)">· fuera del seguimiento</span>' : "") + "</div>" +
+      '<div class="barra" style="flex:1"><i style="width:' +
+        Math.round(porCond[c] * 1000 / totalCond) / 10 + '%"></i></div>' +
       '<div class="v">' + porCond[c] + "</div></div>").join("") + "</div>";
 
   /* --- progreso por objetivo --- */
