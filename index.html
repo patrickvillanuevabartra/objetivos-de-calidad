@@ -3503,6 +3503,120 @@ async function eliminarUsuario(id){
 }
 
 /* ==========================================================================
+   Notificaciones por WhatsApp y correo — mismo mecanismo que Indicadores.
+   La ventana se abre con el clic (window.open antes del await), o el
+   navegador la bloquea por considerarla emergente.
+   ========================================================================== */
+function aplicarPlantilla(txt, d){
+  return String(txt || "").replace(/\{(\w+)\}/g, (m, k) => (d[k] != null && d[k] !== "") ? d[k] : "");
+}
+
+/* Perú: si vienen 9 dígitos se antepone el código de país. */
+function telWa(cel){
+  let n = String(cel || "").replace(/\D/g, "");
+  if(!n) return "";
+  if(n.length === 9) n = "51" + n;
+  return n;
+}
+
+const PLANTILLAS = {
+  hitoVencido: {
+    wa: "Estimado/a {responsable},\n\nEl siguiente hito venció y sigue abierto:\n\n" +
+        "• Hito: {hito}\n• Indicador: {indicador}\n• Objetivo: {objetivo}\n" +
+        "• Venció el: {vencio} ({dias} días de atraso)\n• Avance registrado: {avance}\n\n" +
+        "Le agradecemos registrar el avance o actualizar el plazo.\n\n" +
+        "— Sistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP",
+    asunto: "Hito vencido sin cerrar — SGOE ISO 21001 · Facultad de Ingeniería URP",
+    correo: "Estimado/a {responsable},\n\nEl siguiente hito venció y sigue abierto:\n\n" +
+        "• Hito: {hito}\n• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Oficina: {oficina}\n" +
+        "• Venció el: {vencio} ({dias} días de atraso)\n• Avance registrado: {avance}\n\n" +
+        "Le agradecemos registrar el avance correspondiente o, si el plazo cambió, actualizarlo en el sistema.\n\n" +
+        "Saludos cordiales,\nSistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP"
+  },
+  brecha: {
+    wa: "Estimado/a {responsable},\n\nEl plan de este indicador avanza más que su resultado:\n\n" +
+        "• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Meta: {meta}\n" +
+        "• Ejecución del plan: {ejecucion}\n• Logro de la meta: {logro}\n\n" +
+        "Las actividades se están cumpliendo pero no mueven el indicador. Conviene revisar si el plan de acción necesita reformularse.\n\n" +
+        "— Sistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP",
+    asunto: "Revisión del plan de acción — SGOE ISO 21001 · Facultad de Ingeniería URP",
+    correo: "Estimado/a {responsable},\n\nEl plan de acción de este indicador avanza más que su resultado:\n\n" +
+        "• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Oficina: {oficina}\n• Meta: {meta}\n" +
+        "• Ejecución del plan: {ejecucion}\n• Logro de la meta: {logro}\n\n" +
+        "Las actividades planificadas se están cumpliendo, pero no están moviendo el indicador hacia su meta. " +
+        "Le agradecemos revisar si el plan de acción necesita reformularse.\n\n" +
+        "Saludos cordiales,\nSistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP"
+  }
+};
+
+/* Datos de la notificación según el tipo de fila del tablero. */
+function datosNotif(tipo, id){
+  if(tipo === "hito"){
+    const hi = S.hitos.find(x => x.id === id);
+    if(!hi) return null;
+    const ind = S.indicadores.find(x => x.id === hi.indicadorRef);
+    const o = ind ? S.objetivos.find(x => x.id === ind.objetivoRef) : null;
+    const r = respDelHito(hi, ind) || {};
+    return {
+      responsable: r.nombre || "", correo: r.correo || "", celular: r.cel || "",
+      hito: hi.hito, indicador: ind ? sinHtml(ind.indicador) : "",
+      objetivo: o ? sinHtml(o.objetivo) : "", oficina: o ? o.oficina : "",
+      vencio: verFecha(hi.fv), dias: Math.abs(dias(HOY, hi.fv) || 0),
+      avance: red1(progresoHito(hi.id)) + "%"
+    };
+  }
+  const ind = S.indicadores.find(x => x.id === id);
+  if(!ind) return null;
+  const o = S.objetivos.find(x => x.id === ind.objetivoRef);
+  const b = brechaIndicador(ind) || {};
+  return {
+    responsable: ind.respTec || (o ? o.respProc : "") || "",
+    correo: ind.rtCorreo || (o ? o.rpCorreo : "") || "",
+    celular: ind.rtCel || (o ? o.rpCel : "") || "",
+    indicador: sinHtml(ind.indicador), objetivo: o ? sinHtml(o.objetivo) : "",
+    oficina: o ? o.oficina : "", meta: ind.meta || "",
+    ejecucion: (b.ejec != null ? red1(b.ejec) : "—") + "%",
+    logro: (b.logro != null ? b.logro : "—") + "%"
+  };
+}
+
+function notificarWhatsApp(tipo, id){
+  if(!esGestor()){ toast("Las notificaciones las envía el administrador o el gestor.", true); return; }
+  const d = datosNotif(tipo, id);
+  if(!d) return;
+  const tel = telWa(d.celular);
+  if(!tel){ toast("No hay celular registrado para " + (d.responsable || "el responsable") + ".", true); return; }
+  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : "brecha"];
+  window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(aplicarPlantilla(p.wa, d)), "_blank", "noopener");
+}
+
+function notificarCorreo(tipo, id){
+  if(!esGestor()){ toast("Las notificaciones las envía el administrador o el gestor.", true); return; }
+  const d = datosNotif(tipo, id);
+  if(!d) return;
+  if(!d.correo){ toast("No hay correo registrado para " + (d.responsable || "el responsable") + ".", true); return; }
+  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : "brecha"];
+  const asunto = aplicarPlantilla(p.asunto, d), cuerpo = aplicarPlantilla(p.correo, d);
+  const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(d.correo) +
+                "&su=" + encodeURIComponent(asunto) + "&body=" + encodeURIComponent(cuerpo);
+  const win = window.open(gmail, "_blank", "noopener");
+  if(!win) window.location.href = "mailto:" + encodeURIComponent(d.correo) +
+    "?subject=" + encodeURIComponent(asunto) + "&body=" + encodeURIComponent(cuerpo);
+}
+
+/* Botones de las tablas del tablero. */
+function botonesNotif(tipo, id, tieneCel, tieneCorreo){
+  if(!esGestor()) return "";
+  return '<div style="display:flex;gap:5px;justify-content:flex-end">' +
+    '<button class="ico" data-wa="' + esc(id) + '" data-tipo="' + tipo + '"' +
+      (tieneCel ? "" : " disabled style=\"opacity:.35;cursor:not-allowed\"") +
+      ' title="' + (tieneCel ? "Notificar por WhatsApp" : "Sin celular registrado") + '">💬</button>' +
+    '<button class="ico" data-mail="' + esc(id) + '" data-tipo="' + tipo + '"' +
+      (tieneCorreo ? "" : " disabled style=\"opacity:.35;cursor:not-allowed\"") +
+      ' title="' + (tieneCorreo ? "Notificar por correo" : "Sin correo registrado") + '">✉️</button></div>';
+}
+
+/* ==========================================================================
    Tablero
    ========================================================================== */
 $("tPeriodo").addEventListener("change", pintarTablero);
@@ -3690,7 +3804,7 @@ function pintarTablero(){
     "la ejecución supera al logro en 15 puntos o más, y el logro está por debajo del " + UMBRAL_LOGRO + "% de la meta. " +
     "Señal de que las actividades avanzan pero no están moviendo el indicador: conviene revisar si el plan necesita reformularse.</p>" +
     (brechas.length ?
-      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Ejecución</th><th>Alcanzado</th><th>Logro</th><th>Responsable</th></tr></thead><tbody>' +
+      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Ejecución</th><th>Alcanzado</th><th>Logro</th><th>Responsable</th><th style="text-align:right">Notificar</th></tr></thead><tbody>' +
       brechas.map(x => {
         const o = S.objetivos.find(y => y.id === x.ind.objetivoRef);
         const sem = semaforo(x.b.logro);
@@ -3698,7 +3812,9 @@ function pintarTablero(){
           (o ? recorta(sinHtml(o.objetivo), 40) : "—") + "</td><td>" + esc(x.ind.meta || "—") +
           '</td><td><span class="tag z">' + red1(x.b.ejec) + "%</span></td><td>" + (valorAlcanzado(x.ind) ?? "—") +
           '</td><td><span class="tag ' + sem.clase + '">' + x.b.logro + "%</span></td><td>" +
-          esc(x.ind.respTec || "—") + "</td></tr>";
+          esc(x.ind.respTec || "—") + "</td><td>" +
+          botonesNotif("brecha", x.ind.id, !!(x.ind.rtCel || (o && o.rpCel)), !!(x.ind.rtCorreo || (o && o.rpCorreo))) +
+          "</td></tr>";
       }).join("") + "</tbody></table>" :
       '<div class="vacio">Ningún indicador presenta esta brecha.</div>') +
     (sobrantes.length ?
@@ -3720,11 +3836,13 @@ function pintarTablero(){
   pend.sort((a, b) => b.d - a.d);
   h += '<div class="tarj"><h3>Hitos vencidos sin cerrar (' + pend.length + ")</h3>" +
     (pend.length ?
-      '<table class="t"><thead><tr><th>Hito</th><th>Indicador</th><th>Responsable</th><th>Venció</th><th>Días</th><th>Avance</th></tr></thead><tbody>' +
+      '<table class="t"><thead><tr><th>Hito</th><th>Indicador</th><th>Responsable</th><th>Venció</th><th>Días</th><th>Avance</th><th style="text-align:right">Notificar</th></tr></thead><tbody>' +
       pend.slice(0, 40).map(x => "<tr><td><b>" + esc(x.hi.hito) + "</b></td><td>" +
         recorta(sinHtml(x.ind ? x.ind.indicador : ""), 50) + "</td><td>" +
         esc((respDelHito(x.hi, x.ind) || {}).nombre || "—") + "</td><td>" + verFecha(x.hi.fv) +
-        '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td></tr>").join("") +
+        '</td><td><span class="tag r">' + x.d + " d</span></td><td>" + x.ph + "%</td><td>" +
+        (function(){ const r = respDelHito(x.hi, x.ind) || {};
+          return botonesNotif("hito", x.hi.id, !!r.cel, !!r.correo); })() + "</td></tr>").join("") +
       "</tbody></table>" :
       '<div class="vacio">Ningún hito vencido pendiente.</div>') + "</div>";
 
@@ -3751,6 +3869,12 @@ function pintarTablero(){
       '<div class="vacio">Ningún indicador vence en los próximos ' + dv + " días.</div>") + "</div>";
 
   $("tablero").innerHTML = h;
+  $("tablero").querySelectorAll("[data-wa]").forEach(b => {
+    if(!b.disabled) b.onclick = () => notificarWhatsApp(b.dataset.tipo, b.dataset.wa);
+  });
+  $("tablero").querySelectorAll("[data-mail]").forEach(b => {
+    if(!b.disabled) b.onclick = () => notificarCorreo(b.dataset.tipo, b.dataset.mail);
+  });
   $("tablero").querySelectorAll("[data-venc]").forEach(b => {
     b.onclick = () => { S.diasVenc = parseInt(b.dataset.venc, 10); pintarTablero(); };
   });
