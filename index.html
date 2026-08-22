@@ -321,6 +321,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <button data-v="objetivos">Objetivos de calidad <span class="cont" id="contActivos"></span></button>
         <button data-v="despriorizados">Despriorizados <span class="cont" id="contDespri"></span></button>
         <button data-v="usuarios" id="tabUsuarios" style="display:none">Usuarios</button>
+        <button data-v="notificaciones" id="tabNotif" style="display:none">Notificaciones</button>
         <span class="chip" id="chipUsr"></span>
         <button id="btnSalir">Salir</button>
       </nav>
@@ -410,18 +411,6 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       </div>
 
       <div class="tarj">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div>
-            <h3 style="margin:0">Plantillas de notificación</h3>
-            <p style="font-size:12.5px;color:var(--mist);margin:4px 0 0">Textos que se envían por WhatsApp
-              y correo desde el tablero, cuando un hito vence, cuando un indicador está por vencer o cuando
-              el plan avanza más que el resultado.</p>
-          </div>
-          <button class="btn sec" id="btnPlantillas">Editar plantillas</button>
-        </div>
-      </div>
-
-      <div class="tarj">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
           <h3 style="margin:0">Usuarios del sistema</h3>
           <button class="btn" id="btnNuevoUsuario">+ Crear usuario</button>
@@ -429,6 +418,49 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <input type="text" id="usBuscar" placeholder="Buscar por nombre, usuario, rol u oficina…"
                style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:12px">
         <div id="usuariosLista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
+      </div>
+    </section>
+
+    <!-- ---------- notificaciones ---------- -->
+    <section class="vista" id="vNotificaciones">
+      <div class="page-head">
+        <div class="eyebrow">Mensajes automáticos</div>
+        <h1>Plantillas de notificación</h1>
+        <p>Textos que se envían por WhatsApp y correo desde el tablero. Escribe entre llaves los datos
+           que se reemplazan al enviar; debajo verás cómo queda el mensaje con un caso real.</p>
+      </div>
+
+      <div class="tarj">
+        <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
+          <button type="button" class="btn sec mini on" data-pl="hitoVencido">Hito vencido</button>
+          <button type="button" class="btn sec mini" data-pl="porVencer">Indicador por vencer</button>
+          <button type="button" class="btn sec mini" data-pl="brecha">Plan sin resultado</button>
+          <button class="btn sec mini" id="btnPlDefecto" style="margin-left:auto">Restaurar texto original</button>
+          <button class="btn mini" id="btnGuardarPl">Guardar plantillas</button>
+        </div>
+        <div id="mPlMsg"></div>
+        <div class="panel" id="plVars" style="margin-bottom:14px"></div>
+
+        <div class="f rej">
+          <div class="full">
+            <label for="plWa">Mensaje de WhatsApp</label>
+            <textarea id="plWa" style="min-height:170px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
+          </div>
+          <div class="full">
+            <label for="plAsunto">Asunto del correo</label>
+            <input type="text" id="plAsunto">
+          </div>
+          <div class="full">
+            <label for="plCorreo">Cuerpo del correo</label>
+            <textarea id="plCorreo" style="min-height:190px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarj">
+        <h3>Vista previa <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--mist)">
+          · con datos de un registro real, si lo hay</span></h3>
+        <div class="ruta" id="plPrev" style="white-space:pre-wrap;min-height:110px;align-items:flex-start"></div>
       </div>
     </section>
   </main>
@@ -880,56 +912,6 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
   </div>
 </div>
 
-<!-- ==================== MODAL PLANTILLAS ==================== -->
-<div class="modal" id="mPl">
-  <div class="caja">
-    <div class="cab">
-      <div style="flex:1">
-        <div class="et">Notificaciones</div>
-        <h2>Plantillas de mensajes</h2>
-      </div>
-      <button class="cerrar" data-cierra="mPl">&times;</button>
-    </div>
-    <div class="cuerpo f">
-      <div id="mPlMsg"></div>
-      <div class="cadena">Escribe entre llaves los datos que se reemplazan al enviar. Debajo de cada
-        plantilla verás cómo queda el mensaje con un caso real.</div>
-
-      <div style="display:flex;gap:4px;margin:14px 0 12px;flex-wrap:wrap">
-        <button type="button" class="btn sec mini on" data-pl="hitoVencido">Hito vencido</button>
-        <button type="button" class="btn sec mini" data-pl="porVencer">Por vencer</button>
-        <button type="button" class="btn sec mini" data-pl="brecha">Plan sin resultado</button>
-      </div>
-
-      <div class="panel" id="plVars" style="margin-bottom:14px"></div>
-
-      <div class="rej">
-        <div class="full">
-          <label for="plWa">Mensaje de WhatsApp</label>
-          <textarea id="plWa" style="min-height:150px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
-        </div>
-        <div class="full">
-          <label for="plAsunto">Asunto del correo</label>
-          <input type="text" id="plAsunto">
-        </div>
-        <div class="full">
-          <label for="plCorreo">Cuerpo del correo</label>
-          <textarea id="plCorreo" style="min-height:170px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
-        </div>
-        <div class="full">
-          <label>Vista previa <span class="op">(con datos de un registro real, si lo hay)</span></label>
-          <div class="ruta" id="plPrev" style="white-space:pre-wrap;min-height:80px;align-items:flex-start"></div>
-        </div>
-      </div>
-    </div>
-    <div class="pie">
-      <button class="btn sec" id="btnPlDefecto" style="margin-right:auto">Restaurar texto original</button>
-      <button class="btn sec" data-cierra="mPl">Cancelar</button>
-      <button class="btn" id="btnGuardarPl">Guardar plantillas</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -1227,7 +1209,7 @@ $("btnEntrar").onclick = async () => {
     $("app").style.display = "block";
     $("chipUsr").textContent = S.sesion.nombre + " · " + S.sesion.rol;
     /* La gestión de accesos es solo para administradores. */
-    if(esAdmin()) $("tabUsuarios").style.display = "";
+    if(esAdmin()){ $("tabUsuarios").style.display = ""; $("tabNotif").style.display = ""; }
     arrancar();
   }catch(e){
     $("loginErr").style.display = "block";
@@ -2004,6 +1986,7 @@ document.querySelectorAll("header.top nav button[data-v]").forEach(b => b.onclic
   $("v" + b.dataset.v.charAt(0).toUpperCase() + b.dataset.v.slice(1)).classList.add("on");
   /* Se carga al abrir la pestaña: no hace falta pedirla en cada arranque. */
   if(b.dataset.v === "usuarios" && !S.usuarios.length) cargarUsuarios();
+  if(b.dataset.v === "notificaciones") abrirPlantillas();
 });
 
 /* ==========================================================================
@@ -3732,14 +3715,15 @@ const VARS_PL = {
 let plTipo = "hitoVencido";
 const plBorrador = {};
 
-$("btnPlantillas").onclick = () => {
+/* La pestaña se prepara al abrirla: se copia lo guardado a un borrador
+   para poder descartar los cambios sin tocar lo que está en uso. */
+function abrirPlantillas(){
   Object.keys(PLANTILLAS).forEach(t => plBorrador[t] = Object.assign({}, PLANTILLAS[t]));
   plTipo = "hitoVencido";
   msg("mPlMsg", "", "");
   marcarPestanaPl();
   cargarPlantillaEnForm();
-  $("mPl").classList.add("on");
-};
+}
 
 document.querySelectorAll("[data-pl]").forEach(b => b.onclick = () => {
   guardarBorradorPl();
@@ -3811,8 +3795,7 @@ $("btnGuardarPl").onclick = async () => {
     const resp = await API.saveForm(PLANTILLAS_REC_ID, v, CONFIG.PLANTILLAS.ENTITY_ID);
     if(!PLANTILLAS_REC_ID && resp && resp.record) PLANTILLAS_REC_ID = resp.record.id;
     Object.keys(plBorrador).forEach(t => PLANTILLAS[t] = Object.assign({}, plBorrador[t]));
-    $("mPl").classList.remove("on");
-    toast("Plantillas guardadas.");
+    toast("Plantillas guardadas. Ya se aplican en los envíos.");
   }catch(e){ msg("mPlMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar plantillas";
 };
