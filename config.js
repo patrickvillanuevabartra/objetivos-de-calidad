@@ -301,6 +301,27 @@ const CONFIG = {
   },
 
   // ==========================================================================
+  //  PLANTILLAS DE NOTIFICACIÓN
+  //  Un solo registro con los textos de WhatsApp y correo de las tres
+  //  situaciones del tablero. Si la tabla está vacía se usan los valores
+  //  por defecto del index.html y se crea al guardar por primera vez.
+  // ==========================================================================
+  PLANTILLAS: {
+    ENTITY_ID: "b0W7NcPb9cM7xcMCk9lCkf",
+    F: {
+      wa_vencido:     { id: "bSvardkt5dG4o0qab9cSof", type: "text",   col: "WA hito vencido" },
+      asunto_vencido: { id: "dcKLqYWOPcIQfsWQSnjmkR", type: "text",   col: "Asunto hito vencido" },
+      correo_vencido: { id: "dcVYuswsniWQxcKvnbW7O-", type: "text",   col: "Correo hito vencido" },
+      wa_porvencer:     { id: "cBWRhdRSjgW6zEWQeGhCoq", type: "text",   col: "WA por vencer" },
+      asunto_porvencer: { id: "avrXDoch5fWPldKMlcOSks", type: "string", col: "Asunto por vencer" },
+      correo_porvencer: { id: "ddN8oYWQHcR4RdH0hcQCo5", type: "text",   col: "Correo por vencer" },
+      wa_brecha:      { id: "c7W7ailSncg4koW6jmrbbJ", type: "text",   col: "WA brecha" },
+      asunto_brecha:  { id: "ddVbrxuhfdR4oGW4L-qmoW", type: "text",   col: "Asunto brecha" },
+      correo_brecha:  { id: "cbW6tcR8nezRKmW7_cNqWM", type: "text",   col: "Correo brecha" }
+    }
+  },
+
+  // ==========================================================================
   //  CATÁLOGOS — tablas de las que se leen los desplegables
   //  Extraídos del `default` de cada campo rel (QuintaDB guarda ahí el
   //  ENTITY_ID de destino). Los de procesos y responsable de proceso son
