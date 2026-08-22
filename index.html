@@ -410,6 +410,18 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       </div>
 
       <div class="tarj">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <h3 style="margin:0">Plantillas de notificación</h3>
+            <p style="font-size:12.5px;color:var(--mist);margin:4px 0 0">Textos que se envían por WhatsApp
+              y correo desde el tablero, cuando un hito vence, cuando un indicador está por vencer o cuando
+              el plan avanza más que el resultado.</p>
+          </div>
+          <button class="btn sec" id="btnPlantillas">Editar plantillas</button>
+        </div>
+      </div>
+
+      <div class="tarj">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
           <h3 style="margin:0">Usuarios del sistema</h3>
           <button class="btn" id="btnNuevoUsuario">+ Crear usuario</button>
@@ -868,6 +880,56 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
   </div>
 </div>
 
+<!-- ==================== MODAL PLANTILLAS ==================== -->
+<div class="modal" id="mPl">
+  <div class="caja">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Notificaciones</div>
+        <h2>Plantillas de mensajes</h2>
+      </div>
+      <button class="cerrar" data-cierra="mPl">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mPlMsg"></div>
+      <div class="cadena">Escribe entre llaves los datos que se reemplazan al enviar. Debajo de cada
+        plantilla verás cómo queda el mensaje con un caso real.</div>
+
+      <div style="display:flex;gap:4px;margin:14px 0 12px;flex-wrap:wrap">
+        <button type="button" class="btn sec mini on" data-pl="hitoVencido">Hito vencido</button>
+        <button type="button" class="btn sec mini" data-pl="porVencer">Por vencer</button>
+        <button type="button" class="btn sec mini" data-pl="brecha">Plan sin resultado</button>
+      </div>
+
+      <div class="panel" id="plVars" style="margin-bottom:14px"></div>
+
+      <div class="rej">
+        <div class="full">
+          <label for="plWa">Mensaje de WhatsApp</label>
+          <textarea id="plWa" style="min-height:150px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
+        </div>
+        <div class="full">
+          <label for="plAsunto">Asunto del correo</label>
+          <input type="text" id="plAsunto">
+        </div>
+        <div class="full">
+          <label for="plCorreo">Cuerpo del correo</label>
+          <textarea id="plCorreo" style="min-height:170px;font-family:'IBM Plex Mono',monospace;font-size:12.5px"></textarea>
+        </div>
+        <div class="full">
+          <label>Vista previa <span class="op">(con datos de un registro real, si lo hay)</span></label>
+          <div class="ruta" id="plPrev" style="white-space:pre-wrap;min-height:80px;align-items:flex-start"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn sec" id="btnPlDefecto" style="margin-right:auto">Restaurar texto original</button>
+      <button class="btn sec" data-cierra="mPl">Cancelar</button>
+      <button class="btn" id="btnGuardarPl">Guardar plantillas</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -1204,6 +1266,7 @@ function setConn(ok, texto){
 async function arrancar(){
   try{
     await cargarCatalogos();
+    await cargarPlantillas();
     await recargar();   // ya deja los contadores al día
   }catch(e){
     setConn(false, e.message);
@@ -3533,6 +3596,19 @@ const PLANTILLAS = {
         "Le agradecemos registrar el avance correspondiente o, si el plazo cambió, actualizarlo en el sistema.\n\n" +
         "Saludos cordiales,\nSistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP"
   },
+  porVencer: {
+    wa: "Estimado/a {responsable},\n\nEl siguiente indicador vence pronto:\n\n" +
+        "• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Meta: {meta}\n" +
+        "• Vence el: {vence} (faltan {dias} días)\n• Avance del plan: {ejecucion}\n\n" +
+        "Le agradecemos revisar los hitos pendientes y registrar los avances.\n\n" +
+        "— Sistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP",
+    asunto: "Indicador próximo a vencer — SGOE ISO 21001 · Facultad de Ingeniería URP",
+    correo: "Estimado/a {responsable},\n\nEl siguiente indicador vence pronto:\n\n" +
+        "• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Oficina: {oficina}\n• Meta: {meta}\n" +
+        "• Vence el: {vence} (faltan {dias} días)\n• Avance del plan: {ejecucion}\n• Logro de la meta: {logro}\n\n" +
+        "Le agradecemos revisar los hitos pendientes y registrar los avances antes del vencimiento.\n\n" +
+        "Saludos cordiales,\nSistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP"
+  },
   brecha: {
     wa: "Estimado/a {responsable},\n\nEl plan de este indicador avanza más que su resultado:\n\n" +
         "• Indicador: {indicador}\n• Objetivo: {objetivo}\n• Meta: {meta}\n" +
@@ -3548,6 +3624,33 @@ const PLANTILLAS = {
         "Saludos cordiales,\nSistema de Gestión para Organizaciones Educativas (SGOE)\nISO 21001 — Facultad de Ingeniería URP"
   }
 };
+
+/* Las plantillas se guardan en QuintaDB (un solo registro). Si la tabla
+   está vacía se usan las de arriba y se crea al guardar por primera vez. */
+const PLANTILLAS_DEFECTO = JSON.parse(JSON.stringify(PLANTILLAS));
+let PLANTILLAS_REC_ID = null;
+const MAPA_PL = {
+  hitoVencido: { wa: "wa_vencido",   asunto: "asunto_vencido",   correo: "correo_vencido" },
+  porVencer:   { wa: "wa_porvencer", asunto: "asunto_porvencer", correo: "correo_porvencer" },
+  brecha:      { wa: "wa_brecha",    asunto: "asunto_brecha",    correo: "correo_brecha" }
+};
+
+async function cargarPlantillas(){
+  if(!CONFIG.PLANTILLAS) return;
+  try{
+    const regs = await listar(CONFIG.PLANTILLAS.ENTITY_ID);
+    if(!regs.length) return;
+    PLANTILLAS_REC_ID = regs[0].id;
+    const F = CONFIG.PLANTILLAS.F, v = regs[0].v;
+    Object.keys(MAPA_PL).forEach(tipo => {
+      ["wa", "asunto", "correo"].forEach(k => {
+        const txt = v[F[MAPA_PL[tipo][k]].col];
+        /* QuintaDB devuelve el nombre de la columna cuando está vacía. */
+        if(txt && txt !== F[MAPA_PL[tipo][k]].col) PLANTILLAS[tipo][k] = txt;
+      });
+    });
+  }catch(e){ console.warn("Plantillas: se usan las de por defecto.", e.message); }
+}
 
 /* Datos de la notificación según el tipo de fila del tablero. */
 function datosNotif(tipo, id){
@@ -3569,14 +3672,18 @@ function datosNotif(tipo, id){
   if(!ind) return null;
   const o = S.objetivos.find(x => x.id === ind.objetivoRef);
   const b = brechaIndicador(ind) || {};
+  const p = progresoIndicador(ind.id), lg = logroIndicador(ind);
+  const d = dias(HOY, ind.fv);
   return {
     responsable: ind.respTec || (o ? o.respProc : "") || "",
     correo: ind.rtCorreo || (o ? o.rpCorreo : "") || "",
     celular: ind.rtCel || (o ? o.rpCel : "") || "",
     indicador: sinHtml(ind.indicador), objetivo: o ? sinHtml(o.objetivo) : "",
     oficina: o ? o.oficina : "", meta: ind.meta || "",
-    ejecucion: (b.ejec != null ? red1(b.ejec) : "—") + "%",
-    logro: (b.logro != null ? b.logro : "—") + "%"
+    vence: verFecha(ind.fv), dias: d != null ? Math.abs(d) : "",
+    /* Para "por vencer" no hay brecha calculada: se usa el avance del plan. */
+    ejecucion: (b.ejec != null ? red1(b.ejec) : (p != null ? p : "—")) + "%",
+    logro: (b.logro != null ? b.logro : (lg != null ? lg : "—")) + "%"
   };
 }
 
@@ -3586,7 +3693,7 @@ function notificarWhatsApp(tipo, id){
   if(!d) return;
   const tel = telWa(d.celular);
   if(!tel){ toast("No hay celular registrado para " + (d.responsable || "el responsable") + ".", true); return; }
-  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : "brecha"];
+  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : tipo];
   window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(aplicarPlantilla(p.wa, d)), "_blank", "noopener");
 }
 
@@ -3595,7 +3702,7 @@ function notificarCorreo(tipo, id){
   const d = datosNotif(tipo, id);
   if(!d) return;
   if(!d.correo){ toast("No hay correo registrado para " + (d.responsable || "el responsable") + ".", true); return; }
-  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : "brecha"];
+  const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : tipo];
   const asunto = aplicarPlantilla(p.asunto, d), cuerpo = aplicarPlantilla(p.correo, d);
   const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(d.correo) +
                 "&su=" + encodeURIComponent(asunto) + "&body=" + encodeURIComponent(cuerpo);
@@ -3615,6 +3722,100 @@ function botonesNotif(tipo, id, tieneCel, tieneCorreo){
       (tieneCorreo ? "" : " disabled style=\"opacity:.35;cursor:not-allowed\"") +
       ' title="' + (tieneCorreo ? "Notificar por correo" : "Sin correo registrado") + '">✉️</button></div>';
 }
+
+/* ---- editor de plantillas ---- */
+const VARS_PL = {
+  hitoVencido: ["responsable", "hito", "indicador", "objetivo", "oficina", "vencio", "dias", "avance"],
+  porVencer:   ["responsable", "indicador", "objetivo", "oficina", "meta", "vence", "dias", "ejecucion", "logro"],
+  brecha:      ["responsable", "indicador", "objetivo", "oficina", "meta", "ejecucion", "logro"]
+};
+let plTipo = "hitoVencido";
+const plBorrador = {};
+
+$("btnPlantillas").onclick = () => {
+  Object.keys(PLANTILLAS).forEach(t => plBorrador[t] = Object.assign({}, PLANTILLAS[t]));
+  plTipo = "hitoVencido";
+  msg("mPlMsg", "", "");
+  marcarPestanaPl();
+  cargarPlantillaEnForm();
+  $("mPl").classList.add("on");
+};
+
+document.querySelectorAll("[data-pl]").forEach(b => b.onclick = () => {
+  guardarBorradorPl();
+  plTipo = b.dataset.pl;
+  marcarPestanaPl();
+  cargarPlantillaEnForm();
+});
+function marcarPestanaPl(){
+  document.querySelectorAll("[data-pl]").forEach(x => x.classList.toggle("on", x.dataset.pl === plTipo));
+}
+function guardarBorradorPl(){
+  plBorrador[plTipo] = { wa: $("plWa").value, asunto: $("plAsunto").value, correo: $("plCorreo").value };
+}
+function cargarPlantillaEnForm(){
+  const p = plBorrador[plTipo];
+  $("plWa").value = p.wa;
+  $("plAsunto").value = p.asunto;
+  $("plCorreo").value = p.correo;
+  $("plVars").innerHTML = "<b>Datos disponibles:</b> " +
+    VARS_PL[plTipo].map(v => '<code style="background:#fff;border:1px solid var(--line);border-radius:5px;' +
+      'padding:1px 6px;margin:0 3px 3px 0;display:inline-block">{' + v + "}</code>").join("");
+  previaPlantilla();
+}
+
+["plWa","plAsunto","plCorreo"].forEach(id => $(id).addEventListener("input", previaPlantilla));
+
+/* Busca un registro real del tipo correspondiente para la vista previa;
+   si no hay ninguno, usa un ejemplo. */
+function datosPrevia(){
+  if(plTipo === "hitoVencido"){
+    const hi = S.hitos.find(x => { const d = dias(HOY, x.fv); return d != null && d < 0 && progresoHito(x.id) < 100; });
+    if(hi) return datosNotif("hito", hi.id);
+  }else{
+    const ind = plTipo === "brecha"
+      ? S.indicadores.find(x => brechaIndicador(x))
+      : S.indicadores.find(x => { const d = dias(HOY, x.fv); return d != null && d >= 0 && d <= 90; });
+    if(ind) return datosNotif(plTipo, ind.id);
+  }
+  return { responsable: "Nombre del responsable", hito: "Nombre del hito", indicador: "Nombre del indicador",
+    objetivo: "Nombre del objetivo", oficina: "Oficina responsable", meta: "100%",
+    vencio: "31/12/2026", vence: "31/12/2026", dias: 15, avance: "60%", ejecucion: "80%", logro: "55%" };
+}
+function previaPlantilla(){
+  const d = datosPrevia();
+  $("plPrev").textContent =
+    "— WhatsApp —\n" + aplicarPlantilla($("plWa").value, d) +
+    "\n\n— Correo —\nAsunto: " + aplicarPlantilla($("plAsunto").value, d) +
+    "\n\n" + aplicarPlantilla($("plCorreo").value, d);
+}
+
+$("btnPlDefecto").onclick = () => {
+  if(!confirm("¿Restaurar el texto original de esta plantilla?")) return;
+  plBorrador[plTipo] = Object.assign({}, PLANTILLAS_DEFECTO[plTipo]);
+  cargarPlantillaEnForm();
+  toast("Texto original restaurado. Guarda para aplicarlo.");
+};
+
+$("btnGuardarPl").onclick = async () => {
+  guardarBorradorPl();
+  const F = CONFIG.PLANTILLAS.F, v = {};
+  Object.keys(MAPA_PL).forEach(tipo => {
+    v[F[MAPA_PL[tipo].wa].id] = plBorrador[tipo].wa;
+    v[F[MAPA_PL[tipo].asunto].id] = plBorrador[tipo].asunto;
+    v[F[MAPA_PL[tipo].correo].id] = plBorrador[tipo].correo;
+  });
+  const b = $("btnGuardarPl");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    const resp = await API.saveForm(PLANTILLAS_REC_ID, v, CONFIG.PLANTILLAS.ENTITY_ID);
+    if(!PLANTILLAS_REC_ID && resp && resp.record) PLANTILLAS_REC_ID = resp.record.id;
+    Object.keys(plBorrador).forEach(t => PLANTILLAS[t] = Object.assign({}, plBorrador[t]));
+    $("mPl").classList.remove("on");
+    toast("Plantillas guardadas.");
+  }catch(e){ msg("mPlMsg", "No se pudo guardar: " + e.message, "mal"); }
+  b.disabled = false; b.textContent = "Guardar plantillas";
+};
 
 /* ==========================================================================
    Tablero
@@ -3857,14 +4058,16 @@ function pintarTablero(){
         '" data-venc="' + n + '">' + n + " días</button>").join("") +
       "</div></div>" +
     (prox.length ?
-      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Vence</th><th>Faltan</th><th>Avance</th></tr></thead><tbody>' +
+      '<table class="t"><thead><tr><th>Indicador</th><th>Objetivo</th><th>Meta</th><th>Vence</th><th>Faltan</th><th>Avance</th><th style="text-align:right">Notificar</th></tr></thead><tbody>' +
       prox.map(i => {
         const d = dias(HOY, i.fv), p = progresoIndicador(i.id), sem = semaforo(p);
         const o = S.objetivos.find(x => x.id === i.objetivoRef);
         return "<tr><td>" + recorta(sinHtml(i.indicador), 50) + "</td><td>" +
           (o ? recorta(sinHtml(o.objetivo), 40) : "—") + "</td><td>" + esc(i.meta || "—") +
           "</td><td>" + verFecha(i.fv) + '</td><td><span class="tag ' + (d <= 30 ? "a" : "z") + '">' + d + " d</span></td>" +
-          '<td><span class="tag ' + sem.clase + '">' + (p == null ? "sin hitos" : p + "%") + "</span></td></tr>";
+          '<td><span class="tag ' + sem.clase + '">' + (p == null ? "sin hitos" : p + "%") + "</span></td><td>" +
+          botonesNotif("porVencer", i.id, !!(i.rtCel || (o && o.rpCel)), !!(i.rtCorreo || (o && o.rpCorreo))) +
+          "</td></tr>";
       }).join("") + "</tbody></table>" :
       '<div class="vacio">Ningún indicador vence en los próximos ' + dv + " días.</div>") + "</div>";
 
