@@ -260,6 +260,10 @@ tr.recien > td{animation:destello 2.2s ease-out}
   border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:12px;line-height:1.5}
 .cadena b{color:var(--brand)}
 
+/* ---------- código del objetivo ---------- */
+.cod-obj{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;color:var(--brand);
+  background:var(--verde-cl);border-radius:5px;padding:2px 7px;margin-right:2px;vertical-align:2px}
+
 /* ---------- fórmula del indicador ---------- */
 .formula{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--slate);
   background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px 9px;margin-top:5px;
@@ -357,6 +361,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="campo"><label for="fCondicion">Condición</label><select id="fCondicion"></select></div>
         <div class="campo"><label for="fEstado">Estado</label><select id="fEstado"></select></div>
         <div class="campo" style="flex:1.4"><label for="fBuscar">Buscar</label><input type="text" id="fBuscar" placeholder="objetivo, indicador, responsable…"></div>
+        <button class="btn sec" id="btnCodificar" style="display:none">Asignar códigos</button>
         <button class="btn" id="btnNuevo">+ Nuevo objetivo</button>
       </div>
       <div id="lista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
@@ -487,6 +492,11 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <div class="pista">Los indicadores, metas y plazos se cargan aparte: un objetivo puede medirse con varios.</div>
         </div>
 
+        <div>
+          <label for="oCodigo">Código <span class="op">(se genera solo · editable)</span></label>
+          <input type="text" id="oCodigo" placeholder="OC-2026-01">
+          <div class="err" id="e_oCodigo"></div>
+        </div>
         <div>
           <label for="oPeriodo">Periodo <b class="req">*</b></label>
           <select id="oPeriodo"></select>
@@ -1436,6 +1446,7 @@ async function recargar(){
     id: r.id,
     objetivo:  val(r.v, F.objetivo),
     condicion: val(r.v, F.condicion),
+    codigo:    val(r.v, F.codigo),
     periodo:   val(r.v, E.periodo_txt),
     politica:  val(r.v, E.compromisos_txt),
     estrategia:val(r.v, E.estrategia_txt),
@@ -1631,7 +1642,7 @@ function filtrados(){
     }
     if(q){
       const inds = indicadoresDe(o.id).map(i => i.indicador + " " + i.respTec + " " + i.meta).join(" ");
-      const heno = norm([o.objetivo, o.respProc, o.oficina, inds].join(" "));
+      const heno = norm([o.codigo, o.objetivo, o.respProc, o.oficina, inds].join(" "));
       if(heno.indexOf(q) < 0) return false;
     }
     return true;
@@ -1639,6 +1650,10 @@ function filtrados(){
 }
 
 function pintarLista(){
+  const sinCod = S.objetivos.filter(o => !o.codigo && o.periodo).length;
+  $("btnCodificar").style.display = (sinCod && esGestor()) ? "" : "none";
+  if(sinCod) $("btnCodificar").textContent = "Asignar códigos (" + sinCod + ")";
+
   const arr = filtrados();
   if(!arr.length){
     $("lista").innerHTML = '<div class="vacio">No hay objetivos que coincidan con los filtros.</div>';
@@ -1654,9 +1669,11 @@ function pintarLista(){
     return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + '" data-id="' + esc(o.id) + '">' +
       '<div class="cab" data-tog="' + esc(o.id) + '">' +
         '<div class="tit">' +
-          "<h3>" + esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
+          "<h3>" + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") +
+            esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
           '<div class="meta">' +
             (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+            (!o.codigo ? '<span class="tag a">sin código</span>' : "") +
             (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
             "<span>·</span><span>" + is.length + " indicador(es)</span>" +
             (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
@@ -2054,6 +2071,62 @@ function cargarRuta(ruta){
   actualizarRuta();
 }
 
+/* Código estable del objetivo: OC-2026-01. El correlativo se reinicia cada
+   periodo y los números de objetivos eliminados NO se reutilizan: si un
+   código ya salió en un acta, reasignarlo confundiría. */
+function siguienteCodigo(periodo){
+  if(!periodo) return "";
+  const pref = "OC-" + periodo + "-";
+  const usados = S.objetivos
+    .filter(o => o.codigo && o.codigo.indexOf(pref) === 0)
+    .map(o => parseInt(o.codigo.slice(pref.length), 10))
+    .filter(n => !isNaN(n));
+  const sig = (usados.length ? Math.max(...usados) : 0) + 1;
+  return pref + String(sig).padStart(2, "0");
+}
+
+/* Asigna código a los objetivos que aún no lo tienen. Respeta los ya
+   asignados y continúa el correlativo de cada periodo desde el mayor
+   existente, para no reutilizar números que puedan estar citados. */
+async function codificarPendientes(){
+  const sin = S.objetivos.filter(o => !o.codigo && o.periodo);
+  if(!sin.length){ toast("Todos los objetivos ya tienen código."); return; }
+  const sinPeriodo = S.objetivos.filter(o => !o.codigo && !o.periodo).length;
+  if(!confirm("Se asignará código a " + sin.length + " objetivo(s).\n\n" +
+      "El correlativo se reinicia por periodo y continúa desde el mayor ya usado." +
+      (sinPeriodo ? "\n\n" + sinPeriodo + " objetivo(s) sin periodo quedarán sin código." : ""))) return;
+
+  /* Se ordenan por fecha del primer indicador, o por nombre si no tienen,
+     para que la numeración siga el orden real del plan. */
+  const orden = sin.slice().sort((a, b) => {
+    const fa = plazoObjetivo(a.id).fi, fb = plazoObjetivo(b.id).fi;
+    if(fa && fb && +fa !== +fb) return fa - fb;
+    if(fa && !fb) return -1;
+    if(!fa && fb) return 1;
+    return sinHtml(a.objetivo).localeCompare(sinHtml(b.objetivo), "es");
+  });
+
+  const b = $("btnCodificar");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Asignando…';
+  let hechos = 0;
+  try{
+    for(const o of orden){
+      const cod = siguienteCodigo(o.periodo);
+      const v = {}; v[CONFIG.MATRIZ.F.codigo.id] = cod;
+      await API.saveForm(o.id, v, CONFIG.MATRIZ.ENTITY_ID);
+      o.codigo = cod;   // para que el siguiente correlativo lo tenga en cuenta
+      hechos++;
+    }
+    toast(hechos + " objetivo(s) codificados.");
+    await recargar();
+  }catch(e){
+    toast("Se asignaron " + hechos + " de " + orden.length + ": " + e.message, true);
+    await recargar();
+  }
+  b.disabled = false; b.textContent = "Asignar códigos";
+}
+$("btnCodificar").onclick = codificarPendientes;
+
 /* ==========================================================================
    Formulario del objetivo — solo lo institucional
    ========================================================================== */
@@ -2071,6 +2144,7 @@ function abrirObjetivo(id){
   opciones("oCondicion", CONFIG.REGLAS.condiciones, o ? o.condicion : "Vigente", "— elige —");
   opciones("oOficina", CONFIG.CATALOGOS.oficinas.opciones, o ? o.oficina : (esGestor() ? "" : S.sesion.oficina), "— elige —");
 
+  $("oCodigo").value = o ? o.codigo : "";
   $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
   $("oRPCorreo").value = o ? o.rpCorreo : "";
   $("oRPCel").value = o ? o.rpCel : "";
@@ -2110,7 +2184,12 @@ function leerCasillas(cont){
   return Array.from($(cont).querySelectorAll("input:checked")).map(i => i.value);
 }
 
-$("oPeriodo").addEventListener("change", () => refrescarEstrategias([]));
+$("oPeriodo").addEventListener("change", () => {
+  refrescarEstrategias([]);
+  /* Solo se propone en objetivos nuevos: cambiar el periodo de uno ya
+     codificado no debe alterar su código, que puede estar citado. */
+  if(!S.editObj) $("oCodigo").value = siguienteCodigo($("oPeriodo").value);
+});
 
 function refrescarPolitica(marcados){
   pintarCasillas("oPolitica", S.cat.politica.map(p => ({ label: p.label, codigo: "" })), marcados);
@@ -2196,6 +2275,7 @@ $("btnGuardarObj").onclick = async () => {
   const d = {
     objetivo: $("oObjetivo").value.trim(),
     periodo: $("oPeriodo").value, condicion: $("oCondicion").value,
+    codigo: $("oCodigo").value.trim(),
     politica: leerCasillas("oPolitica").join(SEP),
     estrategia: leerCasillas("oEstrategia").join(SEP),
     oe: $("pOE").dataset.valor || "", oficina: $("oOficina").value,
@@ -2209,6 +2289,10 @@ $("btnGuardarObj").onclick = async () => {
   if(!d.politica){ error("oPolitica", "Marca al menos un compromiso de política."); mal = true; }
   if(!d.oficina){ error("oOficina", "Elige la oficina responsable."); mal = true; }
   if(!d.estrategia){ error("oEstrategia", "Marca al menos una estrategia."); mal = true; }
+  if(d.codigo){
+    const rep = S.objetivos.find(x => norm(x.codigo) === norm(d.codigo) && (!S.editObj || x.id !== S.editObj.id));
+    if(rep){ error("oCodigo", "Ese código ya lo tiene otro objetivo."); mal = true; }
+  }
   if(!d.respProc){ error("oRespProc", "Elige el responsable de proceso."); mal = true; }
   if(!d.rpCorreo){ error("oRPCorreo", "Falta el correo del responsable de proceso."); mal = true; }
   if(!d.rpCel){ error("oRPCel", "Falta el celular del responsable de proceso."); mal = true; }
@@ -2218,6 +2302,7 @@ $("btnGuardarObj").onclick = async () => {
   const v = {};
   v[F.objetivo.id] = d.objetivo;
   v[F.condicion.id] = d.condicion;
+  v[F.codigo.id] = d.codigo || siguienteCodigo(d.periodo);
   v[E.periodo_txt.id] = d.periodo;
   v[E.compromisos_txt.id] = d.politica;
   v[E.estrategia_txt.id] = d.estrategia;
@@ -3902,7 +3987,8 @@ function pintarTablero(){
         plazo = '<span class="tag a">vence en ' + d + " d</span>";
 
       return '<div class="fila-obj">' +
-        '<div class="fo-tit">' + recorta(t, 78) + "</div>" +
+        '<div class="fo-tit">' + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") +
+          recorta(t, 72) + "</div>" +
         '<div class="fo-meta">' +
           (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
           (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
