@@ -34,7 +34,10 @@ const CONFIG = {
       meta:          { id: "ddShmrWODaWQSxWPeGAfKI", type: "text", col: "Meta" },
       fi_meta:       { id: "ddQSkFW7HmBztdM8kBWPWZ", type: "date", col: "F.I. Meta" },  // obligatorio
       fv_meta:       { id: "ddRHWlW5vcU5lcM8kOWRvA", type: "date", col: "F.V. Meta" },  // obligatorio
-      condicion:     { id: "a_xSkfWQXcG4olu8kkW60k", type: "select", col: "Condición" } // obligatorio
+      condicion:     { id: "a_xSkfWQXcG4olu8kkW60k", type: "select", col: "Condición" }, // obligatorio
+      // Código estable del objetivo: OC-2026-01. Se genera solo y sirve
+      // para citarlo en actas e informes sin depender del orden en pantalla.
+      codigo:        { id: "ccgCo1WRHcIOk0W5RcLK4C", type: "string", col: "Código" }
     },
 
     // ---- Relaciones: NO escribibles por REST -----------------------------
