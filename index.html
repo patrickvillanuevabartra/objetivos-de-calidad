@@ -1311,7 +1311,6 @@ async function cargarCatalogos(){
 
   S.cat.respTecnicos = rt.map(x => ({
     id: x.id, label: x.label,
-    raw: x.v,
     correo:  val(x.v, C.responsables_tecnicos.colCorreo),
     celular: val(x.v, C.responsables_tecnicos.colCelular),
     lider:   valRel(x.v, C.responsables_tecnicos.colLider)
@@ -2147,14 +2146,12 @@ function abrirObjetivo(id){
 
   $("oCodigo").value = o ? o.codigo : "";
   $("oObjetivo").value = o ? sinHtml(o.objetivo) : "";
+  $("oRPCorreo").value = o ? o.rpCorreo : "";
+  $("oRPCel").value = o ? o.rpCel : "";
+
   refrescarPolitica(o ? partir(o.politica) : []);
   refrescarEstrategias(o ? partir(o.estrategia) : []);
   refrescarResponsables(o ? o.respProc : "");
-  // El correo y el celular se rellenan DESPUÉS de pintar el desplegable: si se
-  // hacía antes, el repintado los dejaba vacíos y el formulario no se podía
-  // guardar sin volver a elegir la oficina. Se toman del catálogo (dato vigente)
-  // y, si allí no estuvieran, de lo que quedó guardado en el objetivo.
-  sincronizarDatosRespProceso(o ? o.rpCorreo : "", o ? o.rpCel : "");
   $("mObj").classList.add("on");
 }
 
@@ -2267,15 +2264,6 @@ function refrescarResponsables(valorActual){
   opciones("oRespProc", arr.map(r => r.label), valorActual, "— elige —");
   $("pistaRP").textContent = nota;
 }
-/* Rellena correo y celular a partir del responsable elegido, consultando el
-   catálogo. Así un cambio de datos en QuintaDB se refleja al instante y no
-   depende de lo que se copió en el objetivo al crearlo. */
-function sincronizarDatosRespProceso(correoRespaldo, celRespaldo){
-  const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
-  $("oRPCorreo").value = (rp && rp.correo) ? rp.correo : (correoRespaldo || "");
-  $("oRPCel").value    = (rp && rp.celular) ? rp.celular : (celRespaldo || "");
-}
-
 $("oRespProc").addEventListener("change", () => {
   const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
   $("oRPCorreo").value = rp ? (rp.correo || "") : "";
@@ -2412,30 +2400,12 @@ function abrirIndicador(objId, indId){
    igual en el indicador y en el hito: el criterio debe ser uno solo.
    Los que no tienen líder asignado se incluyen siempre, para que nadie
    quede inalcanzable mientras el catálogo se termina de poblar. */
-/* Busca un texto dentro de TODOS los valores del registro del técnico.
-   El campo «Líder» es de tipo relación y QuintaDB no lo devuelve por API, así que
-   filtrar solo por él dejaba la lista sin filtrar y se mostraban todos. Buscando
-   en el registro completo se encuentra igual, venga en la columna que venga. */
-function _rtContiene(t, texto){
-  if(!texto) return false;
-  const objetivo = norm(texto).trim();
-  if(!objetivo) return false;
-  if(coincideRel(t.lider, {id:'', label:texto})) return true;
-  const v = t.raw || {};
-  return Object.keys(v).some(k => {
-    const val = v[k];
-    return typeof val === 'string' && norm(val).includes(objetivo);
-  });
-}
-
-function tecnicosDe(nombreRespProceso, valorActual, oficina){
+function tecnicosDe(nombreRespProceso, valorActual){
   const rp = S.cat.respProceso.find(x => x.label === nombreRespProceso);
   let arr = S.cat.respTecnicos, nota = "";
   if(rp){
-    const suyos = S.cat.respTecnicos.filter(t =>
-      coincideRel(t.lider, rp) || _rtContiene(t, rp.label) || _rtContiene(t, oficina));
-    const huerfanos = S.cat.respTecnicos.filter(t =>
-      !t.lider && !_rtContiene(t, rp.label) && !_rtContiene(t, oficina));
+    const suyos = S.cat.respTecnicos.filter(t => coincideRel(t.lider, rp));
+    const huerfanos = S.cat.respTecnicos.filter(t => !t.lider);
     if(suyos.length){
       arr = suyos.concat(huerfanos);
       nota = suyos.length + " técnico(s) a cargo de " + rp.label +
@@ -2454,7 +2424,7 @@ function tecnicosDe(nombreRespProceso, valorActual, oficina){
 }
 
 function refrescarTecnicos(valorActual){
-  const r = tecnicosDe(S.ctxObj ? S.ctxObj.respProc : "", valorActual, S.ctxObj ? S.ctxObj.oficina : "");
+  const r = tecnicosDe(S.ctxObj ? S.ctxObj.respProc : "", valorActual);
   opciones("oRespTec", r.lista.map(t => t.label), valorActual, "— elige —");
   $("pistaRT").textContent = r.nota;
 }
@@ -2690,27 +2660,52 @@ function revisarCalibracion(){
   const caja = $("calibra");
   const ind = S.editInd;
   const gs = leerVariables();
+  const refNom = gs.__ref || "";
   const ref = gs.__ref != null ? gs[gs.__ref] : null;
   const metaTxt = $("iMeta") ? $("iMeta").value : "";
-  const falso = { meta: metaTxt };
-  const necesarias = unidadesNecesarias(falso, ref == null ? null : parseFloat(ref));
+  const necesarias = unidadesNecesarias({ meta: metaTxt }, ref == null ? null : parseFloat(ref));
   if(necesarias == null || !ind){ caja.style.display = "none"; return; }
 
-  const asignado = red1(producenResultado(ind.id).reduce((n, h) => n + num(h.metaHito), 0));
+  const hs = producenResultado(ind.id);
+  const asignado = red1(hs.reduce((n, x) => n + num(x.metaHito), 0));
   const falta = red1(necesarias - asignado);
+  /* La unidad la declaran los hitos. Sin hitos aún, el nombre de la
+     variable de referencia ("Total de docentes") no sirve como unidad. */
+  const uni = (hs.find(x => x.unidad) || {}).unidad || "unidades";
+  const esPct = /%/.test(String(metaTxt || ""));
+
+  /* Se explica de dónde sale el número: sin esto el usuario ve una cifra
+     con decimales y no sabe qué significa ni qué debe hacer. */
+  const origen = (esPct && ref != null)
+    ? "Para alcanzar la meta de <b>" + metaTxt + "</b> sobre <b>" + red1(ref) + " " + esc(refNom) +
+      "</b>, hay que llegar a <b>" + necesarias + " " + esc(uni) + "</b>."
+    : "La meta del indicador es <b>" + necesarias + " " + esc(uni) + "</b>.";
+
+  const comoSeSuma = "Esa cantidad se reparte entre los hitos: cada uno declara cuántas unidades cubre, " +
+    "y entre todos deben sumar el total.";
+
   caja.style.display = "block";
   if(Math.abs(falta) < 0.01){
     caja.className = "calib ok";
-    caja.innerHTML = "✓ Los hitos suman <b>" + asignado + "</b> de las <b>" + necesarias +
-      "</b> necesarias. Cumpliéndolos todos, el indicador alcanza su meta.";
+    caja.innerHTML = "<b>✓ El plan está bien dimensionado.</b><br>" + origen +
+      " Los hitos suman <b>" + asignado + "</b>, exactamente lo necesario: cumpliéndolos todos, " +
+      "el indicador alcanza su meta.";
   }else if(falta > 0){
     caja.className = "calib av";
-    caja.innerHTML = "⚠ Los hitos suman <b>" + asignado + "</b> de <b>" + necesarias +
-      "</b>. Faltan <b>" + falta + "</b> por asignar: aun cumpliéndolos todos, el indicador no llegaría a su meta.";
+    caja.innerHTML = "<b>⚠ El plan aún no alcanza la meta.</b><br>" + origen + " " + comoSeSuma +
+      "<br><br>Hoy los hitos suman <b>" + asignado + " de " + necesarias + "</b>: " +
+      (asignado === 0
+        ? "todavía no has definido cuántas unidades cubre cada hito."
+        : "faltan <b>" + falta + "</b> por repartir.") +
+      " Si el plan se quedara así, aun cumpliendo todos los hitos el indicador llegaría solo al <b>" +
+      red1(asignado / necesarias * 100) + "%</b> de su meta." +
+      '<br><span style="color:var(--mist)">Usa el botón «Calcular» al crear o editar un hito y el ' +
+      "sistema propone el saldo pendiente.</span>";
   }else{
     caja.className = "calib av";
-    caja.innerHTML = "ℹ Los hitos suman <b>" + asignado + "</b>, más de las <b>" + necesarias +
-      "</b> necesarias. El plan supera la meta en <b>" + Math.abs(falta) + "</b>.";
+    caja.innerHTML = "<b>ℹ El plan supera la meta.</b><br>" + origen +
+      " Los hitos suman <b>" + asignado + "</b>, es decir <b>" + Math.abs(falta) + "</b> de más. " +
+      "No es un problema —conviene si se busca holgura—, pero revisa que las cantidades sean las correctas.";
   }
 }
 
