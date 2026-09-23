@@ -260,6 +260,24 @@ tr.recien > td{animation:destello 2.2s ease-out}
   border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:12px;line-height:1.5}
 .cadena b{color:var(--brand)}
 
+/* ---------- ficha de solo lectura ---------- */
+.fi-sec{margin-bottom:20px}
+.fi-sec h4{font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;
+  letter-spacing:.08em;margin:0 0 9px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.fi-campo{margin-bottom:11px}
+.fi-campo .k{font-size:11px;font-weight:700;color:var(--mist);text-transform:uppercase;letter-spacing:.05em}
+.fi-campo .v{font-size:14px;margin-top:2px;line-height:1.55;overflow-wrap:anywhere}
+.fi-campo .v ul{margin:3px 0 0;padding-left:20px}
+.fi-dos{display:grid;grid-template-columns:1fr 1fr;gap:11px 22px}
+@media (max-width:640px){ .fi-dos{grid-template-columns:1fr} }
+@media print{
+  body *{visibility:hidden}
+  #mFicha,#mFicha *{visibility:visible}
+  #mFicha{position:absolute;inset:0;background:#fff;padding:0;display:block !important}
+  #mFicha .caja{max-width:100%;box-shadow:none;border-radius:0}
+  #mFicha .pie,#mFicha .cerrar,#btnImprimir{display:none}
+}
+
 /* ---------- código del objetivo ---------- */
 .cod-obj{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;color:var(--brand);
   background:var(--verde-cl);border-radius:5px;padding:2px 7px;margin-right:2px;vertical-align:2px}
@@ -919,6 +937,22 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <button class="btn sec" data-cierra="mUsr">Cancelar</button>
       <button class="btn" id="btnGuardarUsr">Guardar usuario</button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== FICHA DE SOLO LECTURA ==================== -->
+<div class="modal" id="mFicha">
+  <div class="caja">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et" id="fiEt">Ficha</div>
+        <h2 id="fiTit"></h2>
+      </div>
+      <button class="btn sec mini" id="btnImprimir" style="margin-right:6px">Imprimir</button>
+      <button class="cerrar" data-cierra="mFicha">&times;</button>
+    </div>
+    <div class="cuerpo" id="fiCuerpo"></div>
+    <div class="pie"><button class="btn sec" data-cierra="mFicha">Cerrar</button></div>
   </div>
 </div>
 
@@ -1687,7 +1721,8 @@ function pintarLista(){
           '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
         "</div>" +
         '<div class="acc">' +
-          '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' +
+          '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
+          (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
           (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
         "</div>" +
       "</div>" +
@@ -1702,6 +1737,8 @@ function pintarLista(){
     };
   });
   const con = (sel, fn) => $("lista").querySelectorAll(sel).forEach(e => e.onclick = () => fn(e));
+  con("[data-ficha]",  e => fichaObjetivo(e.dataset.ficha));
+  con("[data-ifi]",    e => fichaIndicador(e.dataset.ifi));
   con("[data-ver]",    e => abrirObjetivo(e.dataset.ver));
   con("[data-del]",    e => eliminarObjetivo(e.dataset.del));
   con("[data-inuevo]", e => abrirIndicador(e.dataset.inuevo, null));
@@ -1764,9 +1801,12 @@ function bloqueIndicador(o, ind, editable, nOrden){
         '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
         (malSuma ? '<div class="tag r" style="margin-top:4px">Σ ' + suma + "%</div>" : "") +
       "</div>" +
-      (editable ? '<div class="acc">' +
-        '<button class="ico" data-iedit="' + esc(ind.id) + '" data-obj="' + esc(o.id) + '" title="Editar indicador">✏️</button>' +
-        '<button class="ico" data-idel="' + esc(ind.id) + '" title="Eliminar">🗑️</button></div>' : "") +
+      '<div class="acc">' +
+        '<button class="ico" data-ifi="' + esc(ind.id) + '" title="Ver ficha del indicador">👁️</button>' +
+        (editable ?
+          '<button class="ico" data-iedit="' + esc(ind.id) + '" data-obj="' + esc(o.id) + '" title="Editar indicador">✏️</button>' +
+          '<button class="ico" data-idel="' + esc(ind.id) + '" title="Eliminar">🗑️</button>' : "") +
+      "</div>" +
     "</div>";
 
   if(ind.actividades) h += '<div class="ind-txt"><b>Actividades:</b> ' + ind.actividades + "</div>";
@@ -2126,6 +2166,122 @@ async function codificarPendientes(){
   b.disabled = false; b.textContent = "Asignar códigos";
 }
 $("btnCodificar").onclick = codificarPendientes;
+
+/* ==========================================================================
+   Ficha de solo lectura — para consultar sin poder editar y para imprimir
+   ========================================================================== */
+function campoFi(k, v, ancho){
+  if(v == null || v === "" || v === "—") return "";
+  return '<div class="fi-campo"' + (ancho ? ' style="grid-column:1/-1"' : "") + '><div class="k">' +
+    esc(k) + '</div><div class="v">' + v + "</div></div>";
+}
+
+function fichaObjetivo(id){
+  const o = S.objetivos.find(x => x.id === id);
+  if(!o) return;
+  const is = indicadoresDe(o.id), p = progresoObjetivo(o.id), lg = logroObjetivo(o.id);
+  const pl = plazoObjetivo(o.id);
+
+  $("fiEt").textContent = "Objetivo de calidad" + (o.codigo ? " · " + o.codigo : "");
+  $("fiTit").textContent = sinHtml(o.objetivo);
+
+  let c = '<div class="fi-sec"><h4>Identificación</h4><div class="fi-dos">' +
+    campoFi("Código", esc(o.codigo)) +
+    campoFi("Periodo", esc(o.periodo)) +
+    campoFi("Condición", esc(o.condicion)) +
+    campoFi("Oficina responsable", esc(o.oficina)) +
+    campoFi("Plazo", pl.fi ? verFecha(pl.fi) + " → " + verFecha(pl.fv) : "") +
+    campoFi("Avance del plan", p == null ? "sin indicadores" : p + "%") +
+    campoFi("Logro de la meta", lg == null ? "" : lg + "%") +
+    "</div></div>";
+
+  c += '<div class="fi-sec"><h4>Alineamiento institucional</h4>' +
+    campoFi("Compromisos de la política de calidad", listaChips(o.politica), true) +
+    campoFi("Estrategia", listaChips(o.estrategia), true) +
+    campoFi("Objetivo estratégico", listaChips(o.oe), true) + "</div>";
+
+  c += '<div class="fi-sec"><h4>Responsable de proceso</h4><div class="fi-dos">' +
+    campoFi("Nombre", esc(o.respProc)) +
+    campoFi("Correo", esc(o.rpCorreo)) +
+    campoFi("Celular", esc(o.rpCel)) + "</div></div>";
+
+  c += '<div class="fi-sec"><h4>Indicadores (' + is.length + ")</h4>" +
+    (is.length ? is.sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0))
+      .map((ind, i) => bloqueFichaIndicador(ind, i + 1)).join("")
+      : '<div class="vacio">Este objetivo aún no tiene indicadores.</div>') + "</div>";
+
+  $("fiCuerpo").innerHTML = c;
+  $("mFicha").classList.add("on");
+}
+
+function fichaIndicador(id){
+  const ind = S.indicadores.find(x => x.id === id);
+  if(!ind) return;
+  const o = S.objetivos.find(x => x.id === ind.objetivoRef);
+  $("fiEt").textContent = "Indicador" + (o && o.codigo ? " · " + o.codigo : "");
+  $("fiTit").textContent = sinHtml(ind.indicador);
+  $("fiCuerpo").innerHTML =
+    (o ? '<div class="fi-sec"><h4>Objetivo al que pertenece</h4><div class="fi-campo"><div class="v">' +
+      esc(sinHtml(o.objetivo)) + "</div></div></div>" : "") +
+    bloqueFichaIndicador(ind, null);
+  $("mFicha").classList.add("on");
+}
+
+/* Un indicador con todo su contenido: sin recortes ni tooltips. */
+function bloqueFichaIndicador(ind, nOrden){
+  const p = progresoIndicador(ind.id), lg = logroIndicador(ind);
+  const hs = hitosDe(ind.id).sort((a, b) => (fecha(a.fi) || 0) - (fecha(b.fi) || 0));
+  const alc = valorAlcanzado(ind), nec = unidadesNecesarias(ind);
+
+  let c = '<div style="border:1px solid var(--line);border-radius:11px;padding:15px 17px;margin-bottom:14px">' +
+    (nOrden ? '<div style="font-size:12px;color:var(--mist);margin-bottom:4px">Indicador ' + nOrden + "</div>" : "") +
+    '<div style="font-size:15px;font-weight:600;line-height:1.35;margin-bottom:11px">' +
+      esc(sinHtml(ind.indicador)) + "</div>" +
+    '<div class="fi-dos">' +
+      campoFi("Meta", esc(ind.meta)) +
+      campoFi("Plazo", verFecha(ind.fi) + " → " + verFecha(ind.fv)) +
+      campoFi("Avance del plan", p == null ? "sin hitos" : p + "%") +
+      campoFi("Logro de la meta", lg == null ? "" : lg + "% (" + alc + " de " + nec + ")") +
+      campoFi("Responsable técnico", esc(ind.respTec) +
+        (ind.rtCorreo || ind.rtCel ? '<div style="font-size:12.5px;color:var(--mist)">' +
+          [esc(ind.rtCorreo), esc(ind.rtCel)].filter(Boolean).join(" · ") + "</div>" : "")) +
+    "</div>" +
+    campoFi("Fórmula", ind.formula ? '<div class="formula" style="margin-top:3px">ƒ ' +
+      esc(sinHtml(ind.formula)) + "</div>" : "", true) +
+    campoFi("Proceso", esc(ind.proceso), true) +
+    campoFi("Actividades a realizar", ind.actividades, true) +
+    campoFi("Recursos requeridos", ind.recursos, true);
+
+  if(hs.length){
+    c += '<div style="font-size:11px;font-weight:700;color:var(--mist);text-transform:uppercase;' +
+      'letter-spacing:.05em;margin:14px 0 6px">Hitos (' + hs.length + ")</div>" +
+      '<table class="t"><thead><tr><th>Hito</th><th>Meta</th><th>Part.</th><th>Plazo</th>' +
+      "<th>Avance</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>" +
+      hs.map(hi => {
+        const r = respDelHito(hi, ind) || {};
+        return "<tr><td><b>" + esc(hi.hito) + "</b>" +
+          (hi.produce === "Sí" ? ' <span class="tag v">resultado</span>' : "") + "</td>" +
+          "<td>" + (esCuantitativo(hi) ? red1(num(hi.metaHito)) + " " + esc(hi.unidad || "") : "—") + "</td>" +
+          "<td>" + red1(hi.part) + "%</td>" +
+          "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) + "</td>" +
+          "<td>" + red1(progresoHito(hi.id)) + "%</td>" +
+          "<td>" + esc(estadoHito(hi.id)) + "</td>" +
+          "<td>" + esc(r.nombre || "—") + "</td></tr>" +
+          reportesDe(hi.id).map(rep =>
+            '<tr class="rep"><td colspan="7"><b>' + verFecha(rep.fecha) + "</b> · " +
+            red1(rep.pct) + "% · " + esc(rep.estado) + "<div>" + (rep.avance || "") + "</div>" +
+            (rep.dificultades ? '<div style="color:var(--warn);font-size:12.5px">Dificultades: ' +
+              esc(rep.dificultades) + "</div>" : "") +
+            (rep.obs ? '<div style="color:var(--mist);font-size:12.5px">Obs.: ' + esc(rep.obs) + "</div>" : "") +
+            enlacesHtml(rep.enlaces) + accionesHtml(rep.acciones) + "</td></tr>").join("");
+      }).join("") + "</tbody></table>";
+  }else{
+    c += '<div class="vacio" style="margin-top:12px">Sin hitos registrados.</div>';
+  }
+  return c + "</div>";
+}
+
+$("btnImprimir").onclick = () => window.print();
 
 /* ==========================================================================
    Formulario del objetivo — solo lo institucional
@@ -3451,7 +3607,8 @@ function pintarDespriorizados(){
           '<div style="margin-top:5px;font-size:11.5px;color:var(--mist)">no entra al tablero</div>' +
         "</div>" +
         '<div class="acc">' +
-          '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' +
+          '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
+          (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
         "</div>" +
       "</div>" +
       '<div class="cuerpo">' + detalle(o) + "</div>" +
@@ -3466,6 +3623,8 @@ function pintarDespriorizados(){
     };
   });
   const con = (sel, fn) => raiz.querySelectorAll(sel).forEach(e => e.onclick = () => fn(e));
+  con("[data-ficha]",  e => fichaObjetivo(e.dataset.ficha));
+  con("[data-ifi]",    e => fichaIndicador(e.dataset.ifi));
   con("[data-ver]",    e => abrirObjetivo(e.dataset.ver));
   con("[data-inuevo]", e => abrirIndicador(e.dataset.inuevo, null));
   con("[data-iedit]",  e => abrirIndicador(e.dataset.obj, e.dataset.iedit));
