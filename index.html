@@ -345,6 +345,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <button data-v="usuarios" id="tabUsuarios" style="display:none">Usuarios</button>
         <button data-v="notificaciones" id="tabNotif" style="display:none">Notificaciones</button>
         <span class="chip" id="chipUsr"></span>
+        <button id="btnPass" title="Cambiar mi contraseña">🔑</button>
         <button id="btnSalir">Salir</button>
       </nav>
     </div>
@@ -436,11 +437,21 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div class="tarj">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
           <h3 style="margin:0">Usuarios del sistema</h3>
-          <button class="btn" id="btnNuevoUsuario">+ Crear usuario</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sec" id="btnExportarUsr">⬇️ Descargar Excel</button>
+            <button class="btn" id="btnNuevoUsuario">+ Crear usuario</button>
+          </div>
         </div>
         <input type="text" id="usBuscar" placeholder="Buscar por nombre, usuario, rol u oficina…"
                style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:12px">
         <div id="usuariosLista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
+      </div>
+
+      <div class="tarj">
+        <h3>Información del sistema</h3>
+        <p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Útil para diagnosticar cuando algo
+          no carga o los números no cuadran.</p>
+        <div id="infoSistema"></div>
       </div>
     </section>
 
@@ -936,6 +947,43 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     <div class="pie"><span style="margin-right:auto;font-size:12px;color:var(--mist)"><b class="req" style="color:var(--bad)">*</b> campos obligatorios</span>
       <button class="btn sec" data-cierra="mUsr">Cancelar</button>
       <button class="btn" id="btnGuardarUsr">Guardar usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CAMBIAR CONTRASEÑA ==================== -->
+<div class="modal" id="mPass">
+  <div class="caja" style="max-width:460px">
+    <div class="cab">
+      <div style="flex:1">
+        <div class="et">Mi cuenta</div>
+        <h2>Cambiar contraseña</h2>
+      </div>
+      <button class="cerrar" data-cierra="mPass">&times;</button>
+    </div>
+    <div class="cuerpo f">
+      <div id="mPassMsg"></div>
+      <div class="rej">
+        <div class="full">
+          <label for="cpActual">Contraseña actual <b class="req">*</b></label>
+          <input type="password" id="cpActual" autocomplete="current-password">
+          <div class="err" id="e_cpActual"></div>
+        </div>
+        <div class="full">
+          <label for="cpNueva">Contraseña nueva <b class="req">*</b></label>
+          <input type="password" id="cpNueva" autocomplete="new-password">
+          <div class="err" id="e_cpNueva"></div>
+        </div>
+        <div class="full">
+          <label for="cpRepite">Repite la nueva <b class="req">*</b></label>
+          <input type="password" id="cpRepite" autocomplete="new-password">
+          <div class="err" id="e_cpRepite"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn sec" data-cierra="mPass">Cancelar</button>
+      <button class="btn" id="btnGuardarPass">Guardar contraseña</button>
     </div>
   </div>
 </div>
@@ -3658,6 +3706,7 @@ async function cargarUsuarios(){
       activo: val(r.v, F.activo) === "Sí" ? "Sí" : "No"
     })).sort((a, b) => (a.nombre || a.usuario).localeCompare(b.nombre || b.usuario, "es"));
     pintarUsuarios();
+    pintarInfoSistema();
   }catch(e){
     cont.innerHTML = '<div class="msg mal">No se pudieron cargar: ' + esc(e.message) + "</div>";
   }
@@ -4068,6 +4117,91 @@ $("btnGuardarPl").onclick = async () => {
   }catch(e){ msg("mPlMsg", "No se pudo guardar: " + e.message, "mal"); }
   b.disabled = false; b.textContent = "Guardar plantillas";
 };
+
+/* ---- cambiar la propia contraseña ---- */
+$("btnPass").onclick = () => {
+  limpiaErrores("mPass");
+  msg("mPassMsg", "", "");
+  ["cpActual","cpNueva","cpRepite"].forEach(id => $(id).value = "");
+  $("mPass").classList.add("on");
+};
+
+$("btnGuardarPass").onclick = async () => {
+  limpiaErrores("mPass");
+  const act = $("cpActual").value.trim(), nue = $("cpNueva").value.trim(), rep = $("cpRepite").value.trim();
+  let mal = false;
+  if(!act){ error("cpActual", "Escribe tu contraseña actual."); mal = true; }
+  if(!nue){ error("cpNueva", "Escribe la contraseña nueva."); mal = true; }
+  else if(nue.length < 4){ error("cpNueva", "Usa al menos 4 caracteres."); mal = true; }
+  if(nue && rep !== nue){ error("cpRepite", "Las dos contraseñas no coinciden."); mal = true; }
+  if(mal){ msg("mPassMsg", "Revisa los campos marcados.", "mal"); irAlPrimerError("mPass"); return; }
+
+  const b = $("btnGuardarPass");
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Guardando…';
+  try{
+    /* Se relee de QuintaDB en vez de fiarse de la sesión: la contraseña
+       pudo cambiar desde otro sitio mientras esta sesión seguía abierta. */
+    const F = CONFIG.USUARIOS.F;
+    const regs = await listar(CONFIG.USUARIOS.ENTITY_ID);
+    const yo = regs.find(r => norm(val(r.v, F.usuario)) === norm(S.sesion.usuario));
+    if(!yo) throw new Error("No se encontró tu usuario en el sistema.");
+    if(val(yo.v, F.password) !== act){
+      error("cpActual", "La contraseña actual no es correcta.");
+      msg("mPassMsg", "", "");
+      b.disabled = false; b.textContent = "Guardar contraseña";
+      return;
+    }
+    const v = {}; v[F.password.id] = nue;
+    await API.saveForm(yo.id, v, CONFIG.USUARIOS.ENTITY_ID);
+    $("mPass").classList.remove("on");
+    toast("Contraseña actualizada. Úsala la próxima vez que entres.");
+    if(S.usuarios.length) await cargarUsuarios();
+  }catch(e){ msg("mPassMsg", "No se pudo guardar: " + e.message, "mal"); }
+  b.disabled = false; b.textContent = "Guardar contraseña";
+};
+
+/* ---- descarga de usuarios ----
+   CSV con BOM: Excel lo abre con las tildes correctas y sin asistente. */
+$("btnExportarUsr").onclick = () => {
+  if(!S.usuarios.length){ toast("No hay usuarios que descargar.", true); return; }
+  const cols = ["Nombre completo", "Usuario", "Contraseña", "Rol", "Oficina asignada", "Activo"];
+  const celda = t => '"' + String(t == null ? "" : t).replace(/"/g, '""') + '"';
+  const filas = S.usuarios.map(u => [u.nombre, u.usuario, u.pass, u.rol, u.oficina, u.activo].map(celda).join(";"));
+  const csv = "\uFEFF" + cols.map(celda).join(";") + "\r\n" + filas.join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  a.download = "usuarios-objetivos-calidad-" + iso(HOY) + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast(S.usuarios.length + " usuario(s) descargados.");
+};
+
+/* ---- información del sistema ---- */
+function pintarInfoSistema(){
+  const caja = $("infoSistema");
+  if(!caja) return;
+  const activos = S.usuarios.filter(u => u.activo === "Sí").length;
+  const porRol = {};
+  S.usuarios.forEach(u => porRol[u.rol] = (porRol[u.rol] || 0) + 1);
+  const sinInd = S.objetivos.filter(o => !indicadoresDe(o.id).length).length;
+  const sinCod = S.objetivos.filter(o => !o.codigo).length;
+
+  const fila = (k, v, alerta) => "<tr><td>" + esc(k) + '</td><td style="font-family:\'IBM Plex Mono\',monospace' +
+    (alerta ? ";color:var(--warn);font-weight:600" : "") + '">' + esc(v) + "</td></tr>";
+
+  caja.innerHTML = '<table class="t"><tbody>' +
+    fila("Objetivos registrados", S.objetivos.length) +
+    fila("· sin indicadores", sinInd, sinInd > 0) +
+    fila("· sin código asignado", sinCod, sinCod > 0) +
+    fila("Indicadores", S.indicadores.length) +
+    fila("Hitos", S.hitos.length) +
+    fila("Reportes de avance", S.reportes.length) +
+    fila("Usuarios", S.usuarios.length + " (" + activos + " activos)") +
+    Object.keys(porRol).sort().map(r => fila("· " + r, porRol[r])).join("") +
+    fila("Base de datos", CONFIG.APP_ID) +
+    fila("Tabla de usuarios", CONFIG.USUARIOS.ENTITY_ID) +
+    fila("Proxy", String(CONFIG.PROXY_URL).replace(/^https?:\/\//, "").replace(/\/$/, "")) +
+    "</tbody></table>";
+}
 
 /* ==========================================================================
    Tablero
