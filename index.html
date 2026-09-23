@@ -278,6 +278,20 @@ tr.recien > td{animation:destello 2.2s ease-out}
   #mFicha .pie,#mFicha .cerrar,#btnImprimir{display:none}
 }
 
+/* ---------- objetivos con el mismo título, agrupados ---------- */
+.obj-grupo{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--verde);
+  border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.og-cab{background:var(--verde-cl);padding:13px 16px;display:flex;gap:12px;align-items:flex-start;
+  border-bottom:1px solid var(--line)}
+.og-cab h3{margin:0 0 4px;font-size:14.5px;font-weight:700;line-height:1.35;color:var(--verde-osc)}
+.og-meta{font-size:12px;color:var(--verde-osc);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.obj.en-grupo{border:0;border-radius:0;margin:0;box-shadow:none}
+.obj.en-grupo + .obj.en-grupo{border-top:1px solid var(--line)}
+.obj.en-grupo .cab{padding-left:26px}
+.obj.en-grupo .tit h3{font-size:13.5px;color:var(--slate)}
+.obj.en-grupo .tit h3::before{content:"↳ ";color:var(--gris-cl)}
+@media (max-width:720px){ .og-cab{flex-wrap:wrap} .obj.en-grupo .cab{padding-left:16px} }
+
 /* ---------- código del objetivo ---------- */
 .cod-obj{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;color:var(--brand);
   background:var(--verde-cl);border-radius:5px;padding:2px 7px;margin-right:2px;vertical-align:2px}
@@ -1731,6 +1745,73 @@ function filtrados(){
   });
 }
 
+function tarjetaObjetivo(o, abiertos, enGrupo){
+  const p = progresoObjetivo(o.id), sem = semaforo(p), eo = estadoObjetivo(o);
+  const is = indicadoresDe(o.id);
+  const cumplidos = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
+  /* Dentro de un grupo el título ya está en la cabecera: la fila lo
+     reemplaza por la oficina, que es lo que distingue a cada registro. */
+  const titulo = enGrupo ? (o.oficina || "(sin oficina asignada)") : (sinHtml(o.objetivo) || "(sin título)");
+  return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + (enGrupo ? " en-grupo" : "") +
+      '" data-id="' + esc(o.id) + '">' +
+    '<div class="cab" data-tog="' + esc(o.id) + '">' +
+      '<div class="tit">' +
+        "<h3>" + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") + esc(titulo) + "</h3>" +
+        '<div class="meta">' +
+          (!enGrupo && o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+          (!o.codigo ? '<span class="tag a">sin código</span>' : "") +
+          (!enGrupo && o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
+          (enGrupo ? "<span>Responsable: " + esc(o.respProc || "—") + "</span>" : "") +
+          "<span>·</span><span>" + is.length + " indicador(es)</span>" +
+          (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
+          (!is.length ? '<span class="tag r">sin indicadores</span>' : "") +
+        "</div>" +
+      "</div>" +
+      '<div style="flex:0 0 auto;text-align:right;min-width:165px">' +
+        '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
+          (is.length ? ' <span style="font-weight:400;color:var(--mist);font-size:12px">· ' + cumplidos + " de " + is.length + "</span>" : "") + "</div>" +
+        '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+        '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
+      "</div>" +
+      '<div class="acc">' +
+        '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
+        (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
+        (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
+      "</div>" +
+    "</div>" +
+    '<div class="cuerpo">' + detalle(o) + "</div>" +
+  "</div>";
+}
+
+/* Cabecera única con el título del objetivo y, debajo, un registro por
+   oficina responsable. El avance del grupo es el promedio de sus registros,
+   igual que el de un objetivo lo es de sus indicadores. */
+function grupoObjetivos(g, abiertos){
+  const ps = g.map(o => progresoObjetivo(o.id)).filter(x => x != null);
+  const p = ps.length ? red1(ps.reduce((a, b) => a + b, 0) / ps.length) : null;
+  const sem = semaforo(p);
+  const nInd = g.reduce((n, o) => n + indicadoresDe(o.id).length, 0);
+  const oficinas = [...new Set(g.map(o => o.oficina).filter(Boolean))];
+  return '<div class="obj-grupo">' +
+    '<div class="og-cab">' +
+      '<div style="flex:1;min-width:0">' +
+        "<h3>" + esc(sinHtml(g[0].objetivo)) + "</h3>" +
+        '<div class="og-meta">' +
+          (g[0].periodo ? '<span class="tag g">' + esc(g[0].periodo) + "</span>" : "") +
+          "<span>" + g.length + " responsables" + (oficinas.length ? ": " + esc(oficinas.join(" · ")) : "") + "</span>" +
+          "<span>·</span><span>" + nInd + " indicador(es) en total</span>" +
+        "</div>" +
+      "</div>" +
+      '<div style="flex:0 0 auto;text-align:right;min-width:165px;padding-right:4px">' +
+        '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
+          ' <span style="font-weight:400;color:var(--mist);font-size:12px">· promedio</span></div>' +
+        '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+      "</div>" +
+    "</div>" +
+    g.map(o => tarjetaObjetivo(o, abiertos, true)).join("") +
+  "</div>";
+}
+
 function pintarLista(){
   const sinCod = S.objetivos.filter(o => !o.codigo && o.periodo).length;
   $("btnCodificar").style.display = (sinCod && esGestor()) ? "" : "none";
@@ -1744,39 +1825,20 @@ function pintarLista(){
   const abiertos = {};
   document.querySelectorAll(".obj.abierto").forEach(e => abiertos[e.dataset.id] = 1);
 
-  $("lista").innerHTML = arr.map(o => {
-    const p = progresoObjetivo(o.id), sem = semaforo(p), eo = estadoObjetivo(o);
-    const is = indicadoresDe(o.id);
-    const cumplidos = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
-    return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + '" data-id="' + esc(o.id) + '">' +
-      '<div class="cab" data-tog="' + esc(o.id) + '">' +
-        '<div class="tit">' +
-          "<h3>" + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") +
-            esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
-          '<div class="meta">' +
-            (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
-            (!o.codigo ? '<span class="tag a">sin código</span>' : "") +
-            (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
-            "<span>·</span><span>" + is.length + " indicador(es)</span>" +
-            (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
-            (!is.length ? '<span class="tag r">sin indicadores</span>' : "") +
-          "</div>" +
-        "</div>" +
-        '<div style="flex:0 0 auto;text-align:right;min-width:165px">' +
-          '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
-            (is.length ? ' <span style="font-weight:400;color:var(--mist);font-size:12px">· ' + cumplidos + " de " + is.length + "</span>" : "") + "</div>" +
-          '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
-          '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
-        "</div>" +
-        '<div class="acc">' +
-          '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
-          (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
-          (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
-        "</div>" +
-      "</div>" +
-      '<div class="cuerpo">' + detalle(o) + "</div>" +
-    "</div>";
-  }).join("");
+  /* Un mismo objetivo puede estar registrado varias veces, una por cada
+     oficina responsable. En la vista se agrupan por título (y periodo) para
+     que no parezcan duplicados; cada registro conserva su código y sus datos. */
+  const grupos = new Map();
+  arr.forEach(o => {
+    const t = norm(sinHtml(o.objetivo)).replace(/\s+/g, " ").replace(/[\s.,;:]+$/, "").trim();
+    const k = t ? t + "|" + (o.periodo || "") : "id|" + o.id;
+    if(!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(o);
+  });
+
+  $("lista").innerHTML = [...grupos.values()].map(g =>
+    g.length === 1 ? tarjetaObjetivo(g[0], abiertos, false) : grupoObjetivos(g, abiertos)
+  ).join("");
 
   $("lista").querySelectorAll("[data-tog]").forEach(e => {
     e.onclick = ev => {
