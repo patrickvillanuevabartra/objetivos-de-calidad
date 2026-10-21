@@ -278,20 +278,6 @@ tr.recien > td{animation:destello 2.2s ease-out}
   #mFicha .pie,#mFicha .cerrar,#btnImprimir{display:none}
 }
 
-/* ---------- objetivos con el mismo título, agrupados ---------- */
-.obj-grupo{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--verde);
-  border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
-.og-cab{background:var(--verde-cl);padding:13px 16px;display:flex;gap:12px;align-items:flex-start;
-  border-bottom:1px solid var(--line)}
-.og-cab h3{margin:0 0 4px;font-size:14.5px;font-weight:700;line-height:1.35;color:var(--verde-osc)}
-.og-meta{font-size:12px;color:var(--verde-osc);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.obj.en-grupo{border:0;border-radius:0;margin:0;box-shadow:none}
-.obj.en-grupo + .obj.en-grupo{border-top:1px solid var(--line)}
-.obj.en-grupo .cab{padding-left:26px}
-.obj.en-grupo .tit h3{font-size:13.5px;color:var(--slate)}
-.obj.en-grupo .tit h3::before{content:"↳ ";color:var(--gris-cl)}
-@media (max-width:720px){ .og-cab{flex-wrap:wrap} .obj.en-grupo .cab{padding-left:16px} }
-
 /* ---------- código del objetivo ---------- */
 .cod-obj{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;color:var(--brand);
   background:var(--verde-cl);border-radius:5px;padding:2px 7px;margin-right:2px;vertical-align:2px}
@@ -623,6 +609,31 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           </div>
         </div>
 
+        <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
+            Responsable de este indicador
+          </div>
+          <div class="pista" style="margin:0 0 10px">
+            Un objetivo puede repartir sus indicadores entre varias oficinas. Si lo dejas vacío, se hereda el del objetivo.
+          </div>
+          <div class="rej">
+            <div>
+              <label for="iOficina">Oficina responsable</label>
+              <select id="iOficina"></select>
+              <div class="err" id="e_iOficina"></div>
+            </div>
+            <div>
+              <label for="iRespProc">Responsable de proceso</label>
+              <select id="iRespProc"></select>
+              <div class="err" id="e_iRespProc"></div>
+              <div class="pista" id="pistaRPInd"></div>
+            </div>
+            <div><label for="iRPCorreo">Correo responsable de proceso</label><input type="email" id="iRPCorreo"><div class="err" id="e_iRPCorreo"></div></div>
+            <div><label for="iRPCel">Celular responsable de proceso</label><input type="text" id="iRPCel"><div class="err" id="e_iRPCel"></div></div>
+          </div>
+          <div class="aviso" id="avHerencia"></div>
+        </div>
+
         <div class="full">
           <label for="iIndicador">Indicador <b class="req">*</b></label>
           <textarea id="iIndicador"></textarea>
@@ -650,6 +661,39 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
 
         <div>
+          <label for="iTipo">Tipo de indicador <b class="req">*</b></label>
+          <select id="iTipo"></select>
+          <div class="err" id="e_iTipo"></div>
+          <div class="pista" id="pistaTipo"></div>
+        </div>
+        <div>
+          <label for="iDenom">Denominador <span class="op" id="opDenom"></span></label>
+          <input type="number" step="any" id="iDenom">
+          <div class="err" id="e_iDenom"></div>
+          <div class="pista" id="pistaDenom"></div>
+        </div>
+        <div class="full">
+          <label for="iFuenteDenom">Fuente del denominador</label>
+          <textarea id="iFuenteDenom" style="min-height:48px"></textarea>
+          <div class="err" id="e_iFuenteDenom"></div>
+          <div class="pista">Documento, oficina que lo emite y fecha. Ej.: Reporte Resumen de Carga Lectiva General 2026-II, Vice Rectorado Académico, 15/09/2026.</div>
+        </div>
+
+        <div class="full">
+          <label for="iLineaBase">Línea base</label>
+          <textarea id="iLineaBase" style="min-height:48px"></textarea>
+          <div class="pista">De dónde parte el indicador, con su fuente. Ej.: 2.98 — Encuesta de Satisfacción Estudiantil 2025-II, Oficio 004-2026-ODACE.</div>
+        </div>
+        <div>
+          <label for="iValorLB">Valor de la línea base</label>
+          <input type="number" step="any" id="iValorLB">
+          <div class="pista">Solo el número, para poder compararlo con la meta.</div>
+        </div>
+        <div>
+          <div class="aviso" id="avLineaBase"></div>
+        </div>
+
+        <div>
           <label for="iFI">F.I. Meta <b class="req">*</b></label>
           <input type="date" id="iFI">
           <div class="err" id="e_iFI"></div>
@@ -659,6 +703,40 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <input type="date" id="iFV">
           <div class="err" id="e_iFV"></div>
           <div class="aviso" id="avFechasInd"></div>
+        </div>
+
+        <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
+            Tramo y reprogramación
+          </div>
+          <div class="pista" style="margin:0 0 10px">
+            Llena esto solo si la meta de arriba es un tramo de otra mayor, o si la fecha se movió.
+          </div>
+          <div class="rej">
+            <div>
+              <label for="iMetaFinal">Meta final</label>
+              <input type="text" id="iMetaFinal">
+              <div class="pista">Ej.: 100% de las asignaturas. Es informativa: el semáforo corre contra la meta del periodo.</div>
+            </div>
+            <div>
+              <label for="iFVMetaFinal">F.V. meta final</label>
+              <input type="date" id="iFVMetaFinal">
+              <div class="err" id="e_iFVMetaFinal"></div>
+            </div>
+            <div>
+              <label for="iFVOriginal">F.V. original</label>
+              <input type="date" id="iFVOriginal">
+              <div class="err" id="e_iFVOriginal"></div>
+              <div class="pista">La fecha que vencía antes del cambio.</div>
+            </div>
+            <div></div>
+          </div>
+          <div style="margin-top:10px">
+            <label for="iReprog">Reprogramación y sustento</label>
+            <textarea id="iReprog" style="min-height:52px"></textarea>
+            <div class="err" id="e_iReprog"></div>
+            <div class="pista">El acuerdo o documento que respalda el cambio de fecha. Sin esto una reprogramación no se sustenta ante auditoría.</div>
+          </div>
         </div>
 
         <div class="full">
@@ -883,6 +961,18 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div>
           <label>Avance anterior</label>
           <input type="text" id="rAnterior" readonly style="background:var(--paper);font-weight:600">
+        </div>
+        <div>
+          <label for="rFechaReal">Fecha real de ejecución</label>
+          <input type="date" id="rFechaReal">
+          <div class="err" id="e_rFechaReal"></div>
+          <div class="pista">Cuándo ocurrió de verdad, si no coincide con la fecha del reporte.</div>
+        </div>
+        <div></div>
+        <div class="full">
+          <label for="rAnalisis">Análisis de la desviación y acción</label>
+          <textarea id="rAnalisis" style="min-height:64px"></textarea>
+          <div class="pista">Por qué el resultado se aparta de lo previsto y qué se va a hacer. Es la entrada de desempeño para la revisión por la dirección.</div>
         </div>
         <div class="full">
           <label for="rDificultades">Dificultades</label>
@@ -1569,7 +1659,23 @@ async function recargar(){
     rtCorreo:    val(r.v, NI.resp_tecnico_correo),
     rtCel:       val(r.v, NI.resp_tecnico_celular),
     valor:       val(r.v, NI.valor_alcanzado),
-    variables:   r.v[NI.variables.col] || ""
+    variables:   r.v[NI.variables.col] || "",
+    /* Responsable propio del indicador. Vacío = se hereda el del objetivo. */
+    oficina:     val(r.v, NI.oficina),
+    respProc:    val(r.v, NI.resp_proceso),
+    rpCorreo:    val(r.v, NI.resp_proceso_correo),
+    rpCel:       val(r.v, NI.resp_proceso_celular),
+    /* Medición */
+    tipo:        val(r.v, NI.tipo_indicador),
+    denominador: val(r.v, NI.denominador),
+    fuenteDenom: r.v[NI.fuente_denominador.col] || "",
+    lineaBase:   r.v[NI.linea_base.col] || "",
+    valorLB:     val(r.v, NI.valor_linea_base),
+    /* Tramo y reprogramación */
+    metaFinal:   val(r.v, NI.meta_final),
+    fvMetaFinal: val(r.v, NI.fv_meta_final),
+    fvOriginal:  val(r.v, NI.fv_original),
+    reprog:      r.v[NI.reprogramacion.col] || ""
   }));
 
   const H = CONFIG.HITOS.F, HE = CONFIG.HITOS.ESPEJO;
@@ -1602,6 +1708,8 @@ async function recargar(){
     cantidad: R.cantidad_acumulada ? val(r.v, R.cantidad_acumulada) : "",
     dificultades: val(r.v, R.dificultades),
     obs:     val(r.v, R.observacion),
+    fechaReal: val(r.v, R.fecha_real),
+    analisis:  r.v[R.analisis_desv.col] || "",
     enlaces: parseEnlaces(r.v[RE.evidencias_enlaces.col]),
     acciones: leerAcciones(r.sub && r.sub[SUB.id])
   }));
@@ -1659,6 +1767,30 @@ function leerAcciones(bruto){
    Cálculos — cinco niveles
    ========================================================================== */
 const indicadoresDe = objId => S.indicadores.filter(i => i.objetivoRef === objId);
+
+/* Oficina y responsable EFECTIVOS del indicador: los suyos si los declara,
+   los del objetivo si no. La rev 03 del FI-GCA-MT-003 asigna responsable
+   por actividad: el objetivo 1 reparte entre Directores de escuela y el
+   Departamento Académico, y el 5 entre el Comité SGOE y ese departamento.
+   Antes la única salida era duplicar el objetivo. */
+function objetivoDe(ind){ return S.objetivos.find(x => x.id === ind.objetivoRef) || null; }
+function oficinaDe(ind){
+  const o = objetivoDe(ind);
+  return ind.oficina || (o ? o.oficina : "");
+}
+function respProcDe(ind){
+  const o = objetivoDe(ind);
+  return ind.respProc || (o ? o.respProc : "");
+}
+/* Destinatario de las alertas del indicador. Se devuelve el bloque completo
+   —nombre, correo y celular— de una sola fuente: mezclar el nombre del
+   indicador con el correo del objetivo mandaría el aviso a quien no es. */
+function contactoProcesoDe(ind){
+  if(ind.respProc) return { nombre: ind.respProc, correo: ind.rpCorreo, celular: ind.rpCel };
+  const o = objetivoDe(ind);
+  return o ? { nombre: o.respProc, correo: o.rpCorreo, celular: o.rpCel }
+           : { nombre: "", correo: "", celular: "" };
+}
 const hitosDe = indId => S.hitos.filter(h => h.indicadorRef === indId);
 const reportesDe = hitoId => S.reportes.filter(r => r.hitoRef === hitoId)
   .sort((a, b) => (fecha(a.fecha) || 0) - (fecha(b.fecha) || 0));
@@ -1671,8 +1803,8 @@ function progresoHito(hitoId){
 }
 function estadoHito(hitoId){
   const rs = reportesDe(hitoId);
-  if(!rs.length) return "Pendiente";
-  return rs[rs.length - 1].estado || "En Proceso";
+  if(!rs.length) return "No iniciada";
+  return rs[rs.length - 1].estado || "En ejecución";
 }
 /* % del indicador = Σ (participación × % del hito) ÷ 100 */
 function progresoIndicador(indId){
@@ -1745,73 +1877,6 @@ function filtrados(){
   });
 }
 
-function tarjetaObjetivo(o, abiertos, enGrupo){
-  const p = progresoObjetivo(o.id), sem = semaforo(p), eo = estadoObjetivo(o);
-  const is = indicadoresDe(o.id);
-  const cumplidos = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
-  /* Dentro de un grupo el título ya está en la cabecera: la fila lo
-     reemplaza por la oficina, que es lo que distingue a cada registro. */
-  const titulo = enGrupo ? (o.oficina || "(sin oficina asignada)") : (sinHtml(o.objetivo) || "(sin título)");
-  return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + (enGrupo ? " en-grupo" : "") +
-      '" data-id="' + esc(o.id) + '">' +
-    '<div class="cab" data-tog="' + esc(o.id) + '">' +
-      '<div class="tit">' +
-        "<h3>" + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") + esc(titulo) + "</h3>" +
-        '<div class="meta">' +
-          (!enGrupo && o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
-          (!o.codigo ? '<span class="tag a">sin código</span>' : "") +
-          (!enGrupo && o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
-          (enGrupo ? "<span>Responsable: " + esc(o.respProc || "—") + "</span>" : "") +
-          "<span>·</span><span>" + is.length + " indicador(es)</span>" +
-          (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
-          (!is.length ? '<span class="tag r">sin indicadores</span>' : "") +
-        "</div>" +
-      "</div>" +
-      '<div style="flex:0 0 auto;text-align:right;min-width:165px">' +
-        '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
-          (is.length ? ' <span style="font-weight:400;color:var(--mist);font-size:12px">· ' + cumplidos + " de " + is.length + "</span>" : "") + "</div>" +
-        '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
-        '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
-      "</div>" +
-      '<div class="acc">' +
-        '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
-        (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
-        (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
-      "</div>" +
-    "</div>" +
-    '<div class="cuerpo">' + detalle(o) + "</div>" +
-  "</div>";
-}
-
-/* Cabecera única con el título del objetivo y, debajo, un registro por
-   oficina responsable. El avance del grupo es el promedio de sus registros,
-   igual que el de un objetivo lo es de sus indicadores. */
-function grupoObjetivos(g, abiertos){
-  const ps = g.map(o => progresoObjetivo(o.id)).filter(x => x != null);
-  const p = ps.length ? red1(ps.reduce((a, b) => a + b, 0) / ps.length) : null;
-  const sem = semaforo(p);
-  const nInd = g.reduce((n, o) => n + indicadoresDe(o.id).length, 0);
-  const oficinas = [...new Set(g.map(o => o.oficina).filter(Boolean))];
-  return '<div class="obj-grupo">' +
-    '<div class="og-cab">' +
-      '<div style="flex:1;min-width:0">' +
-        "<h3>" + esc(sinHtml(g[0].objetivo)) + "</h3>" +
-        '<div class="og-meta">' +
-          (g[0].periodo ? '<span class="tag g">' + esc(g[0].periodo) + "</span>" : "") +
-          "<span>" + g.length + " responsables" + (oficinas.length ? ": " + esc(oficinas.join(" · ")) : "") + "</span>" +
-          "<span>·</span><span>" + nInd + " indicador(es) en total</span>" +
-        "</div>" +
-      "</div>" +
-      '<div style="flex:0 0 auto;text-align:right;min-width:165px;padding-right:4px">' +
-        '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
-          ' <span style="font-weight:400;color:var(--mist);font-size:12px">· promedio</span></div>' +
-        '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
-      "</div>" +
-    "</div>" +
-    g.map(o => tarjetaObjetivo(o, abiertos, true)).join("") +
-  "</div>";
-}
-
 function pintarLista(){
   const sinCod = S.objetivos.filter(o => !o.codigo && o.periodo).length;
   $("btnCodificar").style.display = (sinCod && esGestor()) ? "" : "none";
@@ -1825,20 +1890,39 @@ function pintarLista(){
   const abiertos = {};
   document.querySelectorAll(".obj.abierto").forEach(e => abiertos[e.dataset.id] = 1);
 
-  /* Un mismo objetivo puede estar registrado varias veces, una por cada
-     oficina responsable. En la vista se agrupan por título (y periodo) para
-     que no parezcan duplicados; cada registro conserva su código y sus datos. */
-  const grupos = new Map();
-  arr.forEach(o => {
-    const t = norm(sinHtml(o.objetivo)).replace(/\s+/g, " ").replace(/[\s.,;:]+$/, "").trim();
-    const k = t ? t + "|" + (o.periodo || "") : "id|" + o.id;
-    if(!grupos.has(k)) grupos.set(k, []);
-    grupos.get(k).push(o);
-  });
-
-  $("lista").innerHTML = [...grupos.values()].map(g =>
-    g.length === 1 ? tarjetaObjetivo(g[0], abiertos, false) : grupoObjetivos(g, abiertos)
-  ).join("");
+  $("lista").innerHTML = arr.map(o => {
+    const p = progresoObjetivo(o.id), sem = semaforo(p), eo = estadoObjetivo(o);
+    const is = indicadoresDe(o.id);
+    const cumplidos = is.filter(i => (progresoIndicador(i.id) || 0) >= 100).length;
+    return '<div class="obj' + (abiertos[o.id] ? " abierto" : "") + '" data-id="' + esc(o.id) + '">' +
+      '<div class="cab" data-tog="' + esc(o.id) + '">' +
+        '<div class="tit">' +
+          "<h3>" + (o.codigo ? '<span class="cod-obj">' + esc(o.codigo) + "</span> " : "") +
+            esc(sinHtml(o.objetivo) || "(sin título)") + "</h3>" +
+          '<div class="meta">' +
+            (o.periodo ? '<span class="tag g">' + esc(o.periodo) + "</span>" : "") +
+            (!o.codigo ? '<span class="tag a">sin código</span>' : "") +
+            (o.oficina ? "<span>" + esc(o.oficina) + "</span>" : "") +
+            "<span>·</span><span>" + is.length + " indicador(es)</span>" +
+            (o.condicion && o.condicion !== "Vigente" ? '<span class="tag a">' + esc(o.condicion) + "</span>" : "") +
+            (!is.length ? '<span class="tag r">sin indicadores</span>' : "") +
+          "</div>" +
+        "</div>" +
+        '<div style="flex:0 0 auto;text-align:right;min-width:165px">' +
+          '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (p == null ? "—" : p + "%") +
+            (is.length ? ' <span style="font-weight:400;color:var(--mist);font-size:12px">· ' + cumplidos + " de " + is.length + "</span>" : "") + "</div>" +
+          '<div class="barra ' + (sem.cl || "") + '"><i style="width:' + (p || 0) + '%"></i></div>' +
+          '<div style="margin-top:5px"><span class="tag ' + eo.tag + '">' + esc(eo.txt) + "</span></div>" +
+        "</div>" +
+        '<div class="acc">' +
+          '<button class="ico" data-ficha="' + esc(o.id) + '" title="Ver ficha completa">👁️</button>' +
+          (puedeEditar(o) ? '<button class="ico" data-ver="' + esc(o.id) + '" title="Editar objetivo">✏️</button>' : "") +
+          (esGestor() ? '<button class="ico" data-del="' + esc(o.id) + '" title="Eliminar">🗑️</button>' : "") +
+        "</div>" +
+      "</div>" +
+      '<div class="cuerpo">' + detalle(o) + "</div>" +
+    "</div>";
+  }).join("");
 
   $("lista").querySelectorAll("[data-tog]").forEach(e => {
     e.onclick = ev => {
@@ -1949,7 +2033,7 @@ function bloqueIndicador(o, ind, editable, nOrden){
       "<td>" + verFecha(hi.fi) + "<br>" + verFecha(hi.fv) + encadenaHtml(hs, hi) +
         (d != null && d < 0 && ph < 100 ? '<div class="tag r" style="margin-top:3px">' + Math.abs(d) + " d vencido</div>" : "") + "</td>" +
       '<td><div class="barra" style="width:64px"><i style="width:' + ph + '%"></i></div>' + ph + "%</td>" +
-      '<td><span class="tag ' + (eh === "Ejecutado" ? "v" : (eh === "Pendiente" ? "g" : "z")) + '">' + esc(eh) + "</span></td>" +
+      '<td><span class="tag ' + (eh === CONFIG.REPORTES.ESTADO_CIERRE ? "v" : (eh === "No iniciada" ? "g" : "z")) + '">' + esc(eh) + "</span></td>" +
       "<td>" + rs.length + (editable ? ' <button class="ico" data-rnuevo="' + esc(hi.id) + '" title="Añadir reporte">＋</button>' : "") + "</td>" +
       "<td>" + (editable ?
         '<button class="ico" data-hedit="' + esc(hi.id) + '" data-ind="' + esc(ind.id) + '" title="Editar">✏️</button> ' +
@@ -2102,6 +2186,12 @@ function encadenaHtml(hs, hi){
 function respDelHito(hi, ind){
   if(hi && hi.respTec) return { nombre: hi.respTec, correo: hi.rtCorreo, cel: hi.rtCel, propio: true };
   if(ind && ind.respTec) return { nombre: ind.respTec, correo: ind.rtCorreo, cel: ind.rtCel, propio: false };
+  /* Sin técnico en ninguno de los dos niveles, el aviso va al responsable
+     de proceso del indicador, que es quien responde por la actividad. */
+  if(ind){
+    const cp = contactoProcesoDe(ind);
+    if(cp.nombre) return { nombre: cp.nombre, correo: cp.correo, cel: cp.celular, propio: false };
+  }
   return null;
 }
 
@@ -2355,7 +2445,23 @@ function bloqueFichaIndicador(ind, nOrden){
       campoFi("Responsable técnico", esc(ind.respTec) +
         (ind.rtCorreo || ind.rtCel ? '<div style="font-size:12.5px;color:var(--mist)">' +
           [esc(ind.rtCorreo), esc(ind.rtCel)].filter(Boolean).join(" · ") + "</div>" : "")) +
+      campoFi("Oficina responsable", esc(oficinaDe(ind)) +
+        (ind.oficina ? "" : '<div style="font-size:12.5px;color:var(--mist)">heredada del objetivo</div>')) +
+      campoFi("Responsable de proceso", (function(){
+        const cp = contactoProcesoDe(ind);
+        return esc(cp.nombre || "—") +
+          (cp.correo || cp.celular ? '<div style="font-size:12.5px;color:var(--mist)">' +
+            [esc(cp.correo), esc(cp.celular)].filter(Boolean).join(" · ") + "</div>" : "");
+      })()) +
+      (ind.tipo ? campoFi("Tipo de indicador", esc(ind.tipo)) : "") +
+      (ind.denominador ? campoFi("Denominador", esc(ind.denominador) +
+        (ind.fuenteDenom ? '<div style="font-size:12.5px;color:var(--mist)">' + esc(ind.fuenteDenom) + "</div>" : "")) : "") +
+      (ind.metaFinal ? campoFi("Meta final", esc(ind.metaFinal) +
+        (ind.fvMetaFinal ? '<div style="font-size:12.5px;color:var(--mist)">al ' + verFecha(ind.fvMetaFinal) + "</div>" : "")) : "") +
     "</div>" +
+    (ind.lineaBase ? campoFi("Línea base", esc(ind.lineaBase), true) : "") +
+    (ind.reprog ? campoFi("Reprogramación", esc(ind.reprog) +
+      (ind.fvOriginal ? '<div style="font-size:12.5px;color:var(--mist)">Vencía el ' + verFecha(ind.fvOriginal) + "</div>" : ""), true) : "") +
     campoFi("Fórmula", ind.formula ? '<div class="formula" style="margin-top:3px">ƒ ' +
       esc(sinHtml(ind.formula)) + "</div>" : "", true) +
     campoFi("Proceso", esc(ind.proceso), true) +
@@ -2379,7 +2485,12 @@ function bloqueFichaIndicador(ind, nOrden){
           "<td>" + esc(r.nombre || "—") + "</td></tr>" +
           reportesDe(hi.id).map(rep =>
             '<tr class="rep"><td colspan="7"><b>' + verFecha(rep.fecha) + "</b> · " +
-            red1(rep.pct) + "% · " + esc(rep.estado) + "<div>" + (rep.avance || "") + "</div>" +
+            red1(rep.pct) + "% · " + esc(rep.estado) +
+            (rep.fechaReal ? ' <span style="color:var(--mist);font-size:12.5px">· ejecutado el ' +
+              verFecha(rep.fechaReal) + "</span>" : "") +
+            "<div>" + (rep.avance || "") + "</div>" +
+            (rep.analisis ? '<div style="font-size:12.5px"><b>Análisis de la desviación:</b> ' +
+              esc(rep.analisis) + "</div>" : "") +
             (rep.dificultades ? '<div style="color:var(--warn);font-size:12.5px">Dificultades: ' +
               esc(rep.dificultades) + "</div>" : "") +
             (rep.obs ? '<div style="color:var(--mist);font-size:12.5px">Obs.: ' + esc(rep.obs) + "</div>" : "") +
@@ -2509,9 +2620,11 @@ function mostrarOE(txt, cuantos){
     : "";
 }
 
-$("oOficina").addEventListener("change", () => refrescarResponsables(""));
-function refrescarResponsables(valorActual){
-  const ofi = $("oOficina").value;
+/* Responsables de proceso de una oficina. Se usa igual en el objetivo y en
+   el indicador: el criterio de filtrado debe ser uno solo. Los que no tienen
+   unidad asignada se incluyen siempre, para que nadie quede inalcanzable
+   mientras el catálogo se termina de poblar. */
+function responsablesDe(ofi, valorActual){
   let arr = S.cat.respProceso, nota = "";
   if(ofi){
     const suyos = S.cat.respProceso.filter(r => r.unidadNombre && norm(r.unidadNombre) === norm(ofi));
@@ -2523,12 +2636,20 @@ function refrescarResponsables(valorActual){
       nota = "Ningún responsable tiene asignada la unidad “" + ofi + "” en QuintaDB, así que se muestran todos.";
     }
   }
+  /* Un valor ya guardado se conserva aunque no esté en la lista filtrada:
+     un registro antiguo no debe perder su responsable. */
   if(valorActual && !arr.some(r => r.label === valorActual)){
     const orig = S.cat.respProceso.find(r => r.label === valorActual);
     if(orig) arr = [orig].concat(arr);
   }
-  opciones("oRespProc", arr.map(r => r.label), valorActual, "— elige —");
-  $("pistaRP").textContent = nota;
+  return { lista: arr, nota };
+}
+
+$("oOficina").addEventListener("change", () => refrescarResponsables(""));
+function refrescarResponsables(valorActual){
+  const r = responsablesDe($("oOficina").value, valorActual);
+  opciones("oRespProc", r.lista.map(x => x.label), valorActual, "— elige —");
+  $("pistaRP").textContent = r.nota;
 }
 $("oRespProc").addEventListener("change", () => {
   const rp = S.cat.respProceso.find(x => x.label === $("oRespProc").value);
@@ -2652,6 +2773,27 @@ function abrirIndicador(objId, indId){
   $("oRTCorreo").value = ind ? ind.rtCorreo : "";
   $("oRTCel").value = ind ? ind.rtCel : "";
 
+  /* Responsable propio del indicador */
+  opciones("iOficina", CONFIG.CATALOGOS.oficinas.opciones, ind ? ind.oficina : "", "— hereda la del objetivo —");
+  refrescarRespProcInd(ind ? ind.respProc : "");
+  $("iRPCorreo").value = ind ? ind.rpCorreo : "";
+  $("iRPCel").value = ind ? ind.rpCel : "";
+  avisoHerencia();
+
+  /* Medición */
+  opciones("iTipo", CONFIG.INDICADORES.TIPOS, ind ? ind.tipo : "", "— elige —");
+  $("iDenom").value       = ind ? (ind.denominador || "") : "";
+  $("iFuenteDenom").value = ind ? ind.fuenteDenom : "";
+  $("iLineaBase").value   = ind ? ind.lineaBase : "";
+  $("iValorLB").value     = ind ? (ind.valorLB || "") : "";
+  aplicarTipoIndicador();
+
+  /* Tramo y reprogramación */
+  $("iMetaFinal").value   = ind ? ind.metaFinal : "";
+  $("iFVMetaFinal").value = ind ? iso(ind.fvMetaFinal) : "";
+  $("iFVOriginal").value  = ind ? iso(ind.fvOriginal) : "";
+  $("iReprog").value      = ind ? ind.reprog : "";
+
   let guardadas = {};
   if(ind && ind.variables){ try{ guardadas = JSON.parse(ind.variables) || {}; }catch(e){ guardadas = {}; } }
   construirVariables(ind ? ind.formula : "", guardadas);
@@ -2689,11 +2831,75 @@ function tecnicosDe(nombreRespProceso, valorActual){
   return { lista: arr, nota };
 }
 
+/* Los técnicos cuelgan del responsable de proceso EFECTIVO del indicador:
+   el suyo si lo declara, el del objetivo si no. Antes miraba siempre al
+   objetivo, y por eso un indicador de otra oficina ofrecía los técnicos
+   equivocados. */
 function refrescarTecnicos(valorActual){
-  const r = tecnicosDe(S.ctxObj ? S.ctxObj.respProc : "", valorActual);
+  const rp = $("iRespProc").value || (S.ctxObj ? S.ctxObj.respProc : "");
+  const r = tecnicosDe(rp, valorActual);
   opciones("oRespTec", r.lista.map(t => t.label), valorActual, "— elige —");
   $("pistaRT").textContent = r.nota;
 }
+
+function refrescarRespProcInd(valorActual){
+  const r = responsablesDe($("iOficina").value, valorActual);
+  opciones("iRespProc", r.lista.map(x => x.label), valorActual, "— hereda el del objetivo —");
+  $("pistaRPInd").textContent = r.nota;
+}
+$("iOficina").addEventListener("change", () => {
+  refrescarRespProcInd("");
+  $("iRPCorreo").value = ""; $("iRPCel").value = "";
+  avisoHerencia(); refrescarTecnicos("");
+});
+$("iRespProc").addEventListener("change", () => {
+  const rp = S.cat.respProceso.find(x => x.label === $("iRespProc").value);
+  $("iRPCorreo").value = rp ? (rp.correo || "") : "";
+  $("iRPCel").value    = rp ? (rp.celular || "") : "";
+  avisoHerencia(); refrescarTecnicos("");
+});
+
+/* Decir en voz alta a quién le va a llegar la alerta. Una oficina elegida
+   sin su responsable es el caso peligroso: el aviso saldría al responsable
+   del objetivo, que es de otra oficina. */
+function avisoHerencia(){
+  const o = S.ctxObj; if(!o) return;
+  const ofi = $("iOficina").value, rp = $("iRespProc").value;
+  if(!ofi && !rp){
+    aviso("avHerencia", "Sin datos propios, este indicador hereda los del objetivo: " +
+      (o.oficina || "sin oficina") + (o.respProc ? " · " + o.respProc : "") + ".");
+  }else if(!rp){
+    aviso("avHerencia", "Elegiste una oficina pero no su responsable. Mientras esté vacío, las alertas irían a " +
+      (o.respProc || "nadie") + ", que es el responsable del objetivo.");
+  }else{
+    aviso("avHerencia", "");
+  }
+}
+
+/* El tipo de indicador manda sobre qué hace falta para poder medirlo. */
+function aplicarTipoIndicador(){
+  const t = $("iTipo").value, pct = t === "Porcentaje";
+  $("opDenom").textContent = pct ? "(obligatorio)" : "(opcional)";
+  $("pistaTipo").textContent =
+    t === "Conteo" ? "Se cuentan unidades y el logro acumula: 54 de 87 docentes." :
+    pct ? "Numerador sobre denominador. Sin denominador, “50%” no se puede traducir a un número." :
+    t === "Índice o puntaje" ? "Valor en una escala: 3.0 sobre 4, 17 sobre 20. No acumula — la última medición reemplaza a la anterior." : "";
+  $("pistaDenom").textContent = pct ? "El universo sobre el que corre la meta. Ej.: 174 docentes con carga lectiva." : "";
+  compararLineaBase();
+}
+$("iTipo").addEventListener("change", aplicarTipoIndicador);
+
+/* Una meta por debajo de la línea base no es meta: es un piso ya superado.
+   Es lo que pasó con desempeño docente, meta 17 contra línea base 17.38. */
+function compararLineaBase(){
+  const lb = parseFloat($("iValorLB").value);
+  const m  = parseFloat(String($("iMeta").value).replace(/[^\d.,-]/g, "").replace(",", "."));
+  if(isNaN(lb) || isNaN(m)){ aviso("avLineaBase", ""); return; }
+  if(m < lb)       aviso("avLineaBase", "La meta (" + m + ") está por debajo de la línea base (" + lb + "): el indicador nace cumplido y no exige mejora.");
+  else if(m === lb) aviso("avLineaBase", "La meta iguala la línea base: esto mide sostenimiento, no mejora. Si es lo que se busca, dilo en la redacción de la meta.");
+  else              aviso("avLineaBase", "");
+}
+["iValorLB", "iMeta"].forEach(id => $(id).addEventListener("input", compararLineaBase));
 $("oRespTec").addEventListener("change", () => {
   const rt = S.cat.respTecnicos.find(x => x.label === $("oRespTec").value);
   $("oRTCorreo").value = rt ? (rt.correo || "") : "";
@@ -2723,9 +2929,50 @@ $("btnGuardarInd").onclick = async () => {
     actividades: $("iActividades").innerHTML.trim(), recursos: $("iRecursos").innerHTML.trim(),
     proceso: actualizarRuta(), respTec: $("oRespTec").value,
     variables: leerVariables(),
-    rtCorreo: $("oRTCorreo").value.trim(), rtCel: $("oRTCel").value.trim()
+    rtCorreo: $("oRTCorreo").value.trim(), rtCel: $("oRTCel").value.trim(),
+    oficinaInd: $("iOficina").value, respProcInd: $("iRespProc").value,
+    rpCorreoInd: $("iRPCorreo").value.trim(), rpCelInd: $("iRPCel").value.trim(),
+    tipo: $("iTipo").value, denom: $("iDenom").value.trim(),
+    fuenteDenom: $("iFuenteDenom").value.trim(),
+    lineaBase: $("iLineaBase").value.trim(), valorLB: $("iValorLB").value.trim(),
+    metaFinal: $("iMetaFinal").value.trim(), fvMetaFinal: $("iFVMetaFinal").value,
+    fvOriginal: $("iFVOriginal").value, reprog: $("iReprog").value.trim()
   };
   let mal = false;
+  if(!d.tipo){ error("iTipo", "Elige el tipo de indicador: de él depende cómo se mide."); mal = true; }
+  if(d.tipo === "Porcentaje" && !d.denom){
+    error("iDenom", "Un porcentaje necesita denominador: sin el universo, la meta no se puede traducir a un número.");
+    mal = true;
+  }
+  if(d.denom && !d.fuenteDenom){
+    error("iFuenteDenom", "Declara de dónde sale el denominador: documento, oficina y fecha.");
+    mal = true;
+  }
+  /* Elegir oficina sin responsable mandaría la alerta a otra oficina. */
+  if(d.oficinaInd && !d.respProcInd){
+    error("iRespProc", "Elegiste una oficina propia: indica también su responsable de proceso.");
+    mal = true;
+  }
+  if(d.respProcInd && !d.rpCorreoInd){
+    error("iRPCorreo", "Falta el correo del responsable de proceso: sin él la alerta no sale.");
+    mal = true;
+  }
+  if(d.metaFinal && !d.fvMetaFinal){
+    error("iFVMetaFinal", "Si declaras una meta final, indica en qué fecha se alcanza.");
+    mal = true;
+  }
+  if(d.fvMetaFinal && d.fv && fecha(d.fvMetaFinal) <= fecha(d.fv)){
+    error("iFVMetaFinal", "La meta final debe vencer después de la meta del periodo; si no, no es un tramo.");
+    mal = true;
+  }
+  if(d.fvOriginal && !d.reprog){
+    error("iReprog", "Una reprogramación sin sustento no se puede defender en auditoría.");
+    mal = true;
+  }
+  if(d.reprog && !d.fvOriginal){
+    error("iFVOriginal", "Indica la fecha que vencía antes del cambio.");
+    mal = true;
+  }
   if(!d.proceso){ error("oRuta", "Elige el proceso que mide este indicador."); mal = true; }
   if(!d.indicador){ error("iIndicador", "Escribe el indicador."); mal = true; }
   if(!d.formula){ error("iFormula", "Escribe la fórmula de cálculo."); mal = true; }
@@ -2766,6 +3013,21 @@ $("btnGuardarInd").onclick = async () => {
   v[NI.resp_tecnico_correo.id] = d.rtCorreo;
   v[NI.resp_tecnico_celular.id] = d.rtCel;
   v[NI.variables.id] = Object.keys(d.variables).length ? JSON.stringify(d.variables) : "";
+  /* Siempre se mandan, incluso vacíos: si se omite un campo, QuintaDB
+     conserva el valor anterior y el cambio se pierde en silencio. */
+  v[NI.oficina.id]              = d.oficinaInd;
+  v[NI.resp_proceso.id]         = d.respProcInd;
+  v[NI.resp_proceso_correo.id]  = d.rpCorreoInd;
+  v[NI.resp_proceso_celular.id] = d.rpCelInd;
+  v[NI.tipo_indicador.id]       = d.tipo;
+  v[NI.denominador.id]          = d.denom;
+  v[NI.fuente_denominador.id]   = d.fuenteDenom;
+  v[NI.linea_base.id]           = d.lineaBase;
+  v[NI.valor_linea_base.id]     = d.valorLB;
+  v[NI.meta_final.id]           = d.metaFinal;
+  v[NI.fv_meta_final.id]        = d.fvMetaFinal;
+  v[NI.fv_original.id]          = d.fvOriginal;
+  v[NI.reprogramacion.id]       = d.reprog;
   /* El valor alcanzado ya no se teclea: se calcula de los hitos al guardar. */
   const va = valorAlcanzado({ id: S.editInd ? S.editInd.id : null, meta: d.meta, variables: JSON.stringify(d.variables) });
   if(va != null) v[NI.valor_alcanzado.id] = va;
@@ -2899,7 +3161,15 @@ function leerVariables(){
 
 /* Valor de la referencia declarado en el indicador. */
 function valorReferencia(ind){
-  if(!ind || !ind.variables) return null;
+  if(!ind) return null;
+  /* El campo Denominador manda sobre el JSON de variables: es el dato
+     declarado, con fuente y a la vista. El JSON es como se tecleaba antes,
+     y es donde se coló el 364 del indicador 6 sin que nadie lo viera. */
+  if(ind.denominador != null && String(ind.denominador).trim() !== ""){
+    const d = parseFloat(ind.denominador);
+    if(!isNaN(d)) return d;
+  }
+  if(!ind.variables) return null;
   try{
     const g = JSON.parse(ind.variables) || {};
     return g.__ref != null && g[g.__ref] != null ? parseFloat(g[g.__ref]) : null;
@@ -2913,12 +3183,17 @@ function nombreReferencia(ind){
 /* Cuántas unidades necesitan los hitos para que el indicador alcance su meta:
    referencia × meta%. Con meta "1 proyecto" y sin %, la meta ES el total. */
 function unidadesNecesarias(ind, refValor){
-  const ref = refValor != null ? refValor : valorReferencia(ind);
-  if(ref == null) return null;
   const m = metaNumerica(ind && ind.meta);
   if(m == null) return null;
   const esPct = /%/.test(String(ind.meta || ""));
-  return esPct ? red1(ref * m / 100) : red1(m);
+  /* Sin porcentaje, la meta ES el total y no hace falta universo: "1
+     proyecto" son 1, "17" son 17 puntos de la escala. Antes se exigía
+     denominador siempre, y por eso los indicadores de conteo y los de
+     escala nunca calculaban logro. */
+  if(!esPct) return red1(m);
+  const ref = refValor != null ? refValor : valorReferencia(ind);
+  if(ref == null) return null;   // un % sin universo no se puede traducir
+  return red1(ref * m / 100);
 }
 
 /* Aviso de calibración: ¿alcanzan los hitos para llegar a la meta? */
@@ -2929,7 +3204,10 @@ function revisarCalibracion(){
   const refNom = gs.__ref || "";
   const ref = gs.__ref != null ? gs[gs.__ref] : null;
   const metaTxt = $("iMeta") ? $("iMeta").value : "";
-  const necesarias = unidadesNecesarias({ meta: metaTxt }, ref == null ? null : parseFloat(ref));
+  /* Mientras se edita manda lo que hay en el campo Denominador. */
+  const denomForm = $("iDenom") && $("iDenom").value.trim() !== "" ? parseFloat($("iDenom").value) : null;
+  const necesarias = unidadesNecesarias({ meta: metaTxt },
+    denomForm != null && !isNaN(denomForm) ? denomForm : (ref == null ? null : parseFloat(ref)));
   if(necesarias == null || !ind){ caja.style.display = "none"; return; }
 
   const hs = producenResultado(ind.id);
@@ -3298,6 +3576,8 @@ function abrirReporte(hitoId, repId){
   $("rAvance").innerHTML = r ? r.avance : "";
   $("rDificultades").value = r ? r.dificultades : "";
   $("rObs").value = r ? r.obs : "";
+  $("rFechaReal").value = r ? iso(r.fechaReal) : "";
+  $("rAnalisis").value = r ? r.analisis : "";
 
   configurarModoReporte(hi, r);
 
@@ -3312,7 +3592,7 @@ function abrirReporte(hitoId, repId){
   }
 
   $("rTipoMed").value = r
-    ? (r.tipoMed || (r.estado === "Ejecutado" ? "Cierre" : "Parcial"))
+    ? (r.tipoMed || (r.estado === CONFIG.REPORTES.ESTADO_CIERRE ? "Cierre" : "Parcial"))
     : "Parcial";
   aplicarTipoMedicion();
 
@@ -3390,15 +3670,15 @@ $("rFecha").addEventListener("change", () => {
     "Reporte extemporáneo: " + d + " día(s) después del vencimiento del hito. Se puede guardar y queda registrado el desfase." : "");
 });
 
-/* Marcar Ejecutado fuerza el 100%, y el 100% propone Ejecutado. */
+/* Marcar Ejecutada fuerza el 100%, y el 100% propone Ejecutada. */
 /* El tipo de medición manda sobre el estado:
-   Parcial → el hito sigue En Proceso · Cierre → el hito queda Ejecutado.
+   Parcial → la actividad sigue En ejecución · Cierre → queda Ejecutada.
    El selector de estado queda bloqueado para que no se contradigan. */
 $("rTipoMed").addEventListener("change", aplicarTipoMedicion);
 
 function aplicarTipoMedicion(){
   const cierre = $("rTipoMed").value === "Cierre";
-  const estado = cierre ? "Ejecutado" : "En Proceso";
+  const estado = cierre ? CONFIG.REPORTES.ESTADO_CIERRE : "En ejecución";
   opciones("rEstado", CONFIG.REPORTES.ESTADOS, estado, "");
   $("rEstado").value = estado;
   /* No se usa `disabled`: un campo deshabilitado se lee vacío y la
@@ -3454,6 +3734,7 @@ $("btnGuardarRep").onclick = async () => {
     cantidad: $("rCantidad").value,
     pct: num($("rAvancePct").value),
     dificultades: $("rDificultades").value.trim(), obs: $("rObs").value.trim(),
+    fechaReal: $("rFechaReal").value, analisis: $("rAnalisis").value.trim(),
     enlaces: leerEnlacesForm(), acciones: leerAccionesForm()
   };
 
@@ -3470,14 +3751,14 @@ $("btnGuardarRep").onclick = async () => {
   if($("rAvancePct").value !== "" && (d.pct < 0 || d.pct > 100)){
     error("rAvancePct", "El avance acumulado va de 0 a 100."); mal = true;
   }
-  /* Un hito al 100% no puede quedar En Proceso. */
+  /* Una actividad al 100% no puede quedar En ejecución. */
   if(d.pct >= 100 && d.tipoMed !== "Cierre"){
     error("rTipoMed", "El hito llegó al 100%: cambia el tipo de medición a “De cierre”.");
     aviso("avCierre", "El avance es 100% pero el reporte está marcado como Parcial. Un hito completo debe cerrarse.");
     mal = true;
   }
-  if(d.tipoMed === "Cierre" && d.estado !== "Ejecutado"){
-    error("rEstado", "Una medición de cierre deja el hito Ejecutado."); mal = true;
+  if(d.tipoMed === "Cierre" && d.estado !== CONFIG.REPORTES.ESTADO_CIERRE){
+    error("rEstado", "Una medición de cierre deja la actividad Ejecutada."); mal = true;
   }
   if(!d.enlaces.length){ error("rEnlaces", "Agrega al menos un enlace de evidencia."); mal = true; }
 
@@ -3505,6 +3786,8 @@ $("btnGuardarRep").onclick = async () => {
   v[R.contribucion.id] = d.pct;          // el campo guarda el % ACUMULADO
   v[R.dificultades.id] = d.dificultades;
   v[R.observacion.id] = d.obs;
+  v[R.fecha_real.id] = d.fechaReal;
+  v[R.analisis_desv.id] = d.analisis;
   if(R.tipo_medicion) v[R.tipo_medicion.id] = d.tipoMed;
   if(R.cantidad_acumulada) v[R.cantidad_acumulada.id] = d.cantidad === "" ? "" : num(d.cantidad);
   v[RE.hito_ref.id] = hi.id;
@@ -4026,7 +4309,7 @@ function datosNotif(tipo, id){
     return {
       responsable: r.nombre || "", correo: r.correo || "", celular: r.cel || "",
       hito: hi.hito, indicador: ind ? sinHtml(ind.indicador) : "",
-      objetivo: o ? sinHtml(o.objetivo) : "", oficina: o ? o.oficina : "",
+      objetivo: o ? sinHtml(o.objetivo) : "", oficina: ind ? oficinaDe(ind) : (o ? o.oficina : ""),
       vencio: verFecha(hi.fv), dias: Math.abs(dias(HOY, hi.fv) || 0),
       avance: red1(progresoHito(hi.id)) + "%"
     };
@@ -4037,12 +4320,16 @@ function datosNotif(tipo, id){
   const b = brechaIndicador(ind) || {};
   const p = progresoIndicador(ind.id), lg = logroIndicador(ind);
   const d = dias(HOY, ind.fv);
+  /* El responsable de proceso sale del indicador, no del objetivo: un
+     objetivo puede repartirse entre dos oficinas y el aviso tiene que
+     llegarle a la que ejecuta esta actividad. */
+  const cp = contactoProcesoDe(ind);
   return {
-    responsable: ind.respTec || (o ? o.respProc : "") || "",
-    correo: ind.rtCorreo || (o ? o.rpCorreo : "") || "",
-    celular: ind.rtCel || (o ? o.rpCel : "") || "",
+    responsable: ind.respTec || cp.nombre || "",
+    correo: ind.rtCorreo || cp.correo || "",
+    celular: ind.rtCel || cp.celular || "",
     indicador: sinHtml(ind.indicador), objetivo: o ? sinHtml(o.objetivo) : "",
-    oficina: o ? o.oficina : "", meta: ind.meta || "",
+    oficina: oficinaDe(ind), meta: ind.meta || "",
     vence: verFecha(ind.fv), dias: d != null ? Math.abs(d) : "",
     /* Para "por vencer" no hay brecha calculada: se usa el avance del plan. */
     ejecucion: (b.ejec != null ? red1(b.ejec) : (p != null ? p : "—")) + "%",
@@ -4387,18 +4674,24 @@ function pintarTablero(){
     }).join("") + "</div>";
 
   /* --- ranking de oficinas --- */
+  /* Se agrupa por INDICADOR, no por objetivo: un objetivo puede repartirse
+     entre dos oficinas —el 5 va entre el Comité SGOE y el Departamento
+     Académico— y cargarlo entero a una sola le daba el crédito, o la culpa,
+     de indicadores que no ejecuta. */
   const porOfi = {};
   objs.forEach(o => {
-    const k = o.oficina || "(sin oficina)";
-    if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0, cumpl: 0, venc: 0, sin: 0, crit: 0, sumaLogro: 0, conLogro: 0 };
-    const x = porOfi[k]; x.n++;
-    const p = progresoObjetivo(o.id), pl = plazoObjetivo(o.id);
-    const d = pl.fv ? dias(HOY, pl.fv) : null;
-    if(p == null) x.sin++;
-    else{ x.suma += p; x.con++; if(p >= 100) x.cumpl++; else if(p < 50) x.crit++; }
-    const lg = logroObjetivo(o.id);
-    if(lg != null){ x.sumaLogro += lg; x.conLogro++; }
-    if(d != null && d < 0 && !(p != null && p >= 100)) x.venc++;
+    indicadoresDe(o.id).forEach(ind => {
+      const k = oficinaDe(ind) || "(sin oficina)";
+      if(!porOfi[k]) porOfi[k] = { n: 0, suma: 0, con: 0, cumpl: 0, venc: 0, sin: 0, crit: 0, sumaLogro: 0, conLogro: 0 };
+      const x = porOfi[k]; x.n++;
+      const p = progresoIndicador(ind.id);
+      const d = ind.fv ? dias(HOY, ind.fv) : null;
+      if(p == null) x.sin++;
+      else{ x.suma += p; x.con++; if(p >= 100) x.cumpl++; else if(p < 50) x.crit++; }
+      const lg = logroIndicador(ind);
+      if(lg != null){ x.sumaLogro += lg; x.conLogro++; }
+      if(d != null && d < 0 && !(p != null && p >= 100)) x.venc++;
+    });
   });
   const ranking = Object.keys(porOfi).map(k => {
     const x = porOfi[k];
@@ -4421,10 +4714,12 @@ function pintarTablero(){
     '<p style="font-size:12.5px;color:var(--mist);margin:-6px 0 12px">Se ordena por <b>logro</b> ' +
     "—cuánto de la meta se alcanzó— y, donde no hay resultado medible, por avance del plan. " +
     "Las dos columnas se muestran juntas a propósito: ejecutar el plan y alcanzar la meta son cosas " +
-    "distintas, y su diferencia es la señal para revisar la planificación.</p>" +
+    "distintas, y su diferencia es la señal para revisar la planificación. " +
+    "Se cuenta por <b>indicador</b>, no por objetivo: un objetivo repartido entre dos oficinas " +
+    "aporta a cada una lo que cada una ejecuta.</p>" +
     '<table class="t"><thead><tr><th style="width:34px">#</th><th>Oficina</th>' +
     '<th style="width:24%">Avance del plan</th><th style="width:24%">Logro de la meta</th>' +
-    "<th>Obj.</th><th>Cumpl.</th><th>Venc.</th></tr></thead><tbody>" +
+    "<th>Indic.</th><th>Cumpl.</th><th>Venc.</th></tr></thead><tbody>" +
     ranking.map((x, i) => {
       const semA = semaforo(x.prom), semL = semaforo(x.logro);
       const orden = x.logro != null ? x.logro : x.prom;
