@@ -614,7 +614,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
             Responsable de este indicador
           </div>
           <div class="pista" style="margin:0 0 10px">
-            Un objetivo puede repartir sus indicadores entre varias oficinas. Si lo dejas vacío, se hereda el del objetivo.
+            Llena esto solo si <b>este indicador</b> lo ejecuta una oficina distinta a la del objetivo. Si lo dejas vacío, hereda la del objetivo y no pasa nada.<br>
+            <span style="color:var(--mist)">Ejemplo: el objetivo de Escucha Activa es del Departamento Académico, pero las dos encuestas de satisfacción
+            las ejecuta el Comité SGOE. Esas dos llevan aquí Comité SGOE; las otras dos se dejan vacías.</span>
           </div>
           <div class="rej">
             <div>
@@ -636,13 +638,15 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
 
         <div class="full">
           <label for="iIndicador">Indicador <b class="req">*</b></label>
-          <textarea id="iIndicador"></textarea>
+          <textarea id="iIndicador" placeholder="Porcentaje de docentes capacitados."></textarea>
           <div class="err" id="e_iIndicador"></div>
+          <div class="pista">Qué se mide, tal como figura en la columna Indicador de la matriz.</div>
         </div>
         <div class="full">
           <label for="iFormula">Fórmula <b class="req">*</b></label>
-          <textarea id="iFormula"></textarea>
+          <textarea id="iFormula" placeholder="(N° acumulado de docentes capacitados en el periodo / Total de docentes con carga lectiva en el periodo) x 100"></textarea>
           <div class="err" id="e_iFormula"></div>
+          <div class="pista">Cómo se calcula. Si es un porcentaje, escribe numerador y denominador; si es un puntaje, describe el promedio y la escala.</div>
         </div>
         <div class="full" id="cajaMedicion" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
           <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
@@ -655,9 +659,9 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
 
         <div class="full">
           <label for="iMeta">Meta <b class="req">*</b></label>
-          <textarea id="iMeta" style="min-height:50px"></textarea>
+          <textarea id="iMeta" style="min-height:50px" placeholder="50%"></textarea>
           <div class="err" id="e_iMeta"></div>
-          <div class="pista">Texto libre, tal como se maneja hoy: 100%, 1 proyecto, 2 procesos misionales…</div>
+          <div class="pista">Escríbela como aparece en la matriz. <b>Ej.:</b> 50% · 75% · 1 proyecto · 2 procesos misionales · 3.0 · 17.5</div>
         </div>
 
         <div>
@@ -668,26 +672,26 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
         <div>
           <label for="iDenom">Denominador <span class="op" id="opDenom"></span></label>
-          <input type="number" step="any" id="iDenom">
+          <input type="number" step="any" id="iDenom" placeholder="174">
           <div class="err" id="e_iDenom"></div>
           <div class="pista" id="pistaDenom"></div>
         </div>
         <div class="full">
-          <label for="iFuenteDenom">Fuente del denominador</label>
-          <textarea id="iFuenteDenom" style="min-height:48px"></textarea>
+          <label for="iFuenteDenom">Fuente del denominador <span class="op">(de dónde sale ese número)</span></label>
+          <textarea id="iFuenteDenom" style="min-height:48px" placeholder="Reporte Resumen de Carga Lectiva General del semestre 2026-II de la Facultad de Ingeniería, emitido por el Vice Rectorado Académico el 15/09/2026."></textarea>
           <div class="err" id="e_iFuenteDenom"></div>
-          <div class="pista">Documento, oficina que lo emite y fecha. Ej.: Reporte Resumen de Carga Lectiva General 2026-II, Vice Rectorado Académico, 15/09/2026.</div>
+          <div class="pista">Nombra el documento, quién lo emite y la fecha. Si el día de mañana alguien pregunta "¿174 de dónde salió?", la respuesta tiene que estar aquí.</div>
         </div>
 
         <div class="full">
-          <label for="iLineaBase">Línea base</label>
-          <textarea id="iLineaBase" style="min-height:48px"></textarea>
-          <div class="pista">De dónde parte el indicador, con su fuente. Ej.: 2.98 — Encuesta de Satisfacción Estudiantil 2025-II, Oficio 004-2026-ODACE.</div>
+          <label for="iLineaBase">Línea base <span class="op">(de dónde parte)</span></label>
+          <textarea id="iLineaBase" style="min-height:48px" placeholder="2.98 — Encuesta de Satisfacción Estudiantil 2025-II, resultados del 24/12/2025 remitidos por Oficio 004-2026-ODACE. Servicio Académico 3.00 y Servicio Administrativo de Facultad 2.95."></textarea>
+          <div class="pista">El valor que ya tenía el indicador antes de empezar, con su fuente. Sirve para saber si la meta exige mejora o solo mantener lo que ya había.</div>
         </div>
         <div>
           <label for="iValorLB">Valor de la línea base</label>
-          <input type="number" step="any" id="iValorLB">
-          <div class="pista">Solo el número, para poder compararlo con la meta.</div>
+          <input type="number" step="any" id="iValorLB" placeholder="2.98">
+          <div class="pista">Solo el número del texto de arriba. Con él se compara contra la meta.</div>
         </div>
         <div>
           <div class="aviso" id="avLineaBase"></div>
@@ -706,36 +710,47 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         </div>
 
         <div class="full" style="background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 16px">
-          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:700;color:var(--brand-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">
             Tramo y reprogramación
           </div>
-          <div class="pista" style="margin:0 0 10px">
-            Llena esto solo si la meta de arriba es un tramo de otra mayor, o si la fecha se movió.
+          <div class="pista" style="margin:0 0 6px">
+            <b>Tramo</b> — cuando la meta de arriba es solo una parte de otra más grande que se alcanza más adelante.<br>
+            <span style="color:var(--mist)">Ejemplo: el objetivo de Pertinencia busca el <b>100% de las asignaturas al 2028</b>, pero
+            este indicador solo mide el <b>50% a agosto de 2027</b>. Entonces arriba va 50% y aquí abajo va el 100% con su fecha.</span>
+          </div>
+          <div class="pista" style="margin:0 0 12px">
+            <b>Reprogramación</b> — cuando la fecha de vencimiento se movió. Hay que dejar escrito <b>de qué fecha a qué fecha</b> y <b>por qué</b>.<br>
+            <span style="color:var(--mist)">Ejemplo: el taller de integridad científica vencía el 31/12/2026 y se corrió al 31/08/2027
+            por acuerdo de revisión de objetivos con el Decanato.</span>
+          </div>
+          <div class="pista" style="margin:0 0 12px;color:var(--mist)">
+            Si la meta no es un tramo y la fecha nunca se movió, deja los cuatro campos vacíos y sigue adelante.
           </div>
           <div class="rej">
             <div>
-              <label for="iMetaFinal">Meta final</label>
-              <input type="text" id="iMetaFinal">
-              <div class="pista">Ej.: 100% de las asignaturas. Es informativa: el semáforo corre contra la meta del periodo.</div>
+              <label for="iMetaFinal">Meta final <span class="op">(la grande, la de más adelante)</span></label>
+              <input type="text" id="iMetaFinal" placeholder="100% de las asignaturas">
+              <div class="pista">No mueve el semáforo: el avance se sigue midiendo contra la meta del periodo. Esta queda registrada para que se vea a dónde se llega al final.</div>
             </div>
             <div>
-              <label for="iFVMetaFinal">F.V. meta final</label>
+              <label for="iFVMetaFinal">F.V. meta final <span class="op">(cuándo se alcanza)</span></label>
               <input type="date" id="iFVMetaFinal">
               <div class="err" id="e_iFVMetaFinal"></div>
+              <div class="pista">Tiene que ser posterior al vencimiento de la meta del periodo. Ejemplo: 31/12/2028.</div>
             </div>
             <div>
-              <label for="iFVOriginal">F.V. original</label>
+              <label for="iFVOriginal">F.V. original <span class="op">(la fecha vieja)</span></label>
               <input type="date" id="iFVOriginal">
               <div class="err" id="e_iFVOriginal"></div>
-              <div class="pista">La fecha que vencía antes del cambio.</div>
+              <div class="pista">La que vencía <b>antes</b> del cambio. Ejemplo: 31/12/2026, si ahora vence el 31/08/2027.</div>
             </div>
             <div></div>
           </div>
           <div style="margin-top:10px">
-            <label for="iReprog">Reprogramación y sustento</label>
-            <textarea id="iReprog" style="min-height:52px"></textarea>
+            <label for="iReprog">Reprogramación y sustento <span class="op">(por qué se movió)</span></label>
+            <textarea id="iReprog" style="min-height:62px" placeholder="Reprogramada al 31/08/2027. Sustento: acuerdo de revisión de objetivos adoptado con el Decanato, registrado en el acta de la revisión por la dirección de octubre de 2026."></textarea>
             <div class="err" id="e_iReprog"></div>
-            <div class="pista">El acuerdo o documento que respalda el cambio de fecha. Sin esto una reprogramación no se sustenta ante auditoría.</div>
+            <div class="pista">Nombra el acuerdo, acta u oficio que respalda el cambio. Una fecha movida sin sustento no se puede defender en auditoría.</div>
           </div>
         </div>
 
@@ -963,16 +978,16 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
           <input type="text" id="rAnterior" readonly style="background:var(--paper);font-weight:600">
         </div>
         <div>
-          <label for="rFechaReal">Fecha real de ejecución</label>
+          <label for="rFechaReal">Fecha real de ejecución <span class="op">(si fue otro día)</span></label>
           <input type="date" id="rFechaReal">
           <div class="err" id="e_rFechaReal"></div>
-          <div class="pista">Cuándo ocurrió de verdad, si no coincide con la fecha del reporte.</div>
+          <div class="pista">Cuándo ocurrió de verdad. <b>Ej.:</b> el taller se dictó en febrero y recién se reporta en setiembre — aquí va febrero.</div>
         </div>
         <div></div>
         <div class="full">
-          <label for="rAnalisis">Análisis de la desviación y acción</label>
-          <textarea id="rAnalisis" style="min-height:64px"></textarea>
-          <div class="pista">Por qué el resultado se aparta de lo previsto y qué se va a hacer. Es la entrada de desempeño para la revisión por la dirección.</div>
+          <label for="rAnalisis">Análisis de la desviación y acción <span class="op">(por qué y qué se hará)</span></label>
+          <textarea id="rAnalisis" style="min-height:64px" placeholder="La primera edición se ejecutó en febrero con 79 participantes, de los cuales 54 aprobaron. Para alcanzar la meta de 87 se requieren 33 docentes adicionales, por lo que se propone una segunda edición en diciembre."></textarea>
+          <div class="pista">Explica la diferencia entre lo planificado y lo logrado, y qué se va a hacer al respecto. Esto es lo que se lleva a la revisión por la dirección — escríbelo pensando en quien lo va a leer ahí.</div>
         </div>
         <div class="full">
           <label for="rDificultades">Dificultades</label>
@@ -2879,12 +2894,15 @@ function avisoHerencia(){
 /* El tipo de indicador manda sobre qué hace falta para poder medirlo. */
 function aplicarTipoIndicador(){
   const t = $("iTipo").value, pct = t === "Porcentaje";
-  $("opDenom").textContent = pct ? "(obligatorio)" : "(opcional)";
-  $("pistaTipo").textContent =
-    t === "Conteo" ? "Se cuentan unidades y el logro acumula: 54 de 87 docentes." :
-    pct ? "Numerador sobre denominador. Sin denominador, “50%” no se puede traducir a un número." :
-    t === "Índice o puntaje" ? "Valor en una escala: 3.0 sobre 4, 17 sobre 20. No acumula — la última medición reemplaza a la anterior." : "";
-  $("pistaDenom").textContent = pct ? "El universo sobre el que corre la meta. Ej.: 174 docentes con carga lectiva." : "";
+  $("opDenom").textContent = pct ? "(obligatorio)" : "(no hace falta)";
+  $("pistaTipo").innerHTML =
+    t === "Conteo" ? "Se cuentan cosas y se van sumando. <b>Ej.:</b> 1 proyecto de responsabilidad social, 2 procesos digitalizados." :
+    pct ? "Una parte sobre un total. <b>Ej.:</b> 50% de los docentes. Necesita saber el total — ese es el denominador." :
+    t === "Índice o puntaje" ? "Una nota o puntaje en una escala. <b>Ej.:</b> 3.0 sobre 4 en satisfacción, 17.5 sobre 20 en desempeño docente. No se suma: la última medición reemplaza a la anterior." :
+    "Elige cómo se mide: contando cosas, como porcentaje de un total, o como un puntaje en una escala.";
+  $("pistaDenom").innerHTML = pct
+    ? "El <b>total</b> sobre el que corre la meta. <b>Ej.:</b> si la meta es 50% de los docentes y hay 174 docentes, aquí va 174 — y el sistema calcula solo que hacen falta 87."
+    : "Este tipo de indicador no lo necesita: la meta ya es el número a alcanzar.";
   compararLineaBase();
 }
 $("iTipo").addEventListener("change", aplicarTipoIndicador);
