@@ -116,8 +116,44 @@ const CONFIG = {
       // `variables` guarda el JSON de los números usados, para poder reabrir
       // el indicador y corregir uno sin volver a teclear todos.
       valor_alcanzado:     { id: "bYWOBdImnhW6pdJCo9W5jL", type: "float", col: "Valor alcanzado" },
-      variables:           { id: "aFp2r2WQfjFikXW4jmsCka", type: "text",  col: "Variables de cálculo" }
+      variables:           { id: "aFp2r2WQfjFikXW4jmsCka", type: "text",  col: "Variables de cálculo" },
+
+      // --- Responsable POR INDICADOR (fase 2, 21-10-2026) -----------------
+      // La rev 03 del FI-GCA-MT-003 asigna responsable fila por fila: el
+      // objetivo 1 tiene Directores de escuela y Depto. Académico, y el 5
+      // tiene Comité SGOE y Depto. Académico. Antes había que duplicar el
+      // objetivo para cargar el segundo responsable (OC-2026-09). Si estos
+      // quedan vacíos, se hereda el del objetivo.
+      oficina:              { id: "cUW4NdI8nbWRlcMKdcVv0B", type: "string", col: "Oficina responsable (texto)" },
+      resp_proceso:         { id: "abWQeOW5jcOA1yWQNdQSk9", type: "string", col: "Responsable proceso (texto)" },
+      resp_proceso_correo:  { id: "ddNmkIl8jdjiOYl8kWBxiB", type: "email",  col: "Correo responsable proceso" },
+      resp_proceso_celular: { id: "aSW67dISjcmOo4Ew8anCoX", type: "phone",  col: "Celular responsable proceso" },
+
+      // --- Medición (fase 2) ----------------------------------------------
+      // `denominador` es el universo sobre el que corre la meta. Sin él no
+      // hay logro computable: 50% no dice nada, 50% de 174 son 87.
+      linea_base:           { id: "apwMLLtCnegOo6n8kxW5vq", type: "text",   col: "Línea base" },
+      valor_linea_base:     { id: "ddMNWaa8jfvOkgW71RW5bt", type: "float",  col: "Valor línea base" },
+      denominador:          { id: "a0W4KheSncmOkgdSkiW5Dn", type: "float",  col: "Denominador" },
+      fuente_denominador:   { id: "bBxxddUmnkWPNcPCkWW4rX", type: "text",   col: "Fuente del denominador" },
+      tipo_indicador:       { id: "ddTtPkAmnbc6ddHGpcRq4b", type: "select", col: "Tipo de indicador" },
+
+      // --- Tramo y reprogramación (fase 2) --------------------------------
+      // `meta_final` es informativa: el semáforo corre contra `meta`. Existe
+      // para que un objetivo que promete 100% y mide 50% declare su horizonte
+      // en vez de quedar como inconsistencia interna del documento.
+      meta_final:           { id: "ddTKddJJfjqOH1W4pdMSkj", type: "string", col: "Meta final" },
+      fv_meta_final:        { id: "bhW4FdUCnlW6_dUgOXmSkE", type: "date",   col: "F.V. meta final" },
+      fv_original:          { id: "aUWPxdGSjdpBVcJmkaW71u", type: "date",   col: "F.V. original" },
+      reprogramacion:       { id: "ddTmkMewbaE4o3s8k6ECkO", type: "text",   col: "Reprogramación y sustento" }
     },
+
+    // Literales EXACTOS del desplegable `Tipo de indicador`.
+    //  Conteo           -> se cuentan unidades; el logro acumula.
+    //  Porcentaje       -> numerador/denominador; necesita `denominador`.
+    //  Índice o puntaje -> valor en una escala (3.0 de 4, 17 de 20). NO se
+    //                      acumula: el último valor reemplaza al anterior.
+    TIPOS: ["Conteo", "Porcentaje", "Índice o puntaje"],
     // Vínculo al objetivo padre: guarda su _qid.
     ESPEJO: {
       objetivo_ref: { id: "a2WQpdSmjnx7fsB8onpCom", type: "string", col: "Objetivo ref" }
@@ -217,7 +253,10 @@ const CONFIG = {
     F: {
       fecha_ejecucion:  { id: "coAMD6WR1cGiPaWQ7cNb5O", type: "date", col: "Fecha de ejecución o reporte"  }, // oblig.
       avance:           { id: "afWPRdKaHcTQqaW5emyZGZ", type: "text", col: "Avance (descripción)"  }, // oblig. RTE
-      estado_hito:      { id: "dcK0BcGmnfW5jnkSo9nCkM", type: "radio", col: "Estado del hito" }, // oblig.
+      // Renombrado en fase 2: ahora se llama "Estado de la actividad" y
+      // lleva los cinco estados del FI-GCA-MT-008. Los 10 reportes previos
+      // se remapearon: En Proceso -> En ejecución, Ejecutado -> Ejecutada.
+      estado_hito:      { id: "dcK0BcGmnfW5jnkSo9nCkM", type: "radio", col: "Estado de la actividad" }, // oblig.
       contribucion:     { id: "cTtSkeyKXeWQRdKSkJFCkM", type: "float", col: "Contribución al progreso del hito" }, // oblig.
       dificultades:     { id: "ddRhNcJCjcWOJdJZxcJmof", type: "text", col: "Dificultades"  },
       observacion:      { id: "bxdCk5W49hAkBcRIBdRCky", type: "text", col: "Observación"  },
@@ -225,12 +264,21 @@ const CONFIG = {
       tipo_medicion:    { id: "aEW5NdOCnltOoPW4xdUCo9", type: "select", col: "Tipo de medición" },
       // Solo se usa en hitos con meta cuantitativa: de aquí sale el % de
       // avance, en vez de que alguien lo estime a ojo.
-      cantidad_acumulada: { id: "cZvttcMNXfW6hdJmk0fLuH", type: "float", col: "Cantidad acumulada" }
+      cantidad_acumulada: { id: "cZvttcMNXfW6hdJmk0fLuH", type: "float", col: "Cantidad acumulada" },
+
+      // --- Columnas del FI-GCA-MT-008 (fase 2, 21-10-2026) ----------------
+      // La fecha del reporte y la fecha en que realmente ocurrió la cosa no
+      // son lo mismo: el taller fue en febrero y se reportó en setiembre.
+      fecha_real:       { id: "cWW5lcQrrcWPeom8krW5mU", type: "date", col: "Fecha real de ejecución" },
+      analisis_desv:    { id: "cRWQVdJdbcTlJcICkmfSke", type: "text", col: "Análisis de la desviación y acción" }
     },
 
     // Literales EXACTOS del radio. Mandar con esta capitalización o se
-    // rechaza. (El Excel usa "En proceso" en minúscula: no coincide.)
-    ESTADOS: ["En Proceso", "Ejecutado"],
+    // rechaza. Son los cinco estados del Plan de Acción y Seguimiento.
+    ESTADOS: ["No iniciada", "En ejecución", "Medición programada", "Reprogramada", "Ejecutada"],
+    // El estado que cierra la actividad: el único válido cuando el avance
+    // acumulado llega a 100%.
+    ESTADO_CIERRE: "Ejecutada",
 
     // ---- Relaciones: NO escribibles por REST ------------------------------
     REL: {
