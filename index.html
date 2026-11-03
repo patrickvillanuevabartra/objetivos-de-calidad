@@ -342,6 +342,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <button class="on" data-v="tablero">Tablero</button>
         <button data-v="objetivos">Objetivos de calidad <span class="cont" id="contActivos"></span></button>
         <button data-v="despriorizados">Despriorizados <span class="cont" id="contDespri"></span></button>
+        <button data-v="seguimiento">Seguimiento <span class="cont" id="contSeg"></span></button>
         <button data-v="usuarios" id="tabUsuarios" style="display:none">Usuarios</button>
         <button data-v="notificaciones" id="tabNotif" style="display:none">Notificaciones</button>
         <span class="chip" id="chipUsr"></span>
@@ -361,6 +362,8 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <h1>Tablero de objetivos de calidad</h1>
         <p>Cada objetivo se mide con uno o varios indicadores. El avance sube desde los reportes hasta el objetivo.</p>
       </div>
+      <div class="guia-urp" data-guia="inicio"></div>
+      <div class="guia-urp" data-guia="tablero"></div>
       <div class="filtros">
         <div class="campo"><label for="tPeriodo">Periodo</label><select id="tPeriodo"></select></div>
       </div>
@@ -374,6 +377,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <h1>Objetivos de calidad</h1>
         <p>Un objetivo se mide con varios indicadores. Cada indicador tiene su meta, su plazo y sus hitos.</p>
       </div>
+      <div class="guia-urp" data-guia="objetivos"></div>
       <div class="filtros">
         <div class="campo"><label for="fPeriodo">Periodo</label><select id="fPeriodo"></select></div>
         <div class="campo"><label for="fOficina">Oficina</label><select id="fOficina"></select></div>
@@ -393,12 +397,34 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <h1>Objetivos despriorizados</h1>
         <p>Objetivos que se retiraron del plan sin eliminarse. No entran en el tablero ni en los porcentajes de cumplimiento, pero conservan su historial completo.</p>
       </div>
+      <div class="guia-urp" data-guia="objetivos"></div>
       <div class="filtros">
         <div class="campo"><label for="dPeriodo">Periodo</label><select id="dPeriodo"></select></div>
         <div class="campo"><label for="dOficina">Oficina</label><select id="dOficina"></select></div>
         <div class="campo" style="flex:1.4"><label for="dBuscar">Buscar</label><input type="text" id="dBuscar" placeholder="objetivo, indicador, responsable…"></div>
       </div>
       <div id="listaDespri"></div>
+    </section>
+
+    <!-- ---------- seguimiento de notificaciones ---------- -->
+    <section class="vista" id="vSeguimiento">
+      <div class="page-head">
+        <div class="eyebrow">Evidencia del seguimiento</div>
+        <h1>Avisos enviados</h1>
+        <p>Cada vez que alguien envía un aviso desde el tablero, por WhatsApp o por correo, queda anotado aquí:
+           a quién se le avisó, cuándo, por qué canal y con qué texto exacto. Esta es la constancia de que el
+           seguimiento se hizo, y es lo que se muestra en una auditoría cuando preguntan cómo se le dio
+           seguimiento a un objetivo atrasado.</p>
+      </div>
+      <div class="guia-urp" data-guia="seguimiento"></div>
+      <div class="filtros">
+        <div class="campo"><label for="sgTipo">Tipo de aviso</label><select id="sgTipo"></select></div>
+        <div class="campo"><label for="sgCanal">Canal</label><select id="sgCanal"></select></div>
+        <div class="campo"><label for="sgOficina">Oficina</label><select id="sgOficina"></select></div>
+        <div class="campo" style="flex:1.4"><label for="sgBuscar">Buscar</label><input type="text" id="sgBuscar" placeholder="destinatario, objetivo, indicador…"></div>
+      </div>
+      <div id="sgResumen"></div>
+      <div id="listaSeg"></div>
     </section>
 
     <!-- ---------- usuarios ---------- -->
@@ -585,6 +611,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mIndMsg"></div>
+      <div class="guia-urp" data-guia="indicador"></div>
       <div class="cadena">El <b>% del indicador</b> se calcula solo, desde sus hitos:
         Σ (participación del hito × % del hito) ÷ 100. Aquí no se escriben cantidades:
         la fórmula documenta el método y su <b>referencia</b> define el universo contra el que se mide.</div>
@@ -821,6 +848,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mHitoMsg"></div>
+      <div class="guia-urp" data-guia="hito"></div>
       <div class="cadena">La <b>meta del hito</b> es el tramo de la referencia del indicador que este hito debe cubrir.
         El <b>% del hito</b> saldrá de dividir lo que se reporte entre esa meta. Cumplidos todos los hitos,
         el indicador alcanza la suya.</div>
@@ -917,6 +945,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
     </div>
     <div class="cuerpo f">
       <div id="mRepMsg"></div>
+      <div class="guia-urp" data-guia="reporte"></div>
       <div class="cadena">Este es el <b>único sitio donde se escriben cantidades</b>. De aquí sube todo:
         cantidad → % del hito → % del indicador → % del objetivo.</div>
       <div class="panel" id="pRepHito"></div>
@@ -1138,6 +1167,7 @@ const S = {
   indicadores: [],
   hitos: [],
   reportes: [],
+  avisos: [],
   editObj: null,
   editInd: null,
   editHito: null,
@@ -1557,6 +1587,9 @@ function llenarFiltros(){
   opciones("fOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
   opciones("dPeriodo", per, "", "Todos");
   opciones("dOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
+  opciones("sgOficina", CONFIG.CATALOGOS.oficinas.opciones, "", "Todas");
+  opciones("sgTipo",  CONFIG.SEGUIMIENTO.TIPOS,   "", "Todos");
+  opciones("sgCanal", CONFIG.SEGUIMIENTO.CANALES, "", "Todos");
   opciones("fCondicion", CONFIG.REGLAS.condiciones.filter(c => c !== "Despriorizada"), "", "Todas");
   opciones("fEstado", ["Cumplido", "Avance bueno", "Avance crítico", "Vencido", "Por vencer", "Sin indicadores"], "", "Todos");
 }
@@ -1635,11 +1668,13 @@ async function recargarConEspera(idEsperado, coleccion){
 
 async function recargar(){
   if(!S.volverA) $("lista").innerHTML = '<div class="cargando"><span class="spin"></span>Cargando…</div>';
-  const [obj, ind, hit, rep] = await Promise.all([
+  const [obj, ind, hit, rep, seg] = await Promise.all([
     listar(CONFIG.MATRIZ.ENTITY_ID),
     listar(CONFIG.INDICADORES.ENTITY_ID),
     listar(CONFIG.HITOS.ENTITY_ID),
-    listar(CONFIG.REPORTES.ENTITY_ID)
+    listar(CONFIG.REPORTES.ENTITY_ID),
+    /* El historial de avisos no debe tumbar la carga si falla. */
+    listar(CONFIG.SEGUIMIENTO.ENTITY_ID).catch(() => [])
   ]);
 
   const E = CONFIG.ESPEJO, F = CONFIG.MATRIZ.F;
@@ -1729,9 +1764,32 @@ async function recargar(){
     acciones: leerAcciones(r.sub && r.sub[SUB.id])
   }));
 
+  const G = CONFIG.SEGUIMIENTO.F, GE = CONFIG.SEGUIMIENTO.ESPEJO;
+  S.avisos = (seg || []).map(r => ({
+    id: r.id,
+    fechaHora:    val(r.v, G.fecha_hora),
+    fecha:        val(r.v, G.fecha),
+    tipo:         val(r.v, G.tipo),
+    canal:        val(r.v, G.canal),
+    destinatario: val(r.v, G.destinatario),
+    correo:       val(r.v, G.correo),
+    celular:      val(r.v, G.celular),
+    enviadoPor:   val(r.v, G.enviado_por),
+    objetivo:     r.v[G.objetivo.col] || "",
+    indicador:    r.v[G.indicador.col] || "",
+    hito:         val(r.v, G.hito),
+    oficina:      val(r.v, G.oficina),
+    mensaje:      r.v[G.mensaje.col] || "",
+    estado:       val(r.v, G.estado),
+    objetivoRef:  valRel(r.v, GE.objetivo_ref),
+    indicadorRef: valRel(r.v, GE.indicador_ref),
+    hitoRef:      valRel(r.v, GE.hito_ref)
+  })).sort((a, b) => String(b.fechaHora).localeCompare(String(a.fechaHora)));
+
   pintarLista();
   pintarDespriorizados();
   pintarTablero();
+  pintarSeguimiento();
   actualizarContadores();
   restaurarPosicion();
 }
@@ -2259,6 +2317,7 @@ document.querySelectorAll("header.top nav button[data-v]").forEach(b => b.onclic
   /* Se carga al abrir la pestaña: no hace falta pedirla en cada arranque. */
   if(b.dataset.v === "usuarios" && !S.usuarios.length) cargarUsuarios();
   if(b.dataset.v === "notificaciones") abrirPlantillas();
+  if(b.dataset.v === "seguimiento") pintarSeguimiento();
 });
 
 /* ==========================================================================
@@ -3967,6 +4026,99 @@ async function eliminarReporte(id){
    ========================================================================== */
 const esDespriorizado = o => norm(o.condicion) === "despriorizada";
 
+/* ==========================================================================
+   Vista «Seguimiento» — el historial de avisos enviados
+   ========================================================================== */
+["sgTipo", "sgCanal", "sgOficina"].forEach(id => $(id).addEventListener("change", pintarSeguimiento));
+$("sgBuscar").addEventListener("input", pintarSeguimiento);
+
+function pintarSeguimiento(){
+  const cajaLista = $("listaSeg"); if(!cajaLista) return;
+  const todos = S.avisos || [];
+  $("contSeg").textContent = todos.length || "";
+
+  const tipo = $("sgTipo").value, canal = $("sgCanal").value,
+        ofi = $("sgOficina").value, q = norm($("sgBuscar").value.trim());
+  const arr = todos.filter(a => {
+    if(tipo && a.tipo !== tipo) return false;
+    if(canal && a.canal !== canal) return false;
+    if(ofi && a.oficina !== ofi) return false;
+    if(q && norm([a.destinatario, a.objetivo, a.indicador, a.hito, a.oficina, a.enviadoPor].join(" ")).indexOf(q) < 0) return false;
+    return true;
+  });
+
+  /* Resumen: lo primero que se pregunta en una auditoría es cuántos avisos
+     se mandaron y a cuántos objetivos distintos alcanzaron. */
+  const objetivosAvisados = new Set(arr.map(a => a.objetivoRef).filter(Boolean)).size;
+  const porCanal = c => arr.filter(a => a.canal === c).length;
+  $("sgResumen").innerHTML = !todos.length ? "" :
+    '<div class="tarj" style="margin-bottom:14px"><div style="display:flex;gap:28px;flex-wrap:wrap">' +
+      bloqueCifra(arr.length, "avisos enviados") +
+      bloqueCifra(objetivosAvisados, objetivosAvisados === 1 ? "objetivo alcanzado" : "objetivos alcanzados") +
+      bloqueCifra(porCanal("Correo"), "por correo") +
+      bloqueCifra(porCanal("WhatsApp"), "por WhatsApp") +
+    "</div></div>";
+
+  if(!todos.length){
+    cajaLista.innerHTML = '<div class="vacio">Todavía no se ha enviado ningún aviso.<br>' +
+      'Los avisos se envían desde el <b>Tablero</b>, con los botones 💬 y ✉️ de las tablas de ' +
+      'hitos vencidos e indicadores por vencer. Cada envío aparecerá aquí con su fecha y su texto.</div>';
+    return;
+  }
+  if(!arr.length){ cajaLista.innerHTML = '<div class="vacio">Ningún aviso coincide con el filtro.</div>'; return; }
+
+  cajaLista.innerHTML = '<div class="tarj"><table class="t"><thead><tr>' +
+    '<th style="width:124px">Fecha y hora</th><th style="width:96px">Canal</th>' +
+    "<th>Destinatario</th><th>Sobre qué se avisó</th>" +
+    '<th style="width:132px">Tipo</th><th style="width:116px">Estado</th><th style="width:46px"></th>' +
+    "</tr></thead><tbody>" +
+    arr.map(a =>
+      "<tr>" +
+        "<td style=\"font-family:'IBM Plex Mono',monospace;font-size:12.5px\">" + esc(a.fechaHora || "—") + "</td>" +
+        "<td>" + (a.canal === "WhatsApp" ? "💬 WhatsApp" : "✉️ Correo") + "</td>" +
+        "<td><b>" + esc(a.destinatario || "—") + "</b>" +
+          (a.oficina ? '<div style="font-size:12.5px;color:var(--mist)">' + esc(a.oficina) + "</div>" : "") + "</td>" +
+        "<td>" + esc(a.indicador || a.objetivo || "—") +
+          (a.hito ? '<div style="font-size:12.5px;color:var(--mist)">Hito: ' + esc(a.hito) + "</div>" : "") + "</td>" +
+        '<td><span class="tag ' + (a.tipo === "Hito vencido" ? "r" : "a") + '">' + esc(a.tipo || "—") + "</span></td>" +
+        "<td>" + esc(a.estado || "Enviado") + "</td>" +
+        '<td><button class="ico" data-aviso="' + esc(a.id) + '" title="Ver el mensaje que se envió">👁</button></td>' +
+      "</tr>").join("") +
+    "</tbody></table></div>";
+
+  cajaLista.querySelectorAll("[data-aviso]").forEach(b => b.onclick = () => verAviso(b.dataset.aviso));
+}
+
+function bloqueCifra(n, etiqueta){
+  return '<div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:600;line-height:1">' +
+    n + '</div><div style="font-size:12.5px;color:var(--mist);margin-top:2px">' + etiqueta + "</div></div>";
+}
+
+/* El texto exacto que se envió, tal cual salió. */
+function verAviso(id){
+  const a = S.avisos.find(x => x.id === id); if(!a) return;
+  $("fiEt").textContent = "Aviso enviado · " + (a.canal || "");
+  $("fiTit").textContent = a.destinatario || "Aviso";
+  $("fiCuerpo").innerHTML =
+    '<div class="fi-sec"><div class="fi-dos">' +
+      campoFi("Fecha y hora", esc(a.fechaHora)) +
+      campoFi("Canal", esc(a.canal)) +
+      campoFi("Destinatario", esc(a.destinatario) +
+        (a.correo || a.celular ? '<div style="font-size:12.5px;color:var(--mist)">' +
+          [esc(a.correo), esc(a.celular)].filter(Boolean).join(" · ") + "</div>" : "")) +
+      campoFi("Enviado por", esc(a.enviadoPor || "—")) +
+      campoFi("Tipo de aviso", esc(a.tipo)) +
+      campoFi("Estado", esc(a.estado || "Enviado")) +
+    "</div>" +
+    campoFi("Objetivo", esc(a.objetivo), true) +
+    campoFi("Indicador", esc(a.indicador), true) +
+    (a.hito ? campoFi("Hito", esc(a.hito), true) : "") +
+    campoFi("Mensaje enviado", '<div class="ruta" style="white-space:pre-wrap;align-items:flex-start;margin-top:4px">' +
+      esc(a.mensaje) + "</div>", true) +
+    "</div>";
+  $("mFicha").classList.add("on");
+}
+
 ["dPeriodo","dOficina"].forEach(id => $(id).addEventListener("change", pintarDespriorizados));
 $("dBuscar").addEventListener("input", pintarDespriorizados);
 
@@ -4362,7 +4514,9 @@ function notificarWhatsApp(tipo, id){
   const tel = telWa(d.celular);
   if(!tel){ toast("No hay celular registrado para " + (d.responsable || "el responsable") + ".", true); return; }
   const p = PLANTILLAS[tipo === "hito" ? "hitoVencido" : tipo];
-  window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(aplicarPlantilla(p.wa, d)), "_blank", "noopener");
+  const texto = aplicarPlantilla(p.wa, d);
+  window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(texto), "_blank", "noopener");
+  registrarAviso(tipo, id, "WhatsApp", d, texto);
 }
 
 function notificarCorreo(tipo, id){
@@ -4377,12 +4531,82 @@ function notificarCorreo(tipo, id){
   const win = window.open(gmail, "_blank", "noopener");
   if(!win) window.location.href = "mailto:" + encodeURIComponent(d.correo) +
     "?subject=" + encodeURIComponent(asunto) + "&body=" + encodeURIComponent(cuerpo);
+  registrarAviso(tipo, id, "Correo", d, asunto + "\n\n" + cuerpo);
+}
+
+/* ==========================================================================
+   Seguimiento de notificaciones — la constancia de que se avisó
+   ==========================================================================
+   Abrir WhatsApp o el correo no deja rastro de nada: si alguien pregunta a
+   quién se le avisó, cuándo y qué se le dijo, no había forma de saberlo.
+   Cada envío escribe ahora una fila con el texto exacto.
+
+   Se registra el envío, no la lectura: el aplicativo abre el mensaje ya
+   redactado, pero quien lo manda es la persona. Por eso el estado nace como
+   «Enviado» y el responsable puede cambiarlo después a «Con respuesta» o
+   «Sin respuesta». Decir más que eso sería inventar evidencia. */
+function registrarAviso(tipo, id, canal, d, texto){
+  const G = CONFIG.SEGUIMIENTO.F, GE = CONFIG.SEGUIMIENTO.ESPEJO;
+  const hi  = tipo === "hito" ? S.hitos.find(x => x.id === id) : null;
+  const ind = hi ? S.indicadores.find(x => x.id === hi.indicadorRef)
+                 : S.indicadores.find(x => x.id === id);
+  const o   = ind ? objetivoDe(ind) : null;
+
+  const ahora = new Date();
+  const dosD = n => String(n).padStart(2, "0");
+  const fechaISO = ahora.getFullYear() + "-" + dosD(ahora.getMonth() + 1) + "-" + dosD(ahora.getDate());
+
+  const v = {};
+  v[G.fecha_hora.id]   = fechaISO + " " + dosD(ahora.getHours()) + ":" + dosD(ahora.getMinutes());
+  v[G.fecha.id]        = fechaISO;
+  v[G.tipo.id]         = tipo === "hito" ? "Hito vencido" : "Indicador por vencer";
+  v[G.canal.id]        = canal;
+  v[G.destinatario.id] = d.responsable || "";
+  v[G.correo.id]       = d.correo || "";
+  v[G.celular.id]      = d.celular || "";
+  v[G.enviado_por.id]  = (S.sesion && (S.sesion.nombre || S.sesion.usuario)) || "";
+  v[G.objetivo.id]     = o ? ((o.codigo ? o.codigo + " · " : "") + sinHtml(o.objetivo)) : "";
+  v[G.indicador.id]    = ind ? sinHtml(ind.indicador) : "";
+  v[G.hito.id]         = hi ? hi.hito : "";
+  v[G.oficina.id]      = ind ? oficinaDe(ind) : "";
+  v[G.mensaje.id]      = texto;
+  v[G.estado.id]       = "Enviado";
+  if(o)   v[GE.objetivo_ref.id]  = o.id;
+  if(ind) v[GE.indicador_ref.id] = ind.id;
+  if(hi)  v[GE.hito_ref.id]      = hi.id;
+
+  /* No se bloquea la interfaz: el mensaje ya se abrió. Si el registro
+     falla, se avisa para que la persona sepa que ese envío no quedó
+     documentado, en vez de dar por buena una evidencia que no existe. */
+  API.saveForm(null, v, CONFIG.SEGUIMIENTO.ENTITY_ID)
+    .then(() => { toast("Aviso registrado en Seguimiento."); recargar(); })
+    .catch(e => toast("El mensaje se abrió, pero no se pudo registrar el envío: " + e.message, true));
+}
+
+/* Último aviso enviado sobre un indicador o un hito. */
+function ultimoAviso(tipo, id){
+  const campo = tipo === "hito" ? "hitoRef" : "indicadorRef";
+  const suyos = (S.avisos || []).filter(a => a[campo] === id);
+  return suyos.length ? suyos[0] : null;   // S.avisos viene ordenado desc.
 }
 
 /* Botones de las tablas del tablero. */
 function botonesNotif(tipo, id, tieneCel, tieneCorreo){
   if(!esGestor()) return "";
-  return '<div style="display:flex;gap:5px;justify-content:flex-end">' +
+  /* Si ya se avisó hace poco, se dice: evita que tres personas manden el
+     mismo recordatorio el mismo día, y recuerda que el seguimiento ya
+     está hecho. Pasados los días de vigencia la fila vuelve a verse
+     como pendiente de avisar. */
+  const ult = ultimoAviso(tipo, id);
+  let sello = "";
+  if(ult){
+    const d = dias(ult.fecha, HOY);
+    const reciente = d != null && d <= CONFIG.SEGUIMIENTO.VIGENCIA_DIAS;
+    sello = '<div style="font-size:11.5px;color:var(--' + (reciente ? "mist" : "warn") + ');margin-bottom:3px;text-align:right">' +
+      "Avisado " + (d === 0 ? "hoy" : d === 1 ? "ayer" : "hace " + d + " días") +
+      " · " + esc(ult.canal) + "</div>";
+  }
+  return sello + '<div style="display:flex;gap:5px;justify-content:flex-end">' +
     '<button class="ico" data-wa="' + esc(id) + '" data-tipo="' + tipo + '"' +
       (tieneCel ? "" : " disabled style=\"opacity:.35;cursor:not-allowed\"") +
       ' title="' + (tieneCel ? "Notificar por WhatsApp" : "Sin celular registrado") + '">💬</button>' +
@@ -4972,6 +5196,295 @@ function kpi(n, e, clase){
   }
   window.URP = { on, img, cara, festejo, alternar };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+})();
+</script>
+<style id="guias-urpito-css">
+  /* ===== Guías de Urpito · notas de ayuda contextual =====
+     Urpito pone su cara en el resumen de cada nota: lo hace el módulo
+     común, que decora todo «details.ayuda». Aquí solo va el aspecto
+     del cuerpo de la guía. */
+  .guia-urp{margin:0 0 16px}
+  details.ayuda{border:1.5px solid var(--verde-med);background:var(--verde-cl);
+    border-radius:var(--r);overflow:hidden}
+  details.ayuda > summary{cursor:pointer;list-style:none;padding:9px 14px;font-size:14.5px;
+    display:flex;align-items:center;gap:7px;color:var(--ink)}
+  details.ayuda > summary::-webkit-details-marker{display:none}
+  details.ayuda > summary::marker{content:""}
+  details.ayuda > summary .g-sum{flex:1;min-width:0}
+  details.ayuda > summary .g-sum b{font-weight:700}
+  details.ayuda > summary .g-sum i{font-style:normal;color:var(--gris)}
+  details.ayuda > summary::after{content:"Ver";font-size:12.5px;font-weight:700;
+    color:var(--verde);text-decoration:underline;white-space:nowrap}
+  details.ayuda[open] > summary::after{content:"Ocultar"}
+  details.ayuda[open] > summary{border-bottom:1px solid var(--verde-med)}
+  .g-cuerpo{background:var(--card);padding:15px 17px 6px}
+  .g-b{margin:0 0 17px}
+  .g-b > h5{margin:0 0 5px;font-size:14.5px;font-weight:700;color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;letter-spacing:-.005em}
+  .g-b > p{margin:0;font-size:14.5px;line-height:1.55;color:var(--slate)}
+  .g-paso{display:flex;gap:11px;margin:0 0 14px}
+  .g-paso > .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--verde);
+    color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .g-paso > .c{flex:1;min-width:0}
+  .g-ej{margin-top:7px;padding:9px 12px;background:var(--fondo);border-left:3px solid var(--verde-med);
+    border-radius:0 8px 8px 0;font-size:14px;line-height:1.5;color:var(--slate)}
+  .g-ej > .et{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--verde);margin-bottom:3px}
+  .g-ojo{margin-top:7px;padding:9px 12px;background:var(--ambar-bg);border:1px solid var(--ambar-ln);
+    border-radius:8px;font-size:14px;line-height:1.5;color:var(--slate)}
+  .g-ojo:before{content:"Ojo · ";font-weight:700;color:var(--ambar)}
+  @media (max-width:640px){ .g-cuerpo{padding:13px 13px 4px} }
+</style>
+<script id="guias-urpito-js">
+/* ==========================================================================
+   Guías de Urpito — explicar el aplicativo donde hace falta
+   ==========================================================================
+   Este aplicativo es abstracto: cinco niveles encajados y dos porcentajes
+   que se parecen pero no son lo mismo. Leer un manual aparte no funciona,
+   así que la explicación vive en la pantalla y en el formulario donde la
+   duda aparece, plegada, con un ejemplo real de nuestra propia matriz.
+
+   Las notas son «details.ayuda», el patrón común del SGOE: Urpito les
+   pone su cara desde el módulo compartido, igual que en los demás
+   aplicativos. Si alguien lo apaga, la nota sigue abriéndose sin él.
+   ========================================================================== */
+(function(){
+  "use strict";
+
+  const bloque = (t, d, ej, ojo) =>
+    '<div class="g-b"><h5>' + t + "</h5><p>" + d + "</p>" +
+      (ej  ? '<div class="g-ej"><span class="et">Ejemplo de nuestra matriz</span>' + ej + "</div>" : "") +
+      (ojo ? '<div class="g-ojo">' + ojo + "</div>" : "") +
+    "</div>";
+
+  const paso = (n, t, d, ej) =>
+    '<div class="g-paso"><div class="n">' + n + '</div><div class="c">' +
+      '<h5 style="margin:0 0 3px;font-size:14.5px;font-weight:700">' + t + "</h5>" +
+      '<p style="margin:0;font-size:14.5px;line-height:1.5;color:var(--slate)">' + d + "</p>" +
+      (ej ? '<div class="g-ej"><span class="et">Ejemplo de nuestra matriz</span>' + ej + "</div>" : "") +
+    "</div></div>";
+
+  const GUIA = {
+    inicio: {
+      sum: "<b>¿Cómo funciona este aplicativo?</b> <i>· te lo explico en cinco escalones</i>",
+      abierta: true,
+      html:
+        bloque("Para qué sirve",
+          "Aquí se guarda lo que la Facultad se propuso mejorar este año y cuánto se ha avanzado de verdad. " +
+          "Para no perdernos, la información baja por cinco escalones: del propósito general al dato concreto. " +
+          "Cada escalón vive dentro del anterior.") +
+        paso(1, "Objetivo de calidad",
+          "Lo que la Facultad quiere lograr, dicho en una frase. No lleva números ni fechas: es el propósito.",
+          "«Pertinencia y Actualización Curricular: lograr al 2028 que el 100% de las asignaturas integren competencias de IA o digitales.»") +
+        paso(2, "Indicador",
+          "La manera de saber si ese objetivo se está cumpliendo. Aquí sí hay un número —la meta— y una fecha. " +
+          "Un objetivo puede medirse con varios indicadores, y todos pesan igual.",
+          "El objetivo de arriba se mide con dos indicadores. Uno es <b>«Porcentaje de docentes capacitados»</b>, con meta <b>50%</b> al 31/12/2026.") +
+        paso(3, "Hito",
+          "El trabajo concreto que hay que hacer para mover ese indicador, con fecha de inicio y de término. " +
+          "Es lo que alguien tiene que ejecutar.",
+          "Para capacitar a los docentes hay un hito: <b>«Taller de capacitación docente en el uso de la IA»</b>, del 01/01/2026 al 31/12/2026, con meta de <b>87 docentes</b>.") +
+        paso(4, "Reporte de avance",
+          "Cada vez que algo ocurre se anota aquí: en qué fecha, cuánto se logró y con qué evidencia. " +
+          "Este es el único sitio donde se escriben cantidades; todos los porcentajes de arriba salen de aquí.",
+          "En setiembre se reportó: <b>54 docentes capacitados</b> de los 87 que hacen falta, con el registro de asistencia del taller como evidencia.") +
+        paso(5, "Próximas acciones",
+          "Lo que queda por hacer, con responsable y fecha. Se escribe dentro del reporte.",
+          "«Ejecutar una segunda edición del taller», a cargo del Departamento Académico, para el 7 de diciembre de 2026.") +
+        bloque("Todo junto, en una frase",
+          "La Facultad quiere que sus docentes usen inteligencia artificial <i>(objetivo)</i>. " +
+          "Lo mide capacitando a la mitad de ellos <i>(indicador)</i>. " +
+          "Para eso dicta un taller <i>(hito)</i>. " +
+          "En setiembre capacitó a 54 <i>(reporte)</i>. " +
+          "Como faltan 33, programó otra edición <i>(próxima acción)</i>.") +
+        bloque("La idea más importante: avanzar no es lo mismo que lograr",
+          "El aplicativo muestra siempre dos cifras distintas, y conviene no confundirlas:<br><br>" +
+          "<b>Avance del plan</b> — cuánto del trabajo previsto se hizo.<br>" +
+          "<b>Logro de la meta</b> — cuánto del resultado se consiguió.",
+          "El taller se dictó completo, así que el <b>plan va al 100%</b>. Pero aprobaron 54 docentes de los 87 necesarios, " +
+          "así que el <b>logro es 62%</b>. Se hizo todo lo planificado y aun así no se llegó.",
+          "Cuando esas dos cifras se separan mucho, el aplicativo lo marca en el tablero. No es un error: " +
+          "significa que el plan, tal como está, no alcanza para la meta, y hay que agregar algo. " +
+          "Por eso se programó la segunda edición del taller.")
+    },
+
+    tablero: {
+      sum: "<b>Cómo leer el tablero</b> <i>· dónde mirar primero</i>",
+      html:
+        bloque("Qué estás viendo",
+          "Un resumen de cómo va todo: cuántos objetivos hay, cuánto se ha avanzado y qué está en problemas. " +
+          "Si solo vas a mirar una pantalla, mira esta.") +
+        bloque("Los colores",
+          "<b>Verde</b> — va bien o ya se cumplió.<br><b>Ámbar</b> — atención: está por vencer o el avance es flojo.<br>" +
+          "<b>Rojo</b> — venció sin cumplirse, o el avance es crítico.") +
+        bloque("Las dos tablas del final",
+          "Son las que exigen acción. Una lista los <b>hitos vencidos</b> y otra los <b>indicadores que vencen en 30 días</b>. " +
+          "A la derecha de cada fila hay dos botones para avisarle al responsable: 💬 por WhatsApp y ✉️ por correo. " +
+          "El mensaje se escribe solo con la plantilla.",
+          "Si un hito venció y nadie reportó avance, aparece en rojo en la primera tabla. Pulsas 💬 y se abre WhatsApp " +
+          "con el mensaje ya redactado para el responsable de ese hito.",
+          "Encima de los botones verás «Avisado hace 3 días» si alguien ya mandó el aviso. Así no se le escribe " +
+          "tres veces a la misma persona por lo mismo. Todos los envíos quedan en la pestaña <b>Seguimiento</b>.") +
+        bloque("El ranking de oficinas",
+          "Ordena las oficinas por <b>logro</b>, no por cuánto trabajaron. Una oficina que ejecutó todo su plan " +
+          "pero no alcanzó ninguna meta no debe encabezar la lista. Se cuenta por indicador: si un objetivo lo " +
+          "comparten dos oficinas, cada una responde por lo suyo.")
+    },
+
+    objetivos: {
+      sum: "<b>Cómo usar esta lista</b> <i>· y qué significa cada condición</i>",
+      html:
+        bloque("Qué estás viendo",
+          "Los objetivos del periodo, cada uno con sus indicadores dentro. Pulsa sobre un objetivo " +
+          "para abrirlo y ver qué cuelga de él.") +
+        bloque("Los tres botones de cada fila",
+          "<b>👁 Ver</b> — abre la ficha completa, sin recortes, para leer o imprimir.<br>" +
+          "<b>✏️ Editar</b> — cambia los datos.<br>" +
+          "<b>🗑 Eliminar</b> — borra el registro. No se puede deshacer.") +
+        bloque("Vigente, Reformulada y Despriorizada",
+          "<b>Vigente</b> — se mantiene tal como se aprobó.<br>" +
+          "<b>Reformulada</b> — se modificó durante el año y debe constar en el control de cambios del documento.<br>" +
+          "<b>Despriorizada</b> — se retiró del plan pero se conserva su historial. Esos están en su propia pestaña " +
+          "y no entran en ningún porcentaje.",
+          "El objetivo de Ética pasó a <b>Reformulada</b> cuando se amplió la capacitación a los docentes que " +
+          "dictan cursos de investigación y la fecha se corrió a agosto de 2027.")
+    },
+
+    seguimiento: {
+      sum: "<b>Para qué sirve esta pantalla</b> <i>· la constancia de que se avisó</i>",
+      html:
+        bloque("Qué se guarda aquí",
+          "Cada aviso que se mandó desde el tablero: a quién, cuándo, por qué canal y con qué texto exacto. " +
+          "Antes, al pulsar el botón se abría WhatsApp y no quedaba rastro de nada.") +
+        bloque("Por qué importa",
+          "En una auditoría preguntan cómo se le dio seguimiento a un objetivo atrasado. Decir «le avisamos» no basta: " +
+          "hay que mostrarlo. Esta pantalla es esa prueba.",
+          "Pulsa 👁 en cualquier fila y verás el mensaje completo, tal como le llegó al responsable, con su fecha y su hora.") +
+        bloque("El estado de cada aviso",
+          "Nace como <b>Enviado</b>, porque eso es lo único que el aplicativo sabe con certeza: que el mensaje se abrió " +
+          "y se mandó. Si después el responsable contesta, se cambia a <b>Con respuesta</b>.",
+          "",
+          "El aplicativo no puede saber si la persona leyó el mensaje. Decir que lo leyó sería inventar una evidencia, " +
+          "y en auditoría eso es peor que no tener ninguna.")
+    },
+
+    indicador: {
+      sum: "<b>Cómo llenar un indicador</b> <i>· es la parte más delicada; léelo una vez</i>",
+      abierta: true,
+      html:
+        bloque("Qué es un indicador",
+          "La forma de medir si el objetivo se cumple. Tiene una meta con número y una fecha. " +
+          "Si un objetivo necesita medirse de varias maneras, se crean varios indicadores: todos pesan igual.") +
+        bloque("Tipo de indicador: elige bien, de esto depende todo",
+          "<b>Conteo</b> — se cuentan cosas y se van sumando.<br>" +
+          "<b>Porcentaje</b> — una parte sobre un total.<br>" +
+          "<b>Índice o puntaje</b> — una nota en una escala; no se suma, la última medición reemplaza a la anterior.",
+          "<b>Conteo:</b> «1 proyecto de responsabilidad social».<br>" +
+          "<b>Porcentaje:</b> «50% de los docentes capacitados».<br>" +
+          "<b>Índice:</b> «3.1 de satisfacción docente, en escala de 1 a 4».") +
+        bloque("El denominador: el error más común",
+          "Si la meta es un porcentaje, hay que decir <b>sobre cuántos</b>. «50% de los docentes» no significa nada " +
+          "hasta saber cuántos docentes hay. Con ese número el aplicativo calcula solo cuántos hacen falta.",
+          "Docentes con carga lectiva: <b>174</b>. Meta 50% → hacen falta <b>87 docentes</b>. Van 54, así que el logro es 62%.",
+          "Escribe también de dónde salió el número. Si mañana alguien pregunta «¿174 de dónde?», la respuesta " +
+          "tiene que estar ahí: «Reporte de Carga Lectiva 2026-II del Vice Rectorado Académico, 15/09/2026».") +
+        bloque("La línea base",
+          "De dónde partimos antes de empezar. Sirve para saber si la meta pide mejorar o solo mantener lo que ya había.",
+          "La satisfacción docente venía en <b>3.04</b> y la meta es <b>3.1</b>: se pide mejorar un poco. " +
+          "Si la meta fuera 3.0, estaríamos pidiendo <i>menos</i> de lo que ya teníamos.",
+          "Si pones una meta por debajo de la línea base, el aplicativo te avisa en el acto. " +
+          "Nos pasó con desempeño docente: la meta era 17 y la línea base 17.38, o sea que nacía cumplido. Se corrigió a 17.5.") +
+        bloque("Tramo y reprogramación",
+          "<b>Tramo</b> — cuando la meta de este periodo es solo un pedazo de otra más grande que llega después.<br>" +
+          "<b>Reprogramación</b> — cuando la fecha se movió; hay que decir de qué fecha a qué fecha y por qué.",
+          "<b>Tramo:</b> el objetivo busca el 100% de las asignaturas al 2028, pero este indicador mide el 50% a " +
+          "agosto de 2027. Arriba va 50%; la meta final, 100%, va en el recuadro de abajo.<br>" +
+          "<b>Reprogramación:</b> el taller de integridad científica vencía el 31/12/2026 y se corrió al 31/08/2027 " +
+          "por acuerdo con el Decanato.",
+          "Si la meta no es un tramo y la fecha nunca se movió, deja esos cuatro campos vacíos y sigue.")
+    },
+
+    hito: {
+      sum: "<b>Cómo llenar un hito</b> <i>· el trabajo concreto que se va a ejecutar</i>",
+      abierta: true,
+      html:
+        bloque("Qué es un hito",
+          "La tarea que hay que ejecutar para mover el indicador, con su fecha de inicio y de término y su responsable. " +
+          "Lo normal es <b>un solo hito por indicador</b>, al 100% de participación: así quien reporta abre un formulario " +
+          "y escribe su avance, sin más.",
+          "Indicador: «Porcentaje de docentes capacitados». Hito: «Taller de capacitación docente en el uso de la IA», " +
+          "del 01/01/2026 al 31/12/2026.") +
+        bloque("La meta del hito",
+          "Cuántas unidades hay que alcanzar, y de qué. Si el indicador tiene denominador, el aplicativo ya calculó el número.",
+          "<b>87 docentes.</b> Sale de 50% × 174 docentes con carga lectiva.") +
+        bloque("Las fechas tienen que caber dentro",
+          "El hito no puede empezar antes ni terminar después que su indicador, y un reporte no puede tener fecha " +
+          "fuera del hito. El aplicativo lo revisa y no deja guardar si algo se sale.") +
+        bloque("«Produce resultado»",
+          "Marca el hito del que sale el resultado que se compara con la meta. Si un indicador tiene varios hitos, " +
+          "algunos son preparación y solo uno entrega el número final.",
+          "Si hubiera tres hitos —convocar, dictar y certificar— el resultado sale del tercero: los docentes certificados. " +
+          "Los otros dos son trabajo previo.")
+    },
+
+    reporte: {
+      sum: "<b>Cómo registrar un avance</b> <i>· el único sitio del aplicativo con cantidades</i>",
+      abierta: true,
+      html:
+        bloque("Qué se escribe aquí",
+          "Lo que pasó de verdad: en qué fecha, cuánto se logró y con qué evidencia. De aquí sube todo: " +
+          "la cantidad da el porcentaje del hito, el del hito da el del indicador, y el del indicador da el del objetivo.") +
+        bloque("La cantidad, no el porcentaje",
+          "No estimes «vamos por el 60%». Escribe cuántas unidades llevas y el aplicativo saca el porcentaje. " +
+          "Es la diferencia entre un dato y una impresión.",
+          "Escribe <b>54</b> docentes. El aplicativo calcula que son el 62% de los 87 de la meta.") +
+        bloque("Parcial o de cierre",
+          "<b>Parcial</b> — un corte mientras la cosa sigue en marcha.<br>" +
+          "<b>De cierre</b> — la medición final; con ella la actividad queda Ejecutada.") +
+        bloque("La evidencia es obligatoria",
+          "Hay que adjuntar al menos un enlace a SharePoint o Drive. Un avance sin evidencia no se puede auditar, " +
+          "y por eso el aplicativo no lo deja guardar.",
+          "Para el taller: el registro de asistencia y calificación del Departamento Académico.") +
+        bloque("Análisis de la desviación",
+          "Si el resultado no es el esperado, aquí se explica por qué y qué se va a hacer. " +
+          "Esto es lo que se lleva a la revisión por la dirección: escríbelo pensando en quien lo va a leer ahí.",
+          "«Aprobaron 54 de 79 participantes. Para la meta de 87 faltan 33, por lo que se propone una segunda edición en diciembre.»")
+    }
+  };
+
+  /* Las guías de los tres formularios y la del tablero se abren solas la
+     primera vez —ahí es donde se equivoca la gente— y después recuerdan
+     si las cerraste. Las de las listas nacen plegadas: esas pantallas se
+     entienden mirándolas. Si el navegador no deja guardar nada, la guía
+     se abre igual: vale más explicar dos veces que no explicar. */
+  const CLAVE = "urpito_guia_abierta_objetivos";
+  function recordada(cual, pordefecto){
+    if(!pordefecto) return false;
+    try{ return localStorage.getItem(CLAVE + "_" + cual) !== "0"; }catch(e){ return true; }
+  }
+  function recordar(cual, abierta){
+    try{ localStorage.setItem(CLAVE + "_" + cual, abierta ? "1" : "0"); }catch(e){ /* sin memoria */ }
+  }
+
+  function montar(){
+    document.querySelectorAll(".guia-urp[data-guia]").forEach(caja => {
+      if(caja.dataset.lista) return;
+      const g = GUIA[caja.dataset.guia];
+      if(!g){ return; }
+      caja.dataset.lista = "1";
+      const abre = recordada(caja.dataset.guia, g.abierta);
+      caja.innerHTML = "<details class=\"ayuda\"" + (abre ? " open" : "") + ">" +
+        '<summary><span class="g-sum">' + g.sum + "</span></summary>" +
+        '<div class="g-cuerpo">' + g.html + "</div></details>";
+      const d = caja.querySelector("details");
+      d.addEventListener("toggle", () => recordar(caja.dataset.guia, d.open));
+    });
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar);
+  else montar();
+  window.URP_GUIAS = { montar, GUIA };
 })();
 </script>
 </body>

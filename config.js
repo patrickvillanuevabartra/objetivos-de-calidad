@@ -390,6 +390,46 @@ const CONFIG = {
   //  Varios catálogos tienen un rel de vuelta a la matriz (la relación es
   //  bidireccional en QuintaDB). Ese campo NO es dato: se descarta.
   // ==========================================================================
+  /* ------------------------------------------------------------------
+     SEGUIMIENTO DE NOTIFICACIONES
+     ------------------------------------------------------------------
+     Cada aviso que sale por WhatsApp o por correo deja aquí su fila:
+     a quién, cuándo, por qué canal y con qué texto. Es la evidencia
+     del seguimiento, la misma que se pide en auditoría.
+     ------------------------------------------------------------------ */
+  SEGUIMIENTO: {
+    ENTITY_ID: "bTWORdTmnlWQayqmozWR1Z",
+    F: {
+      fecha_hora:  { id: "bMWRJdVCnkW6hdPmkjWOjQ", type: "string", col: "Fecha y hora del envío" },
+      fecha:       { id: "dcS8oUmwXdTz3cISk1vt8c", type: "date",   col: "Fecha del envío" },
+      tipo:        { id: "atA8kxe8njWQuqi8kaW593", type: "select", col: "Tipo de alerta" },
+      canal:       { id: "bmuSoaWQzcJRFdU8oOfmoj", type: "select", col: "Canal" },
+      destinatario:{ id: "dcI8kVWQjdW4SSW6OlWOWz", type: "string", col: "Destinatario" },
+      correo:      { id: "chhvNdImjpDOoIW6tdHmoD", type: "email",  col: "Correo del destinatario" },
+      celular:     { id: "aFWQ02CwPcTyxdVmkapLWj", type: "phone",  col: "Celular del destinatario" },
+      enviado_por: { id: "cmW6DnW5Hhh4JdH8krW5Wl", type: "string", col: "Enviado por" },
+      objetivo:    { id: "dcPmkSWQvjW73cQcpcMJmT", type: "text",   col: "Objetivo" },
+      indicador:   { id: "ccigumWP1dTO_dTwz8lmoC", type: "text",   col: "Indicador" },
+      hito:        { id: "cCv8oVEmndWR0PBehdN8os", type: "string", col: "Hito" },
+      oficina:     { id: "cQlf4BWQncVRKtW73dQgar", type: "string", col: "Oficina responsable" },
+      mensaje:     { id: "cpW4BdQZHcTioWwamCW54c", type: "text",   col: "Mensaje enviado" },
+      estado:      { id: "dcPw8IufjcO41wpvNdPub5", type: "select", col: "Estado" }
+    },
+    /* Gemelos de texto de los campos de relación: el REST no escribe
+       los «rel», así que el enlace viaja en un campo plano. */
+    ESPEJO: {
+      objetivo_ref:  { id: "dcRmkwW61mWOTmW6vHs8kj", type: "string", col: "Objetivo ref" },
+      indicador_ref: { id: "ciWRddPIDhW6JdHXZcVmo4", type: "string", col: "Indicador ref" },
+      hito_ref:      { id: "aZomkVmNTdQOkzWPPGtCo9", type: "string", col: "Hito ref" }
+    },
+    TIPOS:   ["Hito vencido", "Indicador por vencer", "Avance crítico", "Otro"],
+    CANALES: ["Correo", "WhatsApp"],
+    ESTADOS: ["Enviado", "Con respuesta", "Sin respuesta"],
+    /* Días que un aviso se considera vigente: dentro de ese plazo la fila
+       del tablero muestra «ya se avisó» y no se vuelve a insistir. */
+    VIGENCIA_DIAS: 15
+  },
+
   CATALOGOS: {
     periodos: {
       entity: "c9W5DoACjaWROpW6uAAaHm",
