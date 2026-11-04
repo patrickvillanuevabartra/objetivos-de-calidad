@@ -375,7 +375,7 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
       <div class="page-head">
         <div class="eyebrow">Registro</div>
         <h1>Objetivos de calidad</h1>
-        <p>Un objetivo se mide con varios indicadores. Cada indicador tiene su meta, su plazo y sus hitos.</p>
+        <p>Un objetivo se mide con uno o varios indicadores. Cada indicador tiene su meta, su plazo y sus hitos. El plazo no se limita al año en curso: hay objetivos cuya meta vence en 2027 o 2028.</p>
       </div>
       <div class="guia-urp" data-guia="objetivos"></div>
       <div class="filtros">
@@ -1682,7 +1682,7 @@ async function recargar(){
     id: r.id,
     objetivo:  val(r.v, F.objetivo),
     condicion: val(r.v, F.condicion),
-    codigo:    val(r.v, F.codigo),
+    codigo:    (val(r.v, F.codigo) || "").trim(),
     periodo:   val(r.v, E.periodo_txt),
     politica:  val(r.v, E.compromisos_txt),
     estrategia:val(r.v, E.estrategia_txt),
@@ -2403,9 +2403,12 @@ function siguienteCodigo(periodo){
    asignados y continúa el correlativo de cada periodo desde el mayor
    existente, para no reutilizar números que puedan estar citados. */
 async function codificarPendientes(){
-  const sin = S.objetivos.filter(o => !o.codigo && o.periodo);
-  if(!sin.length){ toast("Todos los objetivos ya tienen código."); return; }
-  const sinPeriodo = S.objetivos.filter(o => !o.codigo && !o.periodo).length;
+  /* Los despriorizados quedan fuera: si se les asigna código, al salir del
+     plan dejan un hueco en el correlativo y la lista activa pasa a numerarse
+     hasta un número mayor que la cantidad de objetivos que muestra. */
+  const sin = S.objetivos.filter(o => !o.codigo && o.periodo && !esDespriorizado(o));
+  if(!sin.length){ toast("Todos los objetivos vigentes ya tienen código."); return; }
+  const sinPeriodo = S.objetivos.filter(o => !o.codigo && !o.periodo && !esDespriorizado(o)).length;
   if(!confirm("Se asignará código a " + sin.length + " objetivo(s).\n\n" +
       "El correlativo se reinicia por periodo y continúa desde el mayor ya usado." +
       (sinPeriodo ? "\n\n" + sinPeriodo + " objetivo(s) sin periodo quedarán sin código." : ""))) return;
@@ -5271,7 +5274,9 @@ function kpi(n, e, clase){
       abierta: true,
       html:
         bloque("Para qué sirve",
-          "Aquí se guarda lo que la Facultad se propuso mejorar este año y cuánto se ha avanzado de verdad. " +
+          "Aquí se guarda lo que la Facultad se propuso mejorar y cuánto se ha avanzado de verdad. " +
+          "Un objetivo no se agota en el año en que se formula: algunos tienen metas que vencen en 2027 o 2028, " +
+          "y los que se reprograman conservan su historial completo. " +
           "Para no perdernos, la información baja por cinco escalones: del propósito general al dato concreto. " +
           "Cada escalón vive dentro del anterior.") +
         paso(1, "Objetivo de calidad",
@@ -5279,7 +5284,8 @@ function kpi(n, e, clase){
           "«Pertinencia y Actualización Curricular: lograr al 2028 que el 100% de las asignaturas integren competencias de IA o digitales.»") +
         paso(2, "Indicador",
           "La manera de saber si ese objetivo se está cumpliendo. Aquí sí hay un número —la meta— y una fecha. " +
-          "Un objetivo puede medirse con varios indicadores, y todos pesan igual.",
+          "Un objetivo puede medirse con uno o con varios indicadores, y todos pesan igual. " +
+          "Cada indicador lleva su propia fecha, que puede caer en un año distinto a la de sus hermanos.",
           "El objetivo de arriba se mide con dos indicadores. Uno es <b>«Porcentaje de docentes capacitados»</b>, con meta <b>50%</b> al 31/12/2026.") +
         paso(3, "Hito",
           "El trabajo concreto que hay que hacer para mover ese indicador, con fecha de inicio y de término. " +
@@ -5337,7 +5343,10 @@ function kpi(n, e, clase){
       html:
         bloque("Qué estás viendo",
           "Los objetivos del periodo, cada uno con sus indicadores dentro. Pulsa sobre un objetivo " +
-          "para abrirlo y ver qué cuelga de él.") +
+          "para abrirlo y ver qué cuelga de él. El periodo dice cuándo se formuló el objetivo, no cuándo " +
+          "termina: sus indicadores pueden vencer en años posteriores.",
+          "El objetivo de Pertinencia Curricular se formuló en 2026, pero su meta final es al 2028 y uno de " +
+          "sus indicadores vence en agosto de 2027.") +
         bloque("Los tres botones de cada fila",
           "<b>👁 Ver</b> — abre la ficha completa, sin recortes, para leer o imprimir.<br>" +
           "<b>✏️ Editar</b> — cambia los datos.<br>" +
@@ -5375,7 +5384,8 @@ function kpi(n, e, clase){
       html:
         bloque("Qué es un indicador",
           "La forma de medir si el objetivo se cumple. Tiene una meta con número y una fecha. " +
-          "Si un objetivo necesita medirse de varias maneras, se crean varios indicadores: todos pesan igual.") +
+          "Un objetivo puede tener uno solo o varios: si necesita medirse de varias maneras, se crean varios, " +
+          "y todos pesan igual. La fecha es la del indicador, no la del año en que nació el objetivo.") +
         bloque("Tipo de indicador: elige bien, de esto depende todo",
           "<b>Conteo</b> — se cuentan cosas y se van sumando.<br>" +
           "<b>Porcentaje</b> — una parte sobre un total.<br>" +
