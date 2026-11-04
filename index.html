@@ -270,6 +270,80 @@ tr.recien > td{animation:destello 2.2s ease-out}
 .fi-campo .v ul{margin:3px 0 0;padding-left:20px}
 .fi-dos{display:grid;grid-template-columns:1fr 1fr;gap:11px 22px}
 @media (max-width:640px){ .fi-dos{grid-template-columns:1fr} }
+
+/* ==========================================================================
+   Adaptación a pantallas estrechas
+   ==========================================================================
+   El cuerpo lleva zoom:1.22 para que la letra se lea cómoda en el monitor
+   de escritorio. El zoom tiene una trampa: las media queries miden el
+   viewport SIN zoom, de modo que un quiebre escrito en 720px recién actúa
+   cuando el contenido ya se está dibujando como si hubiera 590px. Por eso
+   los quiebres de aquí van multiplicados por 1.22 mientras el zoom sigue
+   puesto, y por eso el zoom se retira en tableta y móvil: ahí no hacía la
+   letra más legible, solo empujaba la página 500px hacia los lados.
+   ========================================================================== */
+
+/* La marca no debe aplastarse nunca: antes la nav se quedaba con todo el
+   ancho y el título caía a una palabra por línea. */
+header.top .bar{flex-wrap:wrap;row-gap:10px}
+header.top .logo{flex:1 1 300px;min-width:0}
+header.top .logo b{overflow-wrap:break-word}
+
+/* Portátil, ventana a media pantalla o el aplicativo embebido en el portal
+   de QuintaDB. Con siete pestañas, la nav necesita unos 780 px: por debajo
+   de un monitor grande no caben marca y nav en la misma fila sin que el
+   título se parta. Así que la nav baja a su propia fila y se desplaza de
+   lado si hiciera falta. */
+@media (max-width:1400px){
+  header.top .bar{flex-direction:column;align-items:stretch;gap:10px;padding:12px 16px}
+  header.top .logo{flex:none}
+  header.top .logo b{font-size:16.5px}
+  header.top nav{margin-left:0;width:100%;flex-wrap:nowrap;overflow-x:auto;
+    scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px}
+  header.top nav::-webkit-scrollbar{display:none}
+  header.top nav button{flex:none;white-space:nowrap;padding:8px 12px;font-size:13.5px}
+  header.top .chip{margin-left:auto}
+}
+
+/* Tableta y móvil. Se retira el zoom —que era lo que desbordaba la página—
+   y las rejillas de dos columnas pasan a una. */
+@media (max-width:900px){
+  body{zoom:1}
+  main{padding:18px 14px 60px}
+  .page-head h1{font-size:25px}
+  .page-head p{font-size:14.5px}
+  .rej{grid-template-columns:1fr}
+  .fi-dos{grid-template-columns:1fr}
+  .fila-obj{grid-template-columns:1fr}
+  .fila-obj .fo-barra{grid-column:1;margin-top:6px}
+  .filtros{padding:13px 14px;gap:10px}
+  .filtros .campo{min-width:140px}
+  /* Una tabla ancha se desplaza dentro de su tarjeta, en lugar de empujar
+     toda la página y dejar la cabecera a medio ver. */
+  .tarj{overflow-x:auto}
+  /* Los formularios ocupan la pantalla completa: en un móvil, un recuadro
+     flotante con márgenes desperdicia la mitad del espacio útil. */
+  .modal{padding:0;align-items:stretch}
+  .modal .caja{max-width:none;border-radius:0;min-height:100%}
+  .modal .cab{border-radius:0;padding:14px 16px}
+  .modal .cuerpo{padding:16px}
+}
+
+@media (max-width:560px){
+  main{padding:14px 11px 56px}
+  header.top .bar{padding:11px 13px}
+  header.top .logo b{font-size:15.5px}
+  header.top .logo span{font-size:10.5px}
+  .page-head h1{font-size:22px}
+  .tarj{padding:15px 14px}
+  table.t{font-size:12.5px}
+  /* Un filtro por fila: a dos columnas los desplegables quedan tan
+     estrechos que no se lee lo que está elegido. */
+  .filtros{flex-direction:column;align-items:stretch}
+  .filtros .campo{min-width:0;width:100%}
+  .filtros .btn{width:100%}
+}
+
 @media print{
   body *{visibility:hidden}
   #mFicha,#mFicha *{visibility:visible}
