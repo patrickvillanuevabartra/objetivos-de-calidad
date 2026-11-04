@@ -1,5 +1,5 @@
 /* ============================================================================
- *  CONFIG.JS — Matriz Plan de Acción de Objetivos de Calidad
+ *  CONFIG.JS — Plan de acción y seguimiento de objetivos
  *  Facultad de Ingeniería URP · SGOE ISO 21001
  *
  *  Mismo patrón que Indicadores y Riesgos: todos los IDs de QuintaDB viven
