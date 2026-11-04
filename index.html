@@ -634,6 +634,8 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div>
           <label for="oCondicion">Condición <b class="req">*</b></label>
           <select id="oCondicion"></select>
+          <div class="pista">Un objetivo que llegó al 100% sigue siendo <b>Vigente</b>: cumplido no es lo mismo
+            que retirado. <b>Despriorizada</b> es solo para lo que se sacó del plan sin cumplirse.</div>
           <div class="err" id="e_oCondicion"></div>
         </div>
 
@@ -5426,12 +5428,24 @@ function kpi(n, e, clase){
           "<b>✏️ Editar</b> — cambia los datos.<br>" +
           "<b>🗑 Eliminar</b> — borra el registro. No se puede deshacer.") +
         bloque("Vigente, Reformulada y Despriorizada",
-          "<b>Vigente</b> — se mantiene tal como se aprobó.<br>" +
-          "<b>Reformulada</b> — se modificó durante el año y debe constar en el control de cambios del documento.<br>" +
-          "<b>Despriorizada</b> — se retiró del plan pero se conserva su historial. Esos están en su propia pestaña " +
-          "y no entran en ningún porcentaje.",
+          "Son tres cosas distintas y conviene no confundirlas:<br><br>" +
+          "<b>Vigente</b> — se mantiene tal como se aprobó. <i>Aquí entran también los que ya se cumplieron.</i><br>" +
+          "<b>Reformulada</b> — se modificó durante el año: cambió la meta, la fecha o el alcance. " +
+          "Debe constar en el control de cambios del documento.<br>" +
+          "<b>Despriorizada</b> — se retiró del plan <i>sin cumplirse</i>. Conserva su historial completo, " +
+          "vive en su propia pestaña y no entra en ningún porcentaje.",
           "El objetivo de Ética pasó a <b>Reformulada</b> cuando se amplió la capacitación a los docentes que " +
-          "dictan cursos de investigación y la fecha se corrió a agosto de 2027.")
+          "dictan cursos de investigación y la fecha se corrió a agosto de 2027.") +
+        bloque("¿Y cuando un objetivo llega al 100%?",
+          "Se queda <b>Vigente</b>. No se desprioriza. Cumplido y retirado son cosas opuestas, y la pestaña de " +
+          "despriorizados es para lo segundo.<br><br>" +
+          "Que esté cumplido no lo dices tú en la condición: lo calcula el aplicativo desde los reportes, y por eso " +
+          "aparece en verde como <b>Cumplido</b> en el tablero. La condición dice qué pasó con el compromiso; " +
+          "el semáforo dice cómo le fue.",
+          "Si despriorizas un objetivo cumplido, sale de todos los porcentajes y la Facultad aparece con menos " +
+          "logros de los que realmente tuvo. Es esconder un acierto.",
+          "Al terminar el año no hay que hacerle nada. Se queda con su periodo y su historial, y cuando filtres " +
+          "por el periodo siguiente deja de aparecer solo.")
     },
 
     seguimiento: {
@@ -5486,7 +5500,22 @@ function kpi(n, e, clase){
           "agosto de 2027. Arriba va 50%; la meta final, 100%, va en el recuadro de abajo.<br>" +
           "<b>Reprogramación:</b> el taller de integridad científica vencía el 31/12/2026 y se corrió al 31/08/2027 " +
           "por acuerdo con el Decanato.",
-          "Si la meta no es un tramo y la fecha nunca se movió, deja esos cuatro campos vacíos y sigue.")
+          "Si la meta no es un tramo y la fecha nunca se movió, deja esos cuatro campos vacíos y sigue.") +
+        bloque("Una meta que crece año a año",
+          "Cuando el compromiso no se agota en un año, la meta escala: un poco este año, más el siguiente. " +
+          "No se hace subiendo la meta a mitad de camino, sino encadenando un año con otro.<br><br>" +
+          "<b>Cada año lleva su propio objetivo</b>, con su periodo, su indicador y su meta. El del año anterior " +
+          "no se toca: conserva su meta, sus reportes y su evidencia.<br>" +
+          "<b>La línea base es la bisagra</b>: la del año nuevo es lo que se alcanzó al cerrar el anterior. " +
+          "Por eso un año puede arrancar en 50% sin que nadie haya fallado.<br>" +
+          "<b>La meta final</b> se declara desde el primer año y no cambia: es el horizonte al que apunta toda la cadena.",
+          "Digitalización de procesos misionales: <b>2 en 2026</b> (enseñanza-aprendizaje y estudiante-egresado), " +
+          "<b>4 en 2027</b> sumando los dos de investigación, <b>6 en 2028</b>. Meta final declarada desde 2026: " +
+          "6 procesos al 31/12/2028. La línea base de 2027 es 2; la de 2028, 4.",
+          "Para que la cadena signifique algo, <b>la definición no puede moverse</b>: el mismo nombre, la misma " +
+          "fórmula, la misma unidad y, sobre todo, el mismo criterio de qué cuenta como logrado. Si en 2027 alguien " +
+          "afloja el criterio, el 4 de ese año no es comparable con el 2 del anterior y la serie deja de medir nada. " +
+          "Escribe ese criterio en <b>Fuente del denominador</b>, no solo en el reporte: ahí lo lee quien venga después.")
     },
 
     hito: {
