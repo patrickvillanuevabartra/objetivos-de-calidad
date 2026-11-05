@@ -459,6 +459,8 @@ table.t tr.rep td{background:#fff;padding-left:20px;border-left:3px solid var(--
         <div class="campo"><label for="fEstado">Estado</label><select id="fEstado"></select></div>
         <div class="campo" style="flex:1.4"><label for="fBuscar">Buscar</label><input type="text" id="fBuscar" placeholder="objetivo, indicador, responsable…"></div>
         <button class="btn sec" id="btnCodificar" style="display:none">Asignar códigos</button>
+        <button class="btn sec" id="btnXlsx" title="Descarga lo que se ve, con objetivos, indicadores, hitos y avances">⬇ Excel</button>
+        <button class="btn sec" id="btnPdf" title="Descarga lo que se ve, con los enlaces de evidencia clicables">⬇ PDF</button>
         <button class="btn" id="btnNuevo">+ Nuevo objetivo</button>
       </div>
       <div id="lista"><div class="cargando"><span class="spin"></span>Cargando…</div></div>
@@ -5598,6 +5600,194 @@ function kpi(n, e, clase){
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar);
   else montar();
   window.URP_GUIAS = { montar, GUIA };
+})();
+</script>
+<script id="exportar-js">
+/* ==========================================================================
+   Descarga en Excel y PDF — pestaña Objetivos de calidad
+   ==========================================================================
+   Respeta los filtros que estén puestos: se descarga lo que se ve.
+   Recorre los cuatro niveles —objetivo, indicador, hito, avance— y deja
+   los enlaces de evidencia clicables en los dos formatos.
+   Las librerías se cargan solo al pulsar el botón, para no hacer más
+   lento el aplicativo a quien no descarga nada.
+   ========================================================================== */
+(function(){
+  "use strict";
+  const LIB = {
+    xlsx:  "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+    jspdf: "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+    auto:  "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+  };
+  const cargadas = {};
+  function cargar(url){
+    if(cargadas[url]) return cargadas[url];
+    return cargadas[url] = new Promise((ok, mal) => {
+      const s = document.createElement("script");
+      s.src = url; s.onload = ok;
+      s.onerror = () => { delete cargadas[url]; mal(new Error("No se pudo descargar la librería. Revisa la conexión.")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  /* El avance se guarda con formato; aquí se pasa a texto legible. */
+  function plano(html){
+    if(!html) return "";
+    const t = String(html)
+      .replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|tr|li)>/gi, "\n")
+      .replace(/<\/t[dh]>/gi, " | ").replace(/<[^>]+>/g, "");
+    const d = document.createElement("textarea"); d.innerHTML = t;
+    return d.value.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  const pct = v => v == null || isNaN(v) ? "" : (Math.round(v * 10) / 10) + " %";
+
+  /* Una fila por nodo del árbol, en el orden en que se lee en pantalla. */
+  function filas(){
+    const out = [];
+    filtrados().forEach(o => {
+      const eo = estadoObjetivo(o);
+      out.push({ nivel: 1, tipo: "Objetivo",
+        nombre: (o.codigo ? o.codigo + " · " : "") + sinHtml(o.objetivo),
+        detalle: [o.periodo, o.oficina, o.condicion].filter(Boolean).join(" · "),
+        meta: "", plazo: "", avance: pct(progresoObjetivo(o.id)), logro: pct(logroObjetivo(o.id)),
+        estado: eo.txt, responsable: o.respProc || "", enlaces: [] });
+      indicadoresDe(o.id).forEach(ind => {
+        out.push({ nivel: 2, tipo: "Indicador", nombre: sinHtml(ind.indicador),
+          detalle: "Fórmula: " + sinHtml(ind.formula || "—"),
+          meta: ind.meta || "", plazo: verFecha(ind.fi) + " – " + verFecha(ind.fv),
+          avance: pct(progresoIndicador(ind.id)), logro: pct(logroIndicador(ind)),
+          estado: "", responsable: ind.respTec || "", enlaces: [] });
+        hitosDe(ind.id).forEach(hi => {
+          const r = respDelHito(hi, ind) || {};
+          out.push({ nivel: 3, tipo: "Hito", nombre: hi.hito,
+            detalle: "Participación " + (hi.part || 0) + " %",
+            meta: hi.metaHito ? hi.metaHito + " " + (hi.unidad || "") : "",
+            plazo: verFecha(hi.fi) + " – " + verFecha(hi.fv),
+            avance: pct(progresoHito(hi.id)), logro: "", estado: "", responsable: r.nombre || "", enlaces: [] });
+          reportesDe(hi.id).forEach(rep => {
+            const extra = [
+              rep.analisis ? "Análisis: " + rep.analisis : "",
+              rep.obs ? "Observación: " + rep.obs : "",
+              (rep.acciones || []).length ? "Próximas acciones: " + rep.acciones.map(a =>
+                a.accion + (a.responsable ? " — " + a.responsable : "") + (a.fecha ? " (" + verFecha(a.fecha) + ")" : "")).join("; ") : ""
+            ].filter(Boolean).join("\n");
+            out.push({ nivel: 4, tipo: "Avance",
+              nombre: verFecha(rep.fecha) + (rep.tipoMed ? " · " + (rep.tipoMed === "Cierre" ? "De cierre" : rep.tipoMed) : ""),
+              detalle: plano(rep.avance) + (extra ? "\n\n" + extra : ""),
+              meta: rep.cantidad !== "" && rep.cantidad != null ? "Cantidad: " + rep.cantidad : "",
+              plazo: "", avance: pct(rep.pct), logro: "", estado: rep.estado || "", responsable: "",
+              enlaces: (rep.enlaces || []).filter(e => e && e.url) });
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  const SANGRIA = ["", "", "   ", "      ", "         "];
+  const nombreArchivo = ext => "Plan_de_accion_y_seguimiento_" + iso(new Date()) + "." + ext;
+  const COLS = ["Nivel", "Elemento", "Detalle", "Meta", "Plazo", "Avance del plan", "Logro de la meta", "Estado", "Responsable"];
+
+  async function excel(){
+    const b = $("btnXlsx"), txt = b.innerHTML;
+    b.disabled = true; b.innerHTML = '<span class="spin"></span>Preparando…';
+    try{
+      await cargar(LIB.xlsx);
+      const fs = filas();
+      if(!fs.length){ toast("No hay objetivos con los filtros puestos.", true); return; }
+      const maxEnl = Math.max(1, ...fs.map(f => f.enlaces.length));
+      const cab = COLS.concat(Array.from({length: maxEnl}, (_, i) => "Evidencia " + (i + 1)));
+      const datos = [cab].concat(fs.map(f => [f.tipo, SANGRIA[f.nivel] + f.nombre, f.detalle, f.meta, f.plazo,
+        f.avance, f.logro, f.estado, f.responsable].concat(
+        Array.from({length: maxEnl}, (_, i) => f.enlaces[i] ? (f.enlaces[i].etiqueta || f.enlaces[i].url) : ""))));
+      const ws = XLSX.utils.aoa_to_sheet(datos);
+      /* Cada evidencia queda como hipervínculo real: un clic la abre. */
+      fs.forEach((f, r) => f.enlaces.forEach((e, i) => {
+        const ref = XLSX.utils.encode_cell({ r: r + 1, c: COLS.length + i });
+        if(ws[ref]) ws[ref].l = { Target: e.url, Tooltip: e.url };
+      }));
+      ws["!cols"] = [{wch:11},{wch:55},{wch:70},{wch:22},{wch:24},{wch:14},{wch:14},{wch:18},{wch:28}]
+        .concat(Array.from({length: maxEnl}, () => ({wch:40})));
+      ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:fs.length, c:cab.length - 1} }) };
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Plan de acción");
+      XLSX.writeFile(wb, nombreArchivo("xlsx"));
+      toast("Excel descargado.");
+    }catch(e){ toast(e.message, true); }
+    finally{ b.disabled = false; b.innerHTML = txt; }
+  }
+
+  async function pdf(){
+    const b = $("btnPdf"), txt = b.innerHTML;
+    b.disabled = true; b.innerHTML = '<span class="spin"></span>Preparando…';
+    try{
+      await cargar(LIB.jspdf); await cargar(LIB.auto);
+      const fs = filas();
+      if(!fs.length){ toast("No hay objetivos con los filtros puestos.", true); return; }
+      const doc = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(17,22,29);
+      doc.text("Plan de acción y seguimiento de objetivos", 12, 14);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(107,119,133);
+      const filtrosTxt = ["fPeriodo","fOficina","fCondicion","fEstado"].map(id => $(id).value).filter(Boolean).join(" · ");
+      doc.text("Facultad de Ingeniería · URP — SGOE ISO 21001 · Generado el " + verFecha(new Date()) +
+        (filtrosTxt ? " · Filtros: " + filtrosTxt : ""), 12, 20);
+
+      const COLOR = { 1:[15,143,94], 2:[231,244,238], 3:[247,248,250], 4:[255,255,255] };
+      const body = fs.map(f => [
+        f.tipo, SANGRIA[f.nivel] + f.nombre,
+        f.detalle.length > 900 ? f.detalle.slice(0, 900) + "…" : f.detalle,
+        [f.meta, f.plazo].filter(Boolean).join("\n"),
+        f.avance + (f.logro ? "\nlogro " + f.logro : ""),
+        [f.estado, f.responsable].filter(Boolean).join("\n"),
+        f.enlaces.map((e, i) => (e.etiqueta || "Evidencia " + (i + 1))).join("\n")
+      ]);
+      doc.autoTable({
+        startY: 25, head: [["Nivel","Elemento","Detalle","Meta y plazo","Avance","Estado y responsable","Evidencias"]],
+        body, theme: "grid",
+        styles: { font: "helvetica", fontSize: 7.6, cellPadding: 1.6, overflow: "linebreak", valign: "top", textColor: [31,41,51] },
+        headStyles: { fillColor: [17,22,29], textColor: 255, fontStyle: "bold" },
+        columnStyles: { 0:{cellWidth:16}, 1:{cellWidth:58}, 2:{cellWidth:86}, 3:{cellWidth:30}, 4:{cellWidth:20}, 5:{cellWidth:32}, 6:{cellWidth:31} },
+        margin: { left: 10, right: 10 },
+        didParseCell: d => {
+          if(d.section !== "body") return;
+          const f = fs[d.row.index];
+          d.cell.styles.fillColor = COLOR[f.nivel];
+          if(f.nivel === 1){ d.cell.styles.textColor = 255; d.cell.styles.fontStyle = "bold"; }
+          if(f.nivel === 2 && d.column.index === 1) d.cell.styles.fontStyle = "bold";
+          if(d.column.index === 6 && f.enlaces.length) d.cell.styles.textColor = [15,100,190];
+        },
+        /* Cada línea de la columna Evidencias se vuelve un enlace clicable. */
+        didDrawCell: d => {
+          if(d.section !== "body" || d.column.index !== 6) return;
+          const f = fs[d.row.index]; if(!f.enlaces.length) return;
+          const alto = (d.cell.height - 2 * 1.6) / Math.max(1, d.cell.text.length);
+          let y = d.cell.y + 1.6, linea = 0;
+          f.enlaces.forEach((e, i) => {
+            const partes = doc.splitTextToSize(e.etiqueta || "Evidencia " + (i + 1), d.cell.width - 3.2).length;
+            doc.link(d.cell.x, y + linea * alto, d.cell.width, partes * alto, { url: e.url });
+            linea += partes;
+          });
+        },
+        didDrawPage: () => {
+          const n = doc.internal.getNumberOfPages();
+          doc.setFontSize(8); doc.setTextColor(107,119,133);
+          doc.text("Página " + n, W - 22, doc.internal.pageSize.getHeight() - 6);
+        }
+      });
+      doc.save(nombreArchivo("pdf"));
+      toast("PDF descargado.");
+    }catch(e){ toast(e.message, true); }
+    finally{ b.disabled = false; b.innerHTML = txt; }
+  }
+
+  function montar(){
+    const bx = $("btnXlsx"), bp = $("btnPdf");
+    if(bx) bx.onclick = excel;
+    if(bp) bp.onclick = pdf;
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar); else montar();
+  window.URP_EXPORTAR = { filas, excel, pdf };
 })();
 </script>
 </body>
